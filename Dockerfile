@@ -1,4 +1,4 @@
-FROM rust:1.83-bookworm AS backend-builder
+FROM rustlang/rust:nightly-bookworm AS backend-builder
 WORKDIR /build
 COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/src ./src
