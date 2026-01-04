@@ -8,7 +8,7 @@
 
 #
 
-<img width="1535" height="1084" alt="image" src="https://github.com/user-attachments/assets/af4f95ab-5808-4c18-960d-8c7fea6134a4" />
+<img width="1532" height="1078" alt="image" src="https://github.com/user-attachments/assets/3981cde7-4e67-4fda-8fe8-ba965bb0a5ae" />
 
 payme was designed for self-hosting in my homelab environment. Run it on a Raspberry Pi, NAS, or any always-on server to track your household finances privately without relying on third-party services. Your financial data stays on your network, under your control.
 
