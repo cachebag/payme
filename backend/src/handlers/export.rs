@@ -1,11 +1,12 @@
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, FixedExpense, IncomeEntry, Item, Month};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserExport {
     pub version: u32,
     pub savings: Option<f64>,
@@ -15,19 +16,19 @@ pub struct UserExport {
     pub months: Vec<MonthExport>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct FixedExpenseExport {
     pub label: String,
     pub amount: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CategoryExport {
     pub label: String,
     pub default_amount: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct MonthExport {
     pub year: i32,
     pub month: i32,
@@ -37,19 +38,19 @@ pub struct MonthExport {
     pub items: Vec<ItemExport>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct IncomeExport {
     pub label: String,
     pub amount: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct BudgetExport {
     pub category_label: String,
     pub allocated_amount: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct ItemExport {
     pub category_label: String,
     pub description: String,
@@ -57,6 +58,18 @@ pub struct ItemExport {
     pub spent_on: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/export/json",
+    responses(
+        (status = 200, description = "A complete JSON export of all user data", body = UserExport),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal server error during database aggregation")
+    ),
+    tag = "Data Management",
+    summary = "Export all data to JSON",
+    description = "Gathers all user profile info, fixed expenses, categories, and monthly history into a single portable JSON object."
+)]
 pub async fn export_json(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -185,6 +198,18 @@ pub async fn export_json(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/import/json",
+    request_body = UserExport,
+    responses(
+        (status = 200, description = "Data imported successfully. Note: This overwrites existing user data."),
+        (status = 500, description = "Internal server error during database restoration")
+    ),
+    tag = "Data Management",
+    summary = "Import data from JSON",
+    description = "Overwrites the current user's database records with the provided JSON export. This action is destructive and irreversible."
+)]
 pub async fn import_json(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

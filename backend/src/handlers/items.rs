@@ -6,11 +6,12 @@ use axum::{
 use chrono::NaiveDate;
 use serde::Deserialize;
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::middleware::auth::Claims;
 use crate::models::{Item, ItemWithCategory};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateItem {
     pub category_id: i64,
     pub description: String,
@@ -18,7 +19,7 @@ pub struct CreateItem {
     pub spent_on: NaiveDate,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateItem {
     pub category_id: Option<i64>,
     pub description: Option<String>,
@@ -26,6 +27,17 @@ pub struct UpdateItem {
     pub spent_on: Option<NaiveDate>,
 }
 
+#[utoipa::path(
+    get, path = "/api/months/{id}/items",
+    params(("id" = i64, Path)),
+    responses(
+        (status = 200, body = [ItemWithCategory]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Items",
+    summary = "List transactions",
+    description = "Retrieves all itemized spending for the month, including category labels."
+)]
 pub async fn list_items(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -50,6 +62,18 @@ pub async fn list_items(
     Ok(Json(items))
 }
 
+#[utoipa::path(
+    post, path = "/api/months/{id}/items",
+    params(("id" = i64, Path)),
+    request_body = CreateItem,
+    responses(
+        (status = 200, body = Item),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Items",
+    summary = "Record transaction",
+    description = "Logs a new expense against a specific budget category."
+)]
 pub async fn create_item(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -89,6 +113,23 @@ pub async fn create_item(
     }))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/months/{month_id}/items/{id}",
+    params(
+        ("month_id" = i64, Path, description = "Month ID"),
+        ("id" = i64, Path, description = "Item (Transaction) ID")
+    ),
+    request_body = UpdateItem,
+    responses(
+        (status = 200, description = "Item updated successfully", body = Item),
+        (status = 404, description = "Item not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Items",
+    summary = "Update transaction details",
+    description = "Updates an existing transaction. Supports partial updates for category, description, amount, or date."
+)]
 pub async fn update_item(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -145,6 +186,21 @@ pub async fn update_item(
     }))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/months/{month_id}/items/{id}",
+    params(
+        ("month_id" = i64, Path, description = "Month ID"),
+        ("id" = i64, Path, description = "Item (Transaction) ID")
+    ),
+    responses(
+        (status = 204, description = "Item deleted successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Items",
+    summary = "Delete transaction",
+    description = "Permanently removes a transaction from the month's spending list."
+)]
 pub async fn delete_item(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

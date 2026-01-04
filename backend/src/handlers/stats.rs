@@ -4,6 +4,17 @@ use sqlx::SqlitePool;
 use crate::middleware::auth::Claims;
 use crate::models::{CategoryStats, MonthlyStats, StatsResponse};
 
+#[utoipa::path(
+    get,
+    path = "/api/stats",
+    responses(
+        (status = 200, description = "Get financial trends and category comparisons", body = StatsResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Insights",
+    summary = "Generate financial statistics",
+    description = "Calculates average monthly spending/income, monthly trends (Net income), and month-over-month category performance comparisons."
+)]
 pub async fn get_stats(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

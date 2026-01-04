@@ -12,6 +12,17 @@ use crate::models::{
 };
 use crate::pdf;
 
+#[utoipa::path(
+    get,
+    path = "/api/months",
+    responses(
+        (status = 200, description = "List all months for the user", body = [Month]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "List all budget months",
+    description = "Retrieves a history of all months created by the user, ordered by date."
+)]
 pub async fn list_months(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -27,6 +38,17 @@ pub async fn list_months(
     Ok(Json(months))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/months/current",
+    responses(
+        (status = 200, description = "Get current month or create it if it doesn't exist", body = MonthSummary),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Get current month summary",
+    description = "Checks for the current calendar month. If it doesn't exist, it creates it and copies over your default categories."
+)]
 pub async fn get_or_create_current_month(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -92,6 +114,20 @@ pub async fn get_or_create_current_month(
     get_month_summary(&pool, claims.sub, month_record.id).await
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/months/{id}",
+    params(
+        ("id" = i64, Path, description = "Month ID")
+    ),
+    responses(
+        (status = 200, description = "Get full summary for a specific month", body = MonthSummary),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Get specific month details",
+    description = "Returns a complete financial summary for a given month ID, including income, fixed expenses, and itemized spending."
+)]
 pub async fn get_month(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -211,6 +247,22 @@ async fn get_month_summary(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/months/{id}/close",
+    params(
+        ("id" = i64, Path, description = "Month ID")
+    ),
+    responses(
+        (status = 200, description = "Month closed and PDF snapshot generated", body = Month),
+        (status = 400, description = "Month is already closed"),
+        (status = 404, description = "Month not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Close month and generate report",
+    description = "Finalizes the month, prevents further edits, and generates a PDF snapshot for long-term storage."
+)]
 pub async fn close_month(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -259,6 +311,20 @@ pub async fn close_month(
     Ok(Json(updated))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/months/{id}/pdf",
+    params(
+        ("id" = i64, Path, description = "Month ID")
+    ),
+    responses(
+        (status = 200, description = "Download the PDF snapshot", content_type = "application/pdf"),
+        (status = 404, description = "PDF snapshot not found for this month")
+    ),
+    tag = "Months",
+    summary = "Download month PDF",
+    description = "Retrieves the binary PDF data for a closed month's financial report."
+)]
 pub async fn get_month_pdf(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

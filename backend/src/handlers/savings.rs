@@ -1,29 +1,41 @@
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::middleware::auth::Claims;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct SavingsResponse {
     pub savings: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateSavings {
     pub savings: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct RothIraResponse {
     pub roth_ira: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateRothIra {
     pub roth_ira: f64,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/savings",
+    responses(
+        (status = 200, body = SavingsResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Wealth",
+    summary = "Get savings balance",
+    description = "Retrieves the user's total liquid savings amount stored in their profile."
+)]
 pub async fn get_savings(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -37,6 +49,18 @@ pub async fn get_savings(
     Ok(Json(SavingsResponse { savings }))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/savings",
+    request_body = UpdateSavings,
+    responses(
+        (status = 200, body = SavingsResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Wealth",
+    summary = "Update savings balance",
+    description = "Sets a new value for the user's total liquid savings."
+)]
 pub async fn update_savings(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -54,6 +78,17 @@ pub async fn update_savings(
     }))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/roth-ira",
+    responses(
+        (status = 200, body = RothIraResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Wealth",
+    summary = "Get Roth IRA balance",
+    description = "Retrieves the user's total Roth IRA investment balance."
+)]
 pub async fn get_roth_ira(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -67,6 +102,18 @@ pub async fn get_roth_ira(
     Ok(Json(RothIraResponse { roth_ira }))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/roth-ira",
+    request_body = UpdateRothIra,
+    responses(
+        (status = 200, body = RothIraResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Wealth",
+    summary = "Update Roth IRA balance",
+    description = "Sets a new value for the user's total Roth IRA balance."
+)]
 pub async fn update_roth_ira(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

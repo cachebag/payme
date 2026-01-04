@@ -5,27 +5,39 @@ use axum::{
 };
 use serde::Deserialize;
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, MonthlyBudget};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateCategory {
     pub label: String,
     pub default_amount: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateCategory {
     pub label: Option<String>,
     pub default_amount: Option<f64>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateMonthlyBudget {
     pub allocated_amount: f64,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/categories",
+    responses(
+        (status = 200, body = [BudgetCategory]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configuration",
+    summary = "List all categories",
+    description = "Retrieves all budget categories used as templates for new months."
+)]
 pub async fn list_categories(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -41,6 +53,18 @@ pub async fn list_categories(
     Ok(Json(categories))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/categories",
+    request_body = CreateCategory,
+    responses(
+        (status = 201, description = "Category created and added to open months", body = BudgetCategory),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configuration",
+    summary = "Create a category",
+    description = "Creates a new category template."
+)]
 pub async fn create_category(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -83,6 +107,19 @@ pub async fn create_category(
     }))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/categories/{id}",
+    params(("id" = i64, Path, description = "Category ID")),
+    request_body = UpdateCategory,
+    responses(
+        (status = 200, body = BudgetCategory),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configuration",
+    summary = "Update a category",
+    description = "Updates the label or default amount for a category template."
+)]
 pub async fn update_category(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -118,6 +155,14 @@ pub async fn update_category(
     }))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/categories/{id}",
+    params(("id" = i64, Path, description = "Category ID")),
+    responses((status = 204, description = "Deleted")),
+    tag = "Configuration",
+    summary = "Delete global category",
+)]
 pub async fn delete_category(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -133,6 +178,18 @@ pub async fn delete_category(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/months/{id}/budgets",
+    params(("id" = i64, Path, description = "Month ID")),
+    responses(
+        (status = 200, body = [MonthlyBudget]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Budgets",
+    summary = "List monthly allocations",
+    description = "Retrieves the specific budget allocations for a specific month."
+)]
 pub async fn list_monthly_budgets(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -157,6 +214,22 @@ pub async fn list_monthly_budgets(
     Ok(Json(budgets))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/months/{month_id}/budgets/{id}",
+    params(
+        ("month_id" = i64, Path, description = "Month ID"),
+        ("id" = i64, Path, description = "Budget ID")
+    ),
+    request_body = UpdateMonthlyBudget,
+    responses(
+        (status = 200, body = MonthlyBudget),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Budgets",
+    summary = "Update monthly allocation",
+    description = "Adjust the amount of money allocated to a specific category for a specific month."
+)]
 pub async fn update_monthly_budget(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

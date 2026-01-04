@@ -5,22 +5,34 @@ use axum::{
 };
 use serde::Deserialize;
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::middleware::auth::Claims;
 use crate::models::IncomeEntry;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateIncome {
     pub label: String,
     pub amount: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateIncome {
     pub label: Option<String>,
     pub amount: Option<f64>,
 }
 
+#[utoipa::path(
+    get, path = "/api/months/{id}/income",
+    params(("id" = i64, Path)),
+    responses(
+        (status = 200, body = [IncomeEntry]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Income",
+    summary = "List monthly income",
+    description = "Retrieves all sources of income (paychecks, gifts, etc.) recorded for a specific month."
+)]
 pub async fn list_income(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -38,6 +50,18 @@ pub async fn list_income(
     Ok(Json(entries))
 }
 
+#[utoipa::path(
+    post, path = "/api/months/{id}/income",
+    params(("id" = i64, Path)),
+    request_body = CreateIncome,
+    responses(
+        (status = 200, body = IncomeEntry),
+        (status = 500, description = "Internal server error")   
+    ),
+    tag = "Income",
+    summary = "Add income entry",
+    description = "Records a new income source for the month. Only available if the month is open."
+)]
 pub async fn create_income(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -64,6 +88,22 @@ pub async fn create_income(
     }))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/months/{month_id}/income/{id}",
+    params(
+        ("month_id" = i64, Path, description = "Month ID"),
+        ("id" = i64, Path, description = "Income Entry ID")
+    ),
+    request_body = UpdateIncome,
+    responses(
+        (status = 200, description = "Income updated successfully", body = IncomeEntry),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Income",
+    summary = "Update income entry",
+    description = "Modifies an existing income record's label or amount."
+)]
 pub async fn update_income(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
@@ -101,6 +141,21 @@ pub async fn update_income(
     }))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/months/{month_id}/income/{id}",
+    params(
+        ("month_id" = i64, Path, description = "Month ID"),
+        ("id" = i64, Path, description = "Income Entry ID")
+    ),
+    responses(
+        (status = 204, description = "Income deleted successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Income",
+    summary = "Delete income entry",
+    description = "Removes a specific income source from the month's records."
+)]
 pub async fn delete_income(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,

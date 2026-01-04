@@ -8,21 +8,34 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::middleware::auth::Claims;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct AuthRequest {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AuthResponse {
     pub id: i64,
     pub username: String,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/register",
+    request_body = AuthRequest,
+    responses(
+        (status = 200, description = "User registered successfully", body = AuthResponse),
+        (status = 409, description = "Username already exists"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Register a new account",
+    description = "Creates a new user record. Returns the newly created user's ID and username."
+)]
 pub async fn register(
     State(pool): State<SqlitePool>,
     Json(payload): Json<AuthRequest>,
@@ -49,6 +62,19 @@ pub async fn register(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/login",
+    request_body = AuthRequest,
+    responses(
+        (status = 200, description = "Login successful", body = AuthResponse),
+        (status = 401, description = "Invalid credentials"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth",
+    summary = "Authenticate user",
+    description = "Verifies credentials and issues a JWT token."
+)]
 pub async fn login(
     State(pool): State<SqlitePool>,
     jar: CookieJar,
@@ -99,6 +125,17 @@ pub async fn login(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/logout",
+    responses(
+        (status = 200, description = "Logout successful."),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth",
+    summary = "Log out user",
+    description = "Clears the authentication token by setting the session cookie to expire immediately."
+)]
 pub async fn logout(jar: CookieJar) -> impl IntoResponse {
     let cookie = Cookie::build(("token", ""))
         .path("/")
@@ -109,6 +146,18 @@ pub async fn logout(jar: CookieJar) -> impl IntoResponse {
     jar.add(cookie)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/auth/me",
+    responses(
+        (status = 200, description = "Current user retrieved", body = AuthResponse),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth",
+    summary = "Get current user profile",
+    description = "Retrives authenticated user's information."
+)]
 pub async fn me(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
