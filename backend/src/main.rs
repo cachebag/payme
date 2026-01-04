@@ -11,6 +11,7 @@ use axum::{
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 
 use config::Config;
 use handlers::{auth, budget, export, fixed_expenses, income, items, months, savings, stats};
@@ -76,7 +77,8 @@ async fn main() {
     let app = Router::new()
         .merge(public_routes)
         .merge(protected_routes)
-        .layer(cors)
+        .fallback_service(ServeDir::new("/app/static"))
+	.layer(cors)
         .with_state(pool);
 
     let addr = format!("0.0.0.0:{}", config.port);
