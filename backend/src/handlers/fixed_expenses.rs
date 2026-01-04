@@ -107,4 +107,3 @@ pub async fn delete_fixed_expense(
 
     Ok(StatusCode::NO_CONTENT)
 }
-

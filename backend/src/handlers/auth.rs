@@ -54,14 +54,13 @@ pub async fn login(
     jar: CookieJar,
     Json(payload): Json<AuthRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let user: (i64, String, String) = sqlx::query_as(
-        "SELECT id, username, password_hash FROM users WHERE username = ?",
-    )
-    .bind(&payload.username)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::UNAUTHORIZED)?;
+    let user: (i64, String, String) =
+        sqlx::query_as("SELECT id, username, password_hash FROM users WHERE username = ?")
+            .bind(&payload.username)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .ok_or(StatusCode::UNAUTHORIZED)?;
 
     let parsed_hash = PasswordHash::new(&user.2).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Argon2::default()
@@ -114,13 +113,12 @@ pub async fn me(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
-    let user: (i64, String) =
-        sqlx::query_as("SELECT id, username FROM users WHERE id = ?")
-            .bind(claims.sub)
-            .fetch_optional(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            .ok_or(StatusCode::NOT_FOUND)?;
+    let user: (i64, String) = sqlx::query_as("SELECT id, username FROM users WHERE id = ?")
+        .bind(claims.sub)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(AuthResponse {
         id: user.0,
@@ -142,10 +140,12 @@ pub async fn export_db(
     let filename = format!("attachment; filename=\"payme-{}.db\"", claims.username);
     Ok((
         [
-            ("Content-Type".to_string(), "application/octet-stream".to_string()),
+            (
+                "Content-Type".to_string(),
+                "application/octet-stream".to_string(),
+            ),
             ("Content-Disposition".to_string(), filename),
         ],
         data,
     ))
 }
-

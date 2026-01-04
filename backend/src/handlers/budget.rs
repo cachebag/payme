@@ -56,13 +56,12 @@ pub async fn create_category(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let open_months: Vec<(i64,)> = sqlx::query_as(
-        "SELECT id FROM months WHERE user_id = ? AND is_closed = 0",
-    )
-    .bind(claims.sub)
-    .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let open_months: Vec<(i64,)> =
+        sqlx::query_as("SELECT id FROM months WHERE user_id = ? AND is_closed = 0")
+            .bind(claims.sub)
+            .fetch_all(&pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     for (month_id,) in open_months {
         sqlx::query(
@@ -201,4 +200,3 @@ pub async fn update_monthly_budget(
         allocated_amount: payload.allocated_amount,
     }))
 }
-

@@ -1,9 +1,4 @@
-use axum::{
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 use axum_extra::extract::CookieJar;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
@@ -46,4 +41,3 @@ pub async fn auth_middleware(
     request.extensions_mut().insert(token_data.claims);
     Ok(next.run(request).await)
 }
-

@@ -162,7 +162,11 @@ pub async fn delete_item(
     Ok(StatusCode::NO_CONTENT)
 }
 
-async fn verify_month_access(pool: &SqlitePool, user_id: i64, month_id: i64) -> Result<(), StatusCode> {
+async fn verify_month_access(
+    pool: &SqlitePool,
+    user_id: i64,
+    month_id: i64,
+) -> Result<(), StatusCode> {
     let exists: Option<(i64,)> =
         sqlx::query_as("SELECT id FROM months WHERE id = ? AND user_id = ?")
             .bind(month_id)
@@ -193,4 +197,3 @@ async fn verify_month_not_closed(
         None => Err(StatusCode::NOT_FOUND),
     }
 }
-

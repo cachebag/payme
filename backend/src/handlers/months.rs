@@ -8,8 +8,7 @@ use sqlx::SqlitePool;
 
 use crate::middleware::auth::Claims;
 use crate::models::{
-    FixedExpense, IncomeEntry, ItemWithCategory, Month, MonthSummary,
-    MonthlyBudgetWithCategory,
+    FixedExpense, IncomeEntry, ItemWithCategory, Month, MonthSummary, MonthlyBudgetWithCategory,
 };
 use crate::pdf;
 
@@ -138,30 +137,33 @@ async fn get_month_summary(
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let budgets: Vec<MonthlyBudgetWithCategory> = sqlx::query_as::<_, (i64, i64, i64, String, f64)>(
-        r#"
+    let budgets: Vec<MonthlyBudgetWithCategory> =
+        sqlx::query_as::<_, (i64, i64, i64, String, f64)>(
+            r#"
         SELECT mb.id, mb.month_id, mb.category_id, bc.label, mb.allocated_amount
         FROM monthly_budgets mb
         JOIN budget_categories bc ON mb.category_id = bc.id
         WHERE mb.month_id = ?
         "#,
-    )
-    .bind(month_id)
-    .fetch_all(pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .into_iter()
-    .map(|(id, month_id, category_id, category_label, allocated_amount)| {
-        MonthlyBudgetWithCategory {
-            id,
-            month_id,
-            category_id,
-            category_label,
-            allocated_amount,
-            spent_amount: 0.0,
-        }
-    })
-    .collect();
+        )
+        .bind(month_id)
+        .fetch_all(pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .into_iter()
+        .map(
+            |(id, month_id, category_id, category_label, allocated_amount)| {
+                MonthlyBudgetWithCategory {
+                    id,
+                    month_id,
+                    category_id,
+                    category_label,
+                    allocated_amount,
+                    spent_amount: 0.0,
+                }
+            },
+        )
+        .collect();
 
     let items: Vec<ItemWithCategory> = sqlx::query_as(
         r#"
@@ -288,4 +290,3 @@ pub async fn get_month_pdf(
         snapshot.0,
     ))
 }
-

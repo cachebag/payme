@@ -115,4 +115,3 @@ pub struct StatsResponse {
     pub average_monthly_spending: f64,
     pub average_monthly_income: f64,
 }
-

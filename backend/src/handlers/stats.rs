@@ -45,13 +45,12 @@ pub async fn get_stats(
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-        let fixed: (f64,) = sqlx::query_as(
-            "SELECT COALESCE(SUM(amount), 0) FROM fixed_expenses WHERE user_id = ?",
-        )
-        .bind(claims.sub)
-        .fetch_one(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let fixed: (f64,) =
+            sqlx::query_as("SELECT COALESCE(SUM(amount), 0) FROM fixed_expenses WHERE user_id = ?")
+                .bind(claims.sub)
+                .fetch_one(&pool)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         total_spending += spent.0;
         total_income_all += income.0;
@@ -140,4 +139,3 @@ pub async fn get_stats(
         average_monthly_income,
     }))
 }
-

@@ -190,12 +190,11 @@ pub async fn import_json(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(data): Json<UserExport>,
 ) -> Result<StatusCode, StatusCode> {
-    let months: Vec<(i64,)> =
-        sqlx::query_as("SELECT id FROM months WHERE user_id = ?")
-            .bind(claims.sub)
-            .fetch_all(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let months: Vec<(i64,)> = sqlx::query_as("SELECT id FROM months WHERE user_id = ?")
+        .bind(claims.sub)
+        .fetch_all(&pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     for (month_id,) in &months {
         sqlx::query("DELETE FROM items WHERE month_id = ?")
@@ -333,4 +332,3 @@ pub async fn import_json(
 
     Ok(StatusCode::OK)
 }
-
