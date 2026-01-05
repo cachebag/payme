@@ -4,20 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "*", features = ["macros"] }
-axum-extra = { version = "*", features = ["cookie"] }
-tokio = { version = "*", features = ["full"] }
-tower = "*"
-tower-http = { version = "*", features = ["cors", "fs"] }
-serde = { version = "*", features = ["derive"] }
-serde_json = "*"
-sqlx = { version = "*", features = ["runtime-tokio", "sqlite", "chrono"] }
-argon2 = "*"
-jsonwebtoken = { version = "*", features = ["rust_crypto"] }
-chrono = { version = "*", features = ["serde"] }
-printpdf = "0.7"
-uuid = { version = "*", features = ["v4"] }
-dotenvy = "*"
-time = "*"
+axum = { version = "0.8.8", features = ["macros"] }
+axum-extra = { version = "0.12.5", features = ["cookie"] }
+tokio = { version = "1.49.0", features = ["full"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.8", features = ["cors", "fs"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.148"
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "chrono"] }
+argon2 = "0.5.3"
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+printpdf = "0.7.0"
+uuid = { version = "1.19.0", features = ["v4"] }
+dotenvy = "0.15.7"
+time = "0.3.44"
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono" ] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+thiserror = "2.0.17"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.22"

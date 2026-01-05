@@ -1,11 +1,11 @@
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
     Json,
 };
-use chrono::Utc;
+use chrono::{Datelike, Utc};
 use sqlx::SqlitePool;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{
     FixedExpense, IncomeEntry, ItemWithCategory, Month, MonthSummary, MonthlyBudgetWithCategory,
@@ -26,14 +26,13 @@ use crate::pdf;
 pub async fn list_months(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<Vec<Month>>, StatusCode> {
+) -> Result<Json<Vec<Month>>, PaymeError> {
     let months: Vec<Month> = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE user_id = ? ORDER BY year DESC, month DESC",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     Ok(Json(months))
 }
@@ -52,10 +51,10 @@ pub async fn list_months(
 pub async fn get_or_create_current_month(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<MonthSummary>, StatusCode> {
+) -> Result<Json<MonthSummary>, PaymeError> {
     let now = Utc::now();
-    let year = now.format("%Y").to_string().parse::<i32>().unwrap();
-    let month = now.format("%m").to_string().parse::<i32>().unwrap();
+    let year = now.year();
+    let month = now.month() as i32;
 
     let existing: Option<Month> = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE user_id = ? AND year = ? AND month = ?",
@@ -64,8 +63,7 @@ pub async fn get_or_create_current_month(
     .bind(year)
     .bind(month)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     let month_record = match existing {
         Some(m) => m,
@@ -77,16 +75,14 @@ pub async fn get_or_create_current_month(
             .bind(year)
             .bind(month)
             .fetch_one(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
             let categories: Vec<(i64, f64)> = sqlx::query_as(
                 "SELECT id, default_amount FROM budget_categories WHERE user_id = ?",
             )
             .bind(claims.sub)
             .fetch_all(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
             for (cat_id, default_amount) in categories {
                 sqlx::query(
@@ -132,16 +128,15 @@ pub async fn get_month(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path(month_id): Path<i64>,
-) -> Result<Json<MonthSummary>, StatusCode> {
+) -> Result<Json<MonthSummary>, PaymeError> {
     let month: Month = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ? AND user_id = ?",
     )
     .bind(month_id)
     .bind(claims.sub)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::NOT_FOUND)?;
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
     get_month_summary(&pool, claims.sub, month.id).await
 }
@@ -150,28 +145,25 @@ async fn get_month_summary(
     pool: &SqlitePool,
     user_id: i64,
     month_id: i64,
-) -> Result<Json<MonthSummary>, StatusCode> {
+) -> Result<Json<MonthSummary>, PaymeError> {
     let month: Month = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ?",
     )
     .bind(month_id)
     .fetch_one(pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     let income_entries: Vec<IncomeEntry> =
         sqlx::query_as("SELECT id, month_id, label, amount FROM income_entries WHERE month_id = ?")
             .bind(month_id)
             .fetch_all(pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
     let fixed_expenses: Vec<FixedExpense> =
         sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ?")
             .bind(user_id)
             .fetch_all(pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
     let budgets: Vec<MonthlyBudgetWithCategory> =
         sqlx::query_as::<_, (i64, i64, i64, String, f64)>(
@@ -184,8 +176,7 @@ async fn get_month_summary(
         )
         .bind(month_id)
         .fetch_all(pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .await?
         .into_iter()
         .map(
             |(id, month_id, category_id, category_label, allocated_amount)| {
@@ -212,8 +203,7 @@ async fn get_month_summary(
     )
     .bind(month_id)
     .fetch_all(pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     let budgets: Vec<MonthlyBudgetWithCategory> = budgets
         .into_iter()
@@ -267,46 +257,44 @@ pub async fn close_month(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path(month_id): Path<i64>,
-) -> Result<Json<Month>, StatusCode> {
+) -> Result<Json<Month>, PaymeError> {
     let month: Month = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ? AND user_id = ?",
     )
     .bind(month_id)
     .bind(claims.sub)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::NOT_FOUND)?;
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
     if month.is_closed {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(PaymeError::BadRequest(
+            "Month is already closed".to_string(),
+        ));
     }
 
     let summary = get_month_summary(&pool, claims.sub, month_id).await?.0;
-    let pdf_data = pdf::generate_pdf(&summary).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let pdf_data = pdf::generate_pdf(&summary).map_err(|e| PaymeError::Internal(e.to_string()))?;
 
     sqlx::query("INSERT INTO monthly_snapshots (month_id, pdf_data) VALUES (?, ?)")
         .bind(month_id)
         .bind(&pdf_data)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     let now = Utc::now();
     sqlx::query("UPDATE months SET is_closed = 1, closed_at = ? WHERE id = ?")
         .bind(now)
         .bind(month_id)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     let updated: Month = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ?",
     )
     .bind(month_id)
     .fetch_one(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     Ok(Json(updated))
 }
@@ -329,24 +317,22 @@ pub async fn get_month_pdf(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path(month_id): Path<i64>,
-) -> Result<impl axum::response::IntoResponse, StatusCode> {
+) -> Result<impl axum::response::IntoResponse, PaymeError> {
     let _month: Month = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ? AND user_id = ?",
     )
     .bind(month_id)
     .bind(claims.sub)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::NOT_FOUND)?;
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
     let snapshot: (Vec<u8>,) =
         sqlx::query_as("SELECT pdf_data FROM monthly_snapshots WHERE month_id = ?")
             .bind(month_id)
             .fetch_optional(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            .ok_or(StatusCode::NOT_FOUND)?;
+            .await?
+            .ok_or(PaymeError::NotFound)?;
 
     Ok((
         [

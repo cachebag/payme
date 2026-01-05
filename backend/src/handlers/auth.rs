@@ -2,7 +2,7 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{extract::State, response::IntoResponse, Json};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 
 #[derive(Deserialize, ToSchema)]
@@ -39,12 +40,12 @@ pub struct AuthResponse {
 pub async fn register(
     State(pool): State<SqlitePool>,
     Json(payload): Json<AuthRequest>,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> Result<impl IntoResponse, PaymeError> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let password_hash = argon2
         .hash_password(payload.password.as_bytes(), &salt)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .map_err(|e| PaymeError::Internal(e.to_string()))?
         .to_string();
 
     let result = sqlx::query_scalar::<_, i64>(
@@ -53,8 +54,7 @@ pub async fn register(
     .bind(&payload.username)
     .bind(&password_hash)
     .fetch_one(&pool)
-    .await
-    .map_err(|_| StatusCode::CONFLICT)?;
+    .await?;
 
     Ok(Json(AuthResponse {
         id: result,
@@ -79,19 +79,19 @@ pub async fn login(
     State(pool): State<SqlitePool>,
     jar: CookieJar,
     Json(payload): Json<AuthRequest>,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> Result<impl IntoResponse, PaymeError> {
     let user: (i64, String, String) =
         sqlx::query_as("SELECT id, username, password_hash FROM users WHERE username = ?")
             .bind(&payload.username)
             .fetch_optional(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            .ok_or(StatusCode::UNAUTHORIZED)?;
+            .await?
+            .ok_or(PaymeError::Unauthorized)?;
 
-    let parsed_hash = PasswordHash::new(&user.2).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let parsed_hash =
+        PasswordHash::new(&user.2).map_err(|e| PaymeError::Internal(e.to_string()))?;
     Argon2::default()
         .verify_password(payload.password.as_bytes(), &parsed_hash)
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+        .map_err(|_| PaymeError::Unauthorized)?;
 
     let secret = std::env::var("JWT_SECRET")
         .unwrap_or_else(|_| "payme-secret-key-change-in-production".to_string());
@@ -107,7 +107,7 @@ pub async fn login(
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
     )
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(|e| PaymeError::Internal(e.to_string()))?;
 
     let cookie = Cookie::build(("token", token))
         .path("/")
@@ -161,13 +161,12 @@ pub async fn logout(jar: CookieJar) -> impl IntoResponse {
 pub async fn me(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<AuthResponse>, StatusCode> {
+) -> Result<Json<AuthResponse>, PaymeError> {
     let user: (i64, String) = sqlx::query_as("SELECT id, username FROM users WHERE id = ?")
         .bind(claims.sub)
         .fetch_optional(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::NOT_FOUND)?;
+        .await?
+        .ok_or(PaymeError::NotFound)?;
 
     Ok(Json(AuthResponse {
         id: user.0,
@@ -177,14 +176,14 @@ pub async fn me(
 
 pub async fn export_db(
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> Result<impl IntoResponse, PaymeError> {
     let db_path = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "sqlite:payme.db".to_string())
         .replace("sqlite:", "");
 
     let data = tokio::fs::read(&db_path)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| PaymeError::Internal(e.to_string()))?;
 
     let filename = format!("attachment; filename=\"payme-{}.db\"", claims.username);
     Ok((

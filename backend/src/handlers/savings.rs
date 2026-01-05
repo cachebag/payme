@@ -1,8 +1,9 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 
 #[derive(Serialize, ToSchema)]
@@ -39,12 +40,11 @@ pub struct UpdateRothIra {
 pub async fn get_savings(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<SavingsResponse>, StatusCode> {
+) -> Result<Json<SavingsResponse>, PaymeError> {
     let savings: f64 = sqlx::query_scalar("SELECT savings FROM users WHERE id = ?")
         .bind(claims.sub)
         .fetch_one(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(Json(SavingsResponse { savings }))
 }
@@ -65,13 +65,12 @@ pub async fn update_savings(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<UpdateSavings>,
-) -> Result<Json<SavingsResponse>, StatusCode> {
+) -> Result<Json<SavingsResponse>, PaymeError> {
     sqlx::query("UPDATE users SET savings = ? WHERE id = ?")
         .bind(payload.savings)
         .bind(claims.sub)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(Json(SavingsResponse {
         savings: payload.savings,
@@ -92,7 +91,7 @@ pub async fn update_savings(
 pub async fn get_roth_ira(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<RothIraResponse>, StatusCode> {
+) -> Result<Json<RothIraResponse>, PaymeError> {
     let roth_ira: f64 = sqlx::query_scalar("SELECT roth_ira FROM users WHERE id = ?")
         .bind(claims.sub)
         .fetch_one(&pool)
@@ -118,13 +117,12 @@ pub async fn update_roth_ira(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<UpdateRothIra>,
-) -> Result<Json<RothIraResponse>, StatusCode> {
+) -> Result<Json<RothIraResponse>, PaymeError> {
     sqlx::query("UPDATE users SET roth_ira = ? WHERE id = ?")
         .bind(payload.roth_ira)
         .bind(claims.sub)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(Json(RothIraResponse {
         roth_ira: payload.roth_ira,

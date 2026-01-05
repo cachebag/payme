@@ -7,6 +7,7 @@ use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, MonthlyBudget};
 
@@ -41,14 +42,13 @@ pub struct UpdateMonthlyBudget {
 pub async fn list_categories(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<Vec<BudgetCategory>>, StatusCode> {
+) -> Result<Json<Vec<BudgetCategory>>, PaymeError> {
     let categories: Vec<BudgetCategory> = sqlx::query_as(
         "SELECT id, user_id, label, default_amount FROM budget_categories WHERE user_id = ?",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     Ok(Json(categories))
 }
@@ -69,7 +69,7 @@ pub async fn create_category(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<CreateCategory>,
-) -> Result<Json<BudgetCategory>, StatusCode> {
+) -> Result<Json<BudgetCategory>, PaymeError> {
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO budget_categories (user_id, label, default_amount) VALUES (?, ?, ?) RETURNING id",
     )
@@ -77,15 +77,13 @@ pub async fn create_category(
     .bind(&payload.label)
     .bind(payload.default_amount)
     .fetch_one(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     let open_months: Vec<(i64,)> =
         sqlx::query_as("SELECT id FROM months WHERE user_id = ? AND is_closed = 0")
             .bind(claims.sub)
             .fetch_all(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
     for (month_id,) in open_months {
         sqlx::query(
@@ -125,16 +123,15 @@ pub async fn update_category(
     axum::Extension(claims): axum::Extension<Claims>,
     Path(category_id): Path<i64>,
     Json(payload): Json<UpdateCategory>,
-) -> Result<Json<BudgetCategory>, StatusCode> {
+) -> Result<Json<BudgetCategory>, PaymeError> {
     let existing: BudgetCategory = sqlx::query_as(
         "SELECT id, user_id, label, default_amount FROM budget_categories WHERE id = ? AND user_id = ?",
     )
     .bind(category_id)
     .bind(claims.sub)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::NOT_FOUND)?;
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
     let label = payload.label.unwrap_or(existing.label);
     let default_amount = payload.default_amount.unwrap_or(existing.default_amount);
@@ -144,8 +141,7 @@ pub async fn update_category(
         .bind(default_amount)
         .bind(category_id)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(Json(BudgetCategory {
         id: category_id,
@@ -167,13 +163,12 @@ pub async fn delete_category(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path(category_id): Path<i64>,
-) -> Result<StatusCode, StatusCode> {
+) -> Result<StatusCode, PaymeError> {
     sqlx::query("DELETE FROM budget_categories WHERE id = ? AND user_id = ?")
         .bind(category_id)
         .bind(claims.sub)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -194,22 +189,20 @@ pub async fn list_monthly_budgets(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path(month_id): Path<i64>,
-) -> Result<Json<Vec<MonthlyBudget>>, StatusCode> {
+) -> Result<Json<Vec<MonthlyBudget>>, PaymeError> {
     let _month: (i64,) = sqlx::query_as("SELECT id FROM months WHERE id = ? AND user_id = ?")
         .bind(month_id)
         .bind(claims.sub)
         .fetch_optional(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::NOT_FOUND)?;
+        .await?
+        .ok_or(PaymeError::NotFound)?;
 
     let budgets: Vec<MonthlyBudget> = sqlx::query_as(
         "SELECT id, month_id, category_id, allocated_amount FROM monthly_budgets WHERE month_id = ?",
     )
     .bind(month_id)
     .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     Ok(Json(budgets))
 }
@@ -235,18 +228,17 @@ pub async fn update_monthly_budget(
     axum::Extension(claims): axum::Extension<Claims>,
     Path((month_id, budget_id)): Path<(i64, i64)>,
     Json(payload): Json<UpdateMonthlyBudget>,
-) -> Result<Json<MonthlyBudget>, StatusCode> {
+) -> Result<Json<MonthlyBudget>, PaymeError> {
     let month: (bool,) =
         sqlx::query_as("SELECT is_closed FROM months WHERE id = ? AND user_id = ?")
             .bind(month_id)
             .bind(claims.sub)
             .fetch_optional(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            .ok_or(StatusCode::NOT_FOUND)?;
+            .await?
+            .ok_or(PaymeError::NotFound)?;
 
     if month.0 {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(PaymeError::BadRequest("Month is closed".to_string()));
     }
 
     let existing: MonthlyBudget = sqlx::query_as(
@@ -255,16 +247,14 @@ pub async fn update_monthly_budget(
     .bind(budget_id)
     .bind(month_id)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::NOT_FOUND)?;
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
     sqlx::query("UPDATE monthly_budgets SET allocated_amount = ? WHERE id = ?")
         .bind(payload.allocated_amount)
         .bind(budget_id)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(Json(MonthlyBudget {
         id: budget_id,

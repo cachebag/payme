@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, FixedExpense, IncomeEntry, Item, Month};
 
@@ -73,7 +74,7 @@ pub struct ItemExport {
 pub async fn export_json(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<UserExport>, StatusCode> {
+) -> Result<Json<UserExport>, PaymeError> {
     let savings: f64 = sqlx::query_scalar("SELECT savings FROM users WHERE id = ?")
         .bind(claims.sub)
         .fetch_one(&pool)
@@ -90,24 +91,21 @@ pub async fn export_json(
         sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ?")
             .bind(claims.sub)
             .fetch_all(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
     let categories: Vec<BudgetCategory> = sqlx::query_as(
         "SELECT id, user_id, label, default_amount FROM budget_categories WHERE user_id = ?",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     let months: Vec<Month> = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE user_id = ? ORDER BY year, month",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     let mut month_exports = Vec::new();
 
@@ -117,8 +115,7 @@ pub async fn export_json(
         )
         .bind(m.id)
         .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
         let budgets: Vec<(String, f64)> = sqlx::query_as(
             r#"
@@ -130,16 +127,14 @@ pub async fn export_json(
         )
         .bind(m.id)
         .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
         let items: Vec<Item> = sqlx::query_as(
             "SELECT id, month_id, category_id, description, amount, spent_on FROM items WHERE month_id = ?",
         )
         .bind(m.id)
         .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
         let mut item_exports = Vec::new();
         for item in items {
@@ -214,12 +209,11 @@ pub async fn import_json(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Json(data): Json<UserExport>,
-) -> Result<StatusCode, StatusCode> {
+) -> Result<StatusCode, PaymeError> {
     let months: Vec<(i64,)> = sqlx::query_as("SELECT id FROM months WHERE user_id = ?")
         .bind(claims.sub)
         .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     for (month_id,) in &months {
         sqlx::query("DELETE FROM items WHERE month_id = ?")
@@ -297,8 +291,7 @@ pub async fn import_json(
         .bind(&cat.label)
         .bind(cat.default_amount)
         .fetch_one(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
         category_map.insert(cat.label.clone(), id);
     }
 
@@ -311,8 +304,7 @@ pub async fn import_json(
         .bind(month_data.month)
         .bind(month_data.is_closed)
         .fetch_one(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
         for income in &month_data.income_entries {
             sqlx::query("INSERT INTO income_entries (month_id, label, amount) VALUES (?, ?, ?)")

@@ -1,5 +1,6 @@
 mod config;
 mod db;
+mod error;
 mod handlers;
 mod middleware;
 mod models;
@@ -23,6 +24,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
     let config = Config::from_env();
     let pool = db::create_pool(&config.database_url)
         .await
@@ -119,6 +121,8 @@ async fn main() {
     let addr = format!("0.0.0.0:{}", config.port);
     println!("Server running on {}", addr);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .expect("Failed to bind to address");
+    axum::serve(listener, app).await.expect("Server error");
 }

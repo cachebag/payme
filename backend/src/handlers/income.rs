@@ -7,6 +7,7 @@ use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::IncomeEntry;
 
@@ -37,15 +38,14 @@ pub async fn list_income(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path(month_id): Path<i64>,
-) -> Result<Json<Vec<IncomeEntry>>, StatusCode> {
+) -> Result<Json<Vec<IncomeEntry>>, PaymeError> {
     verify_month_access(&pool, claims.sub, month_id).await?;
 
     let entries: Vec<IncomeEntry> =
         sqlx::query_as("SELECT id, month_id, label, amount FROM income_entries WHERE month_id = ?")
             .bind(month_id)
             .fetch_all(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
     Ok(Json(entries))
 }
@@ -67,7 +67,7 @@ pub async fn create_income(
     axum::Extension(claims): axum::Extension<Claims>,
     Path(month_id): Path<i64>,
     Json(payload): Json<CreateIncome>,
-) -> Result<Json<IncomeEntry>, StatusCode> {
+) -> Result<Json<IncomeEntry>, PaymeError> {
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let id: i64 = sqlx::query_scalar(
@@ -77,8 +77,7 @@ pub async fn create_income(
     .bind(&payload.label)
     .bind(payload.amount)
     .fetch_one(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     Ok(Json(IncomeEntry {
         id,
@@ -109,7 +108,7 @@ pub async fn update_income(
     axum::Extension(claims): axum::Extension<Claims>,
     Path((month_id, income_id)): Path<(i64, i64)>,
     Json(payload): Json<UpdateIncome>,
-) -> Result<Json<IncomeEntry>, StatusCode> {
+) -> Result<Json<IncomeEntry>, PaymeError> {
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let existing: IncomeEntry = sqlx::query_as(
@@ -118,9 +117,8 @@ pub async fn update_income(
     .bind(income_id)
     .bind(month_id)
     .fetch_optional(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::NOT_FOUND)?;
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
     let label = payload.label.unwrap_or(existing.label);
     let amount = payload.amount.unwrap_or(existing.amount);
@@ -130,8 +128,7 @@ pub async fn update_income(
         .bind(amount)
         .bind(income_id)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(Json(IncomeEntry {
         id: income_id,
@@ -160,15 +157,14 @@ pub async fn delete_income(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Path((month_id, income_id)): Path<(i64, i64)>,
-) -> Result<StatusCode, StatusCode> {
+) -> Result<StatusCode, PaymeError> {
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     sqlx::query("DELETE FROM income_entries WHERE id = ? AND month_id = ?")
         .bind(income_id)
         .bind(month_id)
         .execute(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -177,34 +173,32 @@ async fn verify_month_access(
     pool: &SqlitePool,
     user_id: i64,
     month_id: i64,
-) -> Result<(), StatusCode> {
+) -> Result<(), PaymeError> {
     let exists: Option<(i64,)> =
         sqlx::query_as("SELECT id FROM months WHERE id = ? AND user_id = ?")
             .bind(month_id)
             .bind(user_id)
             .fetch_optional(pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
-    exists.map(|_| ()).ok_or(StatusCode::NOT_FOUND)
+    exists.map(|_| ()).ok_or(PaymeError::NotFound)
 }
 
 async fn verify_month_not_closed(
     pool: &SqlitePool,
     user_id: i64,
     month_id: i64,
-) -> Result<(), StatusCode> {
+) -> Result<(), PaymeError> {
     let month: Option<(bool,)> =
         sqlx::query_as("SELECT is_closed FROM months WHERE id = ? AND user_id = ?")
             .bind(month_id)
             .bind(user_id)
             .fetch_optional(pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
     match month {
-        Some((true,)) => Err(StatusCode::BAD_REQUEST),
+        Some((true,)) => Err(PaymeError::BadRequest("Month is closed".to_string())),
         Some((false,)) => Ok(()),
-        None => Err(StatusCode::NOT_FOUND),
+        None => Err(PaymeError::NotFound),
     }
 }

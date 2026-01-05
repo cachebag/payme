@@ -1,7 +1,9 @@
-use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+use axum::{extract::Request, middleware::Next, response::Response};
 use axum_extra::extract::CookieJar;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
+
+use crate::error::PaymeError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
@@ -14,7 +16,7 @@ pub async fn auth_middleware(
     jar: CookieJar,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, PaymeError> {
     let token = jar
         .get("token")
         .map(|c| c.value().to_string())
@@ -26,7 +28,7 @@ pub async fn auth_middleware(
                 .and_then(|v| v.strip_prefix("Bearer "))
                 .map(|s| s.to_string())
         })
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .ok_or(PaymeError::Unauthorized)?;
 
     let secret = std::env::var("JWT_SECRET")
         .unwrap_or_else(|_| "payme-secret-key-change-in-production".to_string());
@@ -36,7 +38,7 @@ pub async fn auth_middleware(
         &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),
     )
-    .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    .map_err(|_| PaymeError::Unauthorized)?;
 
     request.extensions_mut().insert(token_data.claims);
     Ok(next.run(request).await)

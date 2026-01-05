@@ -1,6 +1,7 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::State, Json};
 use sqlx::SqlitePool;
 
+use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{CategoryStats, MonthlyStats, StatsResponse};
 
@@ -18,14 +19,13 @@ use crate::models::{CategoryStats, MonthlyStats, StatsResponse};
 pub async fn get_stats(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<StatsResponse>, StatusCode> {
+) -> Result<Json<StatsResponse>, PaymeError> {
     let months: Vec<(i64, i32, i32)> = sqlx::query_as(
         "SELECT id, year, month FROM months WHERE user_id = ? ORDER BY year DESC, month DESC",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .await?;
 
     if months.is_empty() {
         return Ok(Json(StatsResponse {
@@ -46,22 +46,19 @@ pub async fn get_stats(
         )
         .bind(month_id)
         .fetch_one(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await?;
 
         let spent: (f64,) =
             sqlx::query_as("SELECT COALESCE(SUM(amount), 0) FROM items WHERE month_id = ?")
                 .bind(month_id)
                 .fetch_one(&pool)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .await?;
 
         let fixed: (f64,) =
             sqlx::query_as("SELECT COALESCE(SUM(amount), 0) FROM fixed_expenses WHERE user_id = ?")
                 .bind(claims.sub)
                 .fetch_one(&pool)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .await?;
 
         total_spending += spent.0;
         total_income_all += income.0;
@@ -98,8 +95,7 @@ pub async fn get_stats(
             sqlx::query_as("SELECT id, label FROM budget_categories WHERE user_id = ?")
                 .bind(claims.sub)
                 .fetch_all(&pool)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .await?;
 
         for (cat_id, cat_label) in categories {
             let current_spent: (f64,) = sqlx::query_as(
@@ -108,8 +104,7 @@ pub async fn get_stats(
             .bind(current_month_id)
             .bind(cat_id)
             .fetch_one(&pool)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .await?;
 
             let previous_spent: f64 = if let Some(prev_id) = previous_month_id {
                 let result: (f64,) = sqlx::query_as(
@@ -118,8 +113,7 @@ pub async fn get_stats(
                 .bind(prev_id)
                 .bind(cat_id)
                 .fetch_one(&pool)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .await?;
                 result.0
             } else {
                 0.0
