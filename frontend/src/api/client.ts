@@ -173,12 +173,12 @@ export const api = {
       }),
   },
 
-  rothIra: {
-    get: () => request<{ roth_ira: number }>("/roth-ira"),
-    update: (roth_ira: number) =>
-      request<{ roth_ira: number }>("/roth-ira", {
+  retirementSavings: {
+    get: () => request<{ retirement_savings: number }>("/retirement-savings"),
+    update: (retirement_savings: number) =>
+      request<{ retirement_savings: number }>("/retirement-savings", {
         method: "PUT",
-        body: JSON.stringify({ roth_ira }),
+        body: JSON.stringify({ retirement_savings }),
       }),
   },
 };
@@ -186,7 +186,7 @@ export const api = {
 export interface UserExport {
   version: number;
   savings?: number;
-  roth_ira?: number;
+  retirement_savings?: number;
   fixed_expenses: { label: string; amount: number }[];
   categories: { label: string; default_amount: number }[];
   months: {

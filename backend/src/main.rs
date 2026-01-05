@@ -101,8 +101,14 @@ async fn main() {
         .route("/api/stats", get(stats::get_stats))
         .route("/api/savings", get(savings::get_savings))
         .route("/api/savings", put(savings::update_savings))
-        .route("/api/roth-ira", get(savings::get_roth_ira))
-        .route("/api/roth-ira", put(savings::update_roth_ira))
+        .route(
+            "/api/retirement-savings",
+            get(savings::get_retirement_savings),
+        )
+        .route(
+            "/api/retirement-savings",
+            put(savings::update_retirement_savings),
+        )
         .route("/api/export/json", get(export::export_json))
         .route("/api/import/json", post(export::import_json))
         .layer(from_fn(auth_middleware));

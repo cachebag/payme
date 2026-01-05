@@ -28,7 +28,12 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
         .await
         .ok();
 
-    sqlx::query("ALTER TABLE users ADD COLUMN roth_ira REAL NOT NULL DEFAULT 0")
+    sqlx::query("ALTER TABLE users ADD COLUMN retirement_savings REAL NOT NULL DEFAULT 0")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("UPDATE users SET retirement_savings = roth_ira WHERE retirement_savings = 0 AND roth_ira IS NOT NULL AND roth_ira > 0")
         .execute(pool)
         .await
         .ok();

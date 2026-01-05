@@ -4,13 +4,13 @@ import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 
-export function RothIraCard() {
+export function RetirementSavingsCard() {
   const [amount, setAmount] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
-    api.rothIra.get().then((res) => setAmount(res.roth_ira));
+    api.retirementSavings.get().then((res) => setAmount(res.retirement_savings));
   }, []);
 
   const startEdit = () => {
@@ -26,7 +26,7 @@ export function RothIraCard() {
   const saveEdit = async () => {
     const value = parseFloat(editValue);
     if (isNaN(value)) return;
-    await api.rothIra.update(value);
+    await api.retirementSavings.update(value);
     setAmount(value);
     setIsEditing(false);
   };
@@ -36,7 +36,7 @@ export function RothIraCard() {
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-            Roth IRA
+            Retirement Savings
           </div>
           {isEditing ? (
             <div className="flex items-center gap-2">

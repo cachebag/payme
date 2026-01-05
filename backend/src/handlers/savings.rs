@@ -19,14 +19,14 @@ pub struct UpdateSavings {
 }
 
 #[derive(Serialize, ToSchema)]
-pub struct RothIraResponse {
-    pub roth_ira: f64,
+pub struct RetirementSavingsResponse {
+    pub retirement_savings: f64,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
-pub struct UpdateRothIra {
+pub struct UpdateRetirementSavings {
     #[validate(range(min = 0.0))]
-    pub roth_ira: f64,
+    pub retirement_savings: f64,
 }
 
 #[utoipa::path(
@@ -83,53 +83,54 @@ pub async fn update_savings(
 
 #[utoipa::path(
     get,
-    path = "/api/roth-ira",
+    path = "/api/retirement-savings",
     responses(
-        (status = 200, body = RothIraResponse),
+        (status = 200, body = RetirementSavingsResponse),
         (status = 500, description = "Internal server error")
     ),
     tag = "Wealth",
-    summary = "Get Roth IRA balance",
-    description = "Retrieves the user's total Roth IRA investment balance."
+    summary = "Get retirement savings balance",
+    description = "Retrieves the user's total retirement savings balance."
 )]
-pub async fn get_roth_ira(
+pub async fn get_retirement_savings(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<RothIraResponse>, PaymeError> {
-    let roth_ira: f64 = sqlx::query_scalar("SELECT roth_ira FROM users WHERE id = ?")
-        .bind(claims.sub)
-        .fetch_one(&pool)
-        .await
-        .unwrap_or(0.0);
+) -> Result<Json<RetirementSavingsResponse>, PaymeError> {
+    let retirement_savings: f64 =
+        sqlx::query_scalar("SELECT retirement_savings FROM users WHERE id = ?")
+            .bind(claims.sub)
+            .fetch_one(&pool)
+            .await
+            .unwrap_or(0.0);
 
-    Ok(Json(RothIraResponse { roth_ira }))
+    Ok(Json(RetirementSavingsResponse { retirement_savings }))
 }
 
 #[utoipa::path(
     put,
-    path = "/api/roth-ira",
-    request_body = UpdateRothIra,
+    path = "/api/retirement-savings",
+    request_body = UpdateRetirementSavings,
     responses(
-        (status = 200, body = RothIraResponse),
+        (status = 200, body = RetirementSavingsResponse),
         (status = 500, description = "Internal server error")
     ),
     tag = "Wealth",
-    summary = "Update Roth IRA balance",
-    description = "Sets a new value for the user's total Roth IRA balance."
+    summary = "Update retirement savings balance",
+    description = "Sets a new value for the user's total retirement savings balance."
 )]
-pub async fn update_roth_ira(
+pub async fn update_retirement_savings(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-    Json(payload): Json<UpdateRothIra>,
-) -> Result<Json<RothIraResponse>, PaymeError> {
+    Json(payload): Json<UpdateRetirementSavings>,
+) -> Result<Json<RetirementSavingsResponse>, PaymeError> {
     payload.validate()?;
-    sqlx::query("UPDATE users SET roth_ira = ? WHERE id = ?")
-        .bind(payload.roth_ira)
+    sqlx::query("UPDATE users SET retirement_savings = ? WHERE id = ?")
+        .bind(payload.retirement_savings)
         .bind(claims.sub)
         .execute(&pool)
         .await?;
 
-    Ok(Json(RothIraResponse {
-        roth_ira: payload.roth_ira,
+    Ok(Json(RetirementSavingsResponse {
+        retirement_savings: payload.retirement_savings,
     }))
 }

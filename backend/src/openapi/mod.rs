@@ -10,7 +10,7 @@ use crate::handlers::{
     fixed_expenses::{CreateFixedExpense, UpdateFixedExpense},
     income::{CreateIncome, UpdateIncome},
     items::{CreateItem, UpdateItem},
-    savings::{RothIraResponse, SavingsResponse, UpdateRothIra, UpdateSavings},
+    savings::{RetirementSavingsResponse, SavingsResponse, UpdateRetirementSavings, UpdateSavings},
 };
 use crate::models::{
     BudgetCategory, CategoryStats, FixedExpense, IncomeEntry, Item, ItemWithCategory, Month,
@@ -51,8 +51,8 @@ use crate::models::{
         crate::handlers::months::get_month_pdf,
         crate::handlers::savings::get_savings,
         crate::handlers::savings::update_savings,
-        crate::handlers::savings::get_roth_ira,
-        crate::handlers::savings::update_roth_ira,
+        crate::handlers::savings::get_retirement_savings,
+        crate::handlers::savings::update_retirement_savings,
         crate::handlers::stats::get_stats
     ),
     components(schemas(
@@ -78,10 +78,10 @@ use crate::models::{
         StatsResponse,
         CategoryStats,
         MonthlyStats,
-        RothIraResponse,
+        RetirementSavingsResponse,
         SavingsResponse,
         UpdateSavings,
-        UpdateRothIra,
+        UpdateRetirementSavings,
         UserExport,
         CategoryExport,
         MonthExport,

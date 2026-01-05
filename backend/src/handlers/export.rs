@@ -11,7 +11,7 @@ use crate::models::{BudgetCategory, FixedExpense, IncomeEntry, Item, Month};
 pub struct UserExport {
     pub version: u32,
     pub savings: Option<f64>,
-    pub roth_ira: Option<f64>,
+    pub retirement_savings: Option<f64>,
     pub fixed_expenses: Vec<FixedExpenseExport>,
     pub categories: Vec<CategoryExport>,
     pub months: Vec<MonthExport>,
@@ -81,11 +81,12 @@ pub async fn export_json(
         .await
         .unwrap_or(0.0);
 
-    let roth_ira: f64 = sqlx::query_scalar("SELECT roth_ira FROM users WHERE id = ?")
-        .bind(claims.sub)
-        .fetch_one(&pool)
-        .await
-        .unwrap_or(0.0);
+    let retirement_savings: f64 =
+        sqlx::query_scalar("SELECT retirement_savings FROM users WHERE id = ?")
+            .bind(claims.sub)
+            .fetch_one(&pool)
+            .await
+            .unwrap_or(0.0);
 
     let fixed_expenses: Vec<FixedExpense> =
         sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ?")
@@ -174,7 +175,7 @@ pub async fn export_json(
     Ok(Json(UserExport {
         version: 1,
         savings: Some(savings),
-        roth_ira: Some(roth_ira),
+        retirement_savings: Some(retirement_savings),
         fixed_expenses: fixed_expenses
             .into_iter()
             .map(|e| FixedExpenseExport {
@@ -257,9 +258,9 @@ pub async fn import_json(
             .await?;
     }
 
-    if let Some(roth_ira) = data.roth_ira {
-        sqlx::query("UPDATE users SET roth_ira = ? WHERE id = ?")
-            .bind(roth_ira)
+    if let Some(retirement_savings) = data.retirement_savings {
+        sqlx::query("UPDATE users SET retirement_savings = ? WHERE id = ?")
+            .bind(retirement_savings)
             .bind(claims.sub)
             .execute(&mut *tx)
             .await?;

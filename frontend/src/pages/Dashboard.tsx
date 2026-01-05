@@ -2,7 +2,7 @@ import { Layout } from "../components/Layout";
 import { MonthNav } from "../components/MonthNav";
 import { Summary } from "../components/Summary";
 import { SavingsCard } from "../components/SavingsCard";
-import { RothIraCard } from "../components/RothIraCard";
+import { RetirementSavingsCard } from "../components/RetirementSavingsCard";
 import { IncomeSection } from "../components/IncomeSection";
 import { FixedExpenses } from "../components/FixedExpenses";
 import { BudgetSection } from "../components/BudgetSection";
@@ -70,7 +70,7 @@ export function Dashboard() {
           totalFixed={summary.total_fixed}
           totalSpent={summary.total_spent}
           remaining={summary.remaining}
-          extraCard={<RothIraCard />}
+          extraCard={<RetirementSavingsCard />}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
