@@ -8,6 +8,7 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use url::Url;
 use utoipa::ToSchema;
 use validator::Validate;
 
@@ -183,10 +184,12 @@ pub async fn me(
 pub async fn export_db(
     axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<impl IntoResponse, PaymeError> {
-    let db_path = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "sqlite:payme.db".to_string())
-        .replace("sqlite:", "")
-        .replace("?mode=rwc", "");
+    let db_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:payme.db".to_string());
+
+    let db_path = Url::parse(&db_url)
+        .map_err(|e| PaymeError::Internal(e.to_string()))?
+        .path()
+        .to_string();
 
     let data = tokio::fs::read(&db_path)
         .await
