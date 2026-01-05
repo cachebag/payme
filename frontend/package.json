@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
   },
   "dependencies": {
     "lucide-react": "*",
@@ -19,6 +20,12 @@
     "@types/react": "*",
     "@types/react-dom": "*",
     "@vitejs/plugin-react": "*",
+    "eslint": "*",
+    "@eslint/js": "*",
+    "typescript-eslint": "*",
+    "eslint-plugin-react-hooks": "*",
+    "eslint-plugin-react-refresh": "*",
+    "globals": "*",
     "tailwindcss": "*",
     "typescript": "*",
     "vite": "*"

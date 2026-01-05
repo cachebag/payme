@@ -6,6 +6,12 @@
   <b> A very minimal personal finance tracking application. </b>
 </div>
 
+<p align="center">
+  <a href="https://github.com/cachebag/payme/actions/workflows/ci.yml">
+    <img src="https://github.com/cachebag/payme/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+</p>
+
 #
 
 <img width="1532" height="1078" alt="image" src="https://github.com/user-attachments/assets/3981cde7-4e67-4fda-8fe8-ba965bb0a5ae" />

@@ -45,6 +45,7 @@ export function Layout({ children }: LayoutProps) {
         setShowImportConfirm(true);
       }
     } catch {
+      // Invalid JSON, ignore
     }
 
     if (fileInputRef.current) {
@@ -59,6 +60,7 @@ export function Layout({ children }: LayoutProps) {
       await api.importJson(pendingImport);
       window.location.reload();
     } catch {
+      // Import failed, ignore
     } finally {
       setImporting(false);
       setShowImportConfirm(false);

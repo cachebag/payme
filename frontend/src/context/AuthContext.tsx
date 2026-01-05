@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.auth.logout();
     } catch {
+      // Logout failed, ignore
     } finally {
       setUser(null);
     }

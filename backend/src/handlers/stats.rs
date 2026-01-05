@@ -90,7 +90,7 @@ pub async fn get_stats(
 
     let mut category_comparisons: Vec<CategoryStats> = vec![];
 
-    if months.len() >= 1 {
+    if !months.is_empty() {
         let current_month_id = months[0].0;
         let previous_month_id = months.get(1).map(|m| m.0);
 
