@@ -19,7 +19,6 @@ frontend/dist/
 *.sqlite3
 
 # Rust
-Cargo.lock
 **/*.rs.bk
 *.pdb
 
