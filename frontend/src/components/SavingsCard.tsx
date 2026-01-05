@@ -4,14 +4,21 @@ import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 
-export function SavingsCard() {
+interface SavingsCardProps {
+  onSavingsChange?: (savings: number) => void;
+}
+
+export function SavingsCard({ onSavingsChange }: SavingsCardProps) {
   const [savings, setSavings] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
-    api.savings.get().then((res) => setSavings(res.savings));
-  }, []);
+    api.savings.get().then((res) => {
+      setSavings(res.savings);
+      onSavingsChange?.(res.savings);
+    });
+  }, [onSavingsChange]);
 
   const startEdit = () => {
     setEditValue(savings.toString());
@@ -28,6 +35,7 @@ export function SavingsCard() {
     if (isNaN(value)) return;
     await api.savings.update(value);
     setSavings(value);
+    onSavingsChange?.(value);
     setIsEditing(false);
   };
 

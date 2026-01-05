@@ -1,8 +1,10 @@
+import { useState, useCallback } from "react";
 import { Layout } from "../components/Layout";
 import { MonthNav } from "../components/MonthNav";
 import { Summary } from "../components/Summary";
 import { SavingsCard } from "../components/SavingsCard";
 import { RetirementSavingsCard } from "../components/RetirementSavingsCard";
+import { ProjectedSavingsCard } from "../components/ProjectedSavingsCard";
 import { IncomeSection } from "../components/IncomeSection";
 import { FixedExpenses } from "../components/FixedExpenses";
 import { BudgetSection } from "../components/BudgetSection";
@@ -12,6 +14,7 @@ import { useMonth } from "../hooks/useMonth";
 import { Loader2 } from "lucide-react";
 
 export function Dashboard() {
+  const [savings, setSavings] = useState(0);
   const {
     summary,
     months,
@@ -23,6 +26,10 @@ export function Dashboard() {
     closeMonth,
     downloadPdf,
   } = useMonth();
+
+  const handleSavingsChange = useCallback((value: number) => {
+    setSavings(value);
+  }, []);
 
   if (loading && !summary) {
     return (
@@ -58,7 +65,10 @@ export function Dashboard() {
             onDownloadPdf={downloadPdf}
           />
           <div className="w-36">
-            <SavingsCard />
+            <SavingsCard onSavingsChange={handleSavingsChange} />
+          </div>
+          <div className="w-36">
+            <ProjectedSavingsCard savings={savings} remaining={summary.remaining} />
           </div>
         </div>
         <Stats />
