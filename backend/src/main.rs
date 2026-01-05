@@ -17,7 +17,9 @@ use tower_http::services::ServeDir;
 
 use crate::openapi::ApiDoc;
 use config::Config;
-use handlers::{auth, budget, export, fixed_expenses, health, income, items, months, savings, stats};
+use handlers::{
+    auth, budget, export, fixed_expenses, health, income, items, months, savings, stats,
+};
 use middleware::auth::auth_middleware;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;

@@ -8,7 +8,9 @@ pub struct HealthResponse {
     pub database: &'static str,
 }
 
-pub async fn health_check(State(pool): State<SqlitePool>) -> Result<Json<HealthResponse>, StatusCode> {
+pub async fn health_check(
+    State(pool): State<SqlitePool>,
+) -> Result<Json<HealthResponse>, StatusCode> {
     let db_status = sqlx::query("SELECT 1")
         .fetch_one(&pool)
         .await
@@ -24,4 +26,3 @@ pub async fn health_check(State(pool): State<SqlitePool>) -> Result<Json<HealthR
         Err(StatusCode::SERVICE_UNAVAILABLE)
     }
 }
-
