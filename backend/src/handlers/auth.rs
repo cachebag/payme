@@ -37,6 +37,7 @@ pub struct AuthResponse {
         (status = 409, description = "Username already exists"),
         (status = 500, description = "Internal server error")
     ),
+    tag = "Auth",
     summary = "Register a new account",
     description = "Creates a new user record. Returns the newly created user's ID and username."
 )]
@@ -184,7 +185,8 @@ pub async fn export_db(
 ) -> Result<impl IntoResponse, PaymeError> {
     let db_path = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "sqlite:payme.db".to_string())
-        .replace("sqlite:", "");
+        .replace("sqlite:", "")
+        .replace("?mode=rwc", "");
 
     let data = tokio::fs::read(&db_path)
         .await
