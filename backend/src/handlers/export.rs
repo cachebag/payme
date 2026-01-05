@@ -210,66 +210,59 @@ pub async fn import_json(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(data): Json<UserExport>,
 ) -> Result<StatusCode, PaymeError> {
+    let mut tx = pool.begin().await?;
+
     let months: Vec<(i64,)> = sqlx::query_as("SELECT id FROM months WHERE user_id = ?")
         .bind(claims.sub)
-        .fetch_all(&pool)
+        .fetch_all(&mut *tx)
         .await?;
 
     for (month_id,) in &months {
         sqlx::query("DELETE FROM items WHERE month_id = ?")
             .bind(month_id)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
         sqlx::query("DELETE FROM monthly_budgets WHERE month_id = ?")
             .bind(month_id)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
         sqlx::query("DELETE FROM income_entries WHERE month_id = ?")
             .bind(month_id)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
         sqlx::query("DELETE FROM monthly_snapshots WHERE month_id = ?")
             .bind(month_id)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
     }
 
     sqlx::query("DELETE FROM months WHERE user_id = ?")
         .bind(claims.sub)
-        .execute(&pool)
-        .await
-        .ok();
+        .execute(&mut *tx)
+        .await?;
     sqlx::query("DELETE FROM budget_categories WHERE user_id = ?")
         .bind(claims.sub)
-        .execute(&pool)
-        .await
-        .ok();
+        .execute(&mut *tx)
+        .await?;
     sqlx::query("DELETE FROM fixed_expenses WHERE user_id = ?")
         .bind(claims.sub)
-        .execute(&pool)
-        .await
-        .ok();
+        .execute(&mut *tx)
+        .await?;
 
     if let Some(savings) = data.savings {
         sqlx::query("UPDATE users SET savings = ? WHERE id = ?")
             .bind(savings)
             .bind(claims.sub)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
     }
 
     if let Some(roth_ira) = data.roth_ira {
         sqlx::query("UPDATE users SET roth_ira = ? WHERE id = ?")
             .bind(roth_ira)
             .bind(claims.sub)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
     }
 
     for expense in &data.fixed_expenses {
@@ -277,9 +270,8 @@ pub async fn import_json(
             .bind(claims.sub)
             .bind(&expense.label)
             .bind(expense.amount)
-            .execute(&pool)
-            .await
-            .ok();
+            .execute(&mut *tx)
+            .await?;
     }
 
     let mut category_map: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
@@ -290,7 +282,7 @@ pub async fn import_json(
         .bind(claims.sub)
         .bind(&cat.label)
         .bind(cat.default_amount)
-        .fetch_one(&pool)
+        .fetch_one(&mut *tx)
         .await?;
         category_map.insert(cat.label.clone(), id);
     }
@@ -303,7 +295,7 @@ pub async fn import_json(
         .bind(month_data.year)
         .bind(month_data.month)
         .bind(month_data.is_closed)
-        .fetch_one(&pool)
+        .fetch_one(&mut *tx)
         .await?;
 
         for income in &month_data.income_entries {
@@ -311,9 +303,8 @@ pub async fn import_json(
                 .bind(month_id)
                 .bind(&income.label)
                 .bind(income.amount)
-                .execute(&pool)
-                .await
-                .ok();
+                .execute(&mut *tx)
+                .await?;
         }
 
         for budget in &month_data.budgets {
@@ -324,9 +315,8 @@ pub async fn import_json(
                 .bind(month_id)
                 .bind(cat_id)
                 .bind(budget.allocated_amount)
-                .execute(&pool)
-                .await
-                .ok();
+                .execute(&mut *tx)
+                .await?;
             }
         }
 
@@ -340,12 +330,12 @@ pub async fn import_json(
                 .bind(&item.description)
                 .bind(item.amount)
                 .bind(&item.spent_on)
-                .execute(&pool)
-                .await
-                .ok();
+                .execute(&mut *tx)
+                .await?;
             }
         }
     }
 
+    tx.commit().await?;
     Ok(StatusCode::OK)
 }
