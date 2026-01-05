@@ -2,6 +2,7 @@ pub mod auth;
 pub mod budget;
 pub mod export;
 pub mod fixed_expenses;
+pub mod health;
 pub mod income;
 pub mod items;
 pub mod months;

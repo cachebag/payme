@@ -17,7 +17,7 @@ use tower_http::services::ServeDir;
 
 use crate::openapi::ApiDoc;
 use config::Config;
-use handlers::{auth, budget, export, fixed_expenses, income, items, months, savings, stats};
+use handlers::{auth, budget, export, fixed_expenses, health, income, items, months, savings, stats};
 use middleware::auth::auth_middleware;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -35,6 +35,7 @@ async fn main() {
         .expect("Failed to run migrations");
 
     let public_routes = Router::new()
+        .route("/health", get(health::health_check))
         .route("/api/auth/register", post(auth::register))
         .route("/api/auth/login", post(auth::login));
 
