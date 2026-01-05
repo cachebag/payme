@@ -6,25 +6,31 @@ use axum::{
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, MonthlyBudget};
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateCategory {
+    #[validate(length(min = 1, max = 100))]
     pub label: String,
+    #[validate(range(min = 0.0))]
     pub default_amount: f64,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateCategory {
+    #[validate(length(min = 1, max = 100))]
     pub label: Option<String>,
+    #[validate(range(min = 0.0))]
     pub default_amount: Option<f64>,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateMonthlyBudget {
+    #[validate(range(min = 0.0))]
     pub allocated_amount: f64,
 }
 
@@ -70,6 +76,7 @@ pub async fn create_category(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<CreateCategory>,
 ) -> Result<Json<BudgetCategory>, PaymeError> {
+    payload.validate()?;
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO budget_categories (user_id, label, default_amount) VALUES (?, ?, ?) RETURNING id",
     )
@@ -124,6 +131,7 @@ pub async fn update_category(
     Path(category_id): Path<i64>,
     Json(payload): Json<UpdateCategory>,
 ) -> Result<Json<BudgetCategory>, PaymeError> {
+    payload.validate()?;
     let existing: BudgetCategory = sqlx::query_as(
         "SELECT id, user_id, label, default_amount FROM budget_categories WHERE id = ? AND user_id = ?",
     )
@@ -229,6 +237,7 @@ pub async fn update_monthly_budget(
     Path((month_id, budget_id)): Path<(i64, i64)>,
     Json(payload): Json<UpdateMonthlyBudget>,
 ) -> Result<Json<MonthlyBudget>, PaymeError> {
+    payload.validate()?;
     let month: (bool,) =
         sqlx::query_as("SELECT is_closed FROM months WHERE id = ? AND user_id = ?")
             .bind(month_id)

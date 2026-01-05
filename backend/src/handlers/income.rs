@@ -6,20 +6,25 @@ use axum::{
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::IncomeEntry;
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateIncome {
+    #[validate(length(min = 1, max = 100))]
     pub label: String,
+    #[validate(range(min = 0.0))]
     pub amount: f64,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateIncome {
+    #[validate(length(min = 1, max = 100))]
     pub label: Option<String>,
+    #[validate(range(min = 0.0))]
     pub amount: Option<f64>,
 }
 
@@ -68,6 +73,7 @@ pub async fn create_income(
     Path(month_id): Path<i64>,
     Json(payload): Json<CreateIncome>,
 ) -> Result<Json<IncomeEntry>, PaymeError> {
+    payload.validate()?;
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let id: i64 = sqlx::query_scalar(
@@ -109,6 +115,7 @@ pub async fn update_income(
     Path((month_id, income_id)): Path<(i64, i64)>,
     Json(payload): Json<UpdateIncome>,
 ) -> Result<Json<IncomeEntry>, PaymeError> {
+    payload.validate()?;
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let existing: IncomeEntry = sqlx::query_as(

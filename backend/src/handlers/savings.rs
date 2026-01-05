@@ -2,6 +2,7 @@ use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
@@ -11,8 +12,9 @@ pub struct SavingsResponse {
     pub savings: f64,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateSavings {
+    #[validate(range(min = 0.0))]
     pub savings: f64,
 }
 
@@ -21,8 +23,9 @@ pub struct RothIraResponse {
     pub roth_ira: f64,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateRothIra {
+    #[validate(range(min = 0.0))]
     pub roth_ira: f64,
 }
 
@@ -66,6 +69,7 @@ pub async fn update_savings(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<UpdateSavings>,
 ) -> Result<Json<SavingsResponse>, PaymeError> {
+    payload.validate()?;
     sqlx::query("UPDATE users SET savings = ? WHERE id = ?")
         .bind(payload.savings)
         .bind(claims.sub)
@@ -118,6 +122,7 @@ pub async fn update_roth_ira(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<UpdateRothIra>,
 ) -> Result<Json<RothIraResponse>, PaymeError> {
+    payload.validate()?;
     sqlx::query("UPDATE users SET roth_ira = ? WHERE id = ?")
         .bind(payload.roth_ira)
         .bind(claims.sub)

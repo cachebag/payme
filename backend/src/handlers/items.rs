@@ -7,23 +7,28 @@ use chrono::NaiveDate;
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{Item, ItemWithCategory};
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateItem {
     pub category_id: i64,
+    #[validate(length(min = 1, max = 200))]
     pub description: String,
+    #[validate(range(min = 0.0))]
     pub amount: f64,
     pub spent_on: NaiveDate,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateItem {
     pub category_id: Option<i64>,
+    #[validate(length(min = 1, max = 200))]
     pub description: Option<String>,
+    #[validate(range(min = 0.0))]
     pub amount: Option<f64>,
     pub spent_on: Option<NaiveDate>,
 }
@@ -80,6 +85,7 @@ pub async fn create_item(
     Path(month_id): Path<i64>,
     Json(payload): Json<CreateItem>,
 ) -> Result<Json<Item>, PaymeError> {
+    payload.validate()?;
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let _category: (i64,) =
@@ -134,6 +140,7 @@ pub async fn update_item(
     Path((month_id, item_id)): Path<(i64, i64)>,
     Json(payload): Json<UpdateItem>,
 ) -> Result<Json<Item>, PaymeError> {
+    payload.validate()?;
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let existing: Item = sqlx::query_as(

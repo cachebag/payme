@@ -6,20 +6,25 @@ use axum::{
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::FixedExpense;
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateFixedExpense {
+    #[validate(length(min = 1, max = 100))]
     pub label: String,
+    #[validate(range(min = 0.0))]
     pub amount: f64,
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateFixedExpense {
+    #[validate(length(min = 1, max = 100))]
     pub label: Option<String>,
+    #[validate(range(min = 0.0))]
     pub amount: Option<f64>,
 }
 
@@ -64,6 +69,7 @@ pub async fn create_fixed_expense(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<CreateFixedExpense>,
 ) -> Result<Json<FixedExpense>, PaymeError> {
+    payload.validate()?;
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO fixed_expenses (user_id, label, amount) VALUES (?, ?, ?) RETURNING id",
     )
@@ -101,6 +107,7 @@ pub async fn update_fixed_expense(
     Path(expense_id): Path<i64>,
     Json(payload): Json<UpdateFixedExpense>,
 ) -> Result<Json<FixedExpense>, PaymeError> {
+    payload.validate()?;
     let existing: FixedExpense = sqlx::query_as(
         "SELECT id, user_id, label, amount FROM fixed_expenses WHERE id = ? AND user_id = ?",
     )

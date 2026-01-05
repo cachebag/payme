@@ -9,13 +9,16 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct AuthRequest {
+    #[validate(length(min = 3, max = 32))]
     pub username: String,
+    #[validate(length(min = 6, max = 128))]
     pub password: String,
 }
 
@@ -41,6 +44,7 @@ pub async fn register(
     State(pool): State<SqlitePool>,
     Json(payload): Json<AuthRequest>,
 ) -> Result<impl IntoResponse, PaymeError> {
+    payload.validate()?;
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let password_hash = argon2
@@ -80,6 +84,7 @@ pub async fn login(
     jar: CookieJar,
     Json(payload): Json<AuthRequest>,
 ) -> Result<impl IntoResponse, PaymeError> {
+    payload.validate()?;
     let user: (i64, String, String) =
         sqlx::query_as("SELECT id, username, password_hash FROM users WHERE username = ?")
             .bind(&payload.username)
