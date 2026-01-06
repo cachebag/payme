@@ -5,6 +5,7 @@ import { Summary } from "../components/Summary";
 import { SavingsCard } from "../components/SavingsCard";
 import { RetirementSavingsCard } from "../components/RetirementSavingsCard";
 import { ProjectedSavingsCard } from "../components/ProjectedSavingsCard";
+import { VarianceModal } from "../components/VarianceModal";
 import { IncomeSection } from "../components/IncomeSection";
 import { FixedExpenses } from "../components/FixedExpenses";
 import { BudgetSection } from "../components/BudgetSection";
@@ -15,6 +16,7 @@ import { Loader2 } from "lucide-react";
 
 export function Dashboard() {
   const [savings, setSavings] = useState(0);
+  const [showVarianceModal, setShowVarianceModal] = useState(false);
   const {
     summary,
     months,
@@ -68,7 +70,11 @@ export function Dashboard() {
             <SavingsCard onSavingsChange={handleSavingsChange} />
           </div>
           <div className="w-36">
-            <ProjectedSavingsCard savings={savings} remaining={summary.remaining} />
+            <ProjectedSavingsCard
+              savings={savings}
+              remaining={summary.remaining}
+              onAnalyzeClick={() => setShowVarianceModal(true)}
+            />
           </div>
         </div>
         <Stats />
@@ -120,6 +126,15 @@ export function Dashboard() {
           day: "numeric",
         })}
       </footer>
+
+      <VarianceModal
+        isOpen={showVarianceModal}
+        onClose={() => setShowVarianceModal(false)}
+        budgets={summary.budgets}
+        totalIncome={summary.total_income}
+        totalFixed={summary.total_fixed}
+        totalBudgeted={summary.total_budgeted}
+      />
     </Layout>
   );
 }

@@ -1,12 +1,13 @@
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, HelpCircle } from "lucide-react";
 import { Card } from "./ui/Card";
 
 interface ProjectedSavingsCardProps {
   savings: number;
   remaining: number;
+  onAnalyzeClick?: () => void;
 }
 
-export function ProjectedSavingsCard({ savings, remaining }: ProjectedSavingsCardProps) {
+export function ProjectedSavingsCard({ savings, remaining, onAnalyzeClick }: ProjectedSavingsCardProps) {
   const projected = savings + remaining;
 
   return (
@@ -21,6 +22,15 @@ export function ProjectedSavingsCard({ savings, remaining }: ProjectedSavingsCar
         <span className="text-sm font-semibold text-sage-700 dark:text-sage-400">
           ${projected.toFixed(2)}
         </span>
+        {onAnalyzeClick && (
+          <button
+            onClick={onAnalyzeClick}
+            className="p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors"
+            title="Why this amount?"
+          >
+            <HelpCircle size={14} className="text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300" />
+          </button>
+        )}
       </div>
     </Card>
   );
