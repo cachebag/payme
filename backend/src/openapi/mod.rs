@@ -1,3 +1,5 @@
+use crate::audit::AuditLog;
+use crate::handlers::audit::{ActivitySummary, ActivitySummaryResponse, AuditListResponse};
 use utoipa::OpenApi;
 
 use crate::handlers::{
@@ -24,6 +26,8 @@ use crate::models::{
         crate::handlers::auth::login,
         crate::handlers::auth::logout,
         crate::handlers::auth::me,
+        crate::handlers::audit::list_audit_logs,
+        crate::handlers::audit::get_activity_summary,
         crate::handlers::export::export_json,
         crate::handlers::export::import_json,
         crate::handlers::budget::list_monthly_budgets,
@@ -56,6 +60,10 @@ use crate::models::{
         crate::handlers::stats::get_stats
     ),
     components(schemas(
+        AuditLog,
+        AuditListResponse,
+        ActivitySummary,
+        ActivitySummaryResponse,
         AuthRequest,
         AuthResponse,
         MonthlyBudget,

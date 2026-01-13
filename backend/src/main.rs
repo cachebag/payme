@@ -1,3 +1,5 @@
+mod audit;
+mod cache;
 mod config;
 mod db;
 mod error;
@@ -6,6 +8,7 @@ mod middleware;
 mod models;
 mod openapi;
 mod pdf;
+mod ratelimit;
 
 use axum::{
     middleware::from_fn,
@@ -15,12 +18,20 @@ use axum::{
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 
+use crate::cache::CacheManager;
 use crate::openapi::ApiDoc;
+use crate::ratelimit::{RateLimitConfig, RateLimiter};
 use config::Config;
 use handlers::{
-    auth, budget, export, fixed_expenses, health, income, items, months, savings, stats,
+    audit as audit_handlers, auth, budget, export, fixed_expenses, health, income, items, months,
+    savings, stats,
 };
+use middleware::audit::audit_middleware;
 use middleware::auth::auth_middleware;
+use middleware::cache::{cache_middleware, CacheState};
+use middleware::ratelimit::{rate_limit_middleware, RateLimitState};
+use std::sync::Arc;
+use std::time::Duration;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -36,6 +47,22 @@ async fn main() {
         .await
         .expect("Failed to run migrations");
 
+    let rate_limiter = Arc::new(RateLimiter::new(RateLimitConfig {
+        requests_per_window: 100,
+        window_duration: Duration::from_secs(60),
+        cleanup_interval: Duration::from_secs(300),
+    }));
+
+    let cache_manager = Arc::new(CacheManager::new(1000, 500, Duration::from_secs(300)));
+
+    let rate_limit_state = Arc::new(RateLimitState {
+        limiter: rate_limiter,
+    });
+
+    let cache_state = Arc::new(CacheState {
+        manager: cache_manager,
+    });
+
     let public_routes = Router::new()
         .route("/health", get(health::health_check))
         .route("/api/auth/register", post(auth::register))
@@ -45,6 +72,11 @@ async fn main() {
         .route("/api/auth/logout", post(auth::logout))
         .route("/api/auth/me", get(auth::me))
         .route("/api/export", get(auth::export_db))
+        .route("/api/audit/logs", get(audit_handlers::list_audit_logs))
+        .route(
+            "/api/audit/activity",
+            get(audit_handlers::get_activity_summary),
+        )
         .route("/api/months", get(months::list_months))
         .route(
             "/api/months/current",
@@ -125,7 +157,19 @@ async fn main() {
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .fallback_service(ServeDir::new("/app/static"))
         .layer(cors)
-        .with_state(pool);
+        .with_state(pool.clone())
+        .layer(axum::middleware::from_fn_with_state(
+            pool.clone(),
+            audit_middleware,
+        ))
+        .route_layer(axum::middleware::from_fn_with_state(
+            cache_state.clone(),
+            cache_middleware,
+        ))
+        .route_layer(axum::middleware::from_fn_with_state(
+            rate_limit_state,
+            rate_limit_middleware,
+        ));
 
     let addr = format!("0.0.0.0:{}", config.port);
     tracing::info!("Server running on {}", addr);
