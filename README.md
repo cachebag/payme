@@ -126,3 +126,7 @@ server {
     }
 }
 ```
+### Thank you :D
+Didn't know this would gain so much traction but I'm happy to see this is helpful to some!
+<br>
+[![Star History Chart](https://api.star-history.com/svg?repos=cachebag/payme&type=date&legend=top-left)](https://www.star-history.com/#cachebag/payme&type=date&legend=top-left)
