@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Vault, Pencil, Check, X, HelpCircle } from "lucide-react";
+import { Vault, Pencil, Check, X, HelpCircle, Info } from "lucide-react";
 import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { ProgressBar } from "./ui/ProgressBar";
+import { Modal } from "./ui/Modal";
+import { Button } from "./ui/Button";
 
 interface SavingsCardProps {
   remaining: number;
@@ -14,6 +16,7 @@ export function SavingsCard({ remaining, onAnalyzeClick }: SavingsCardProps) {
   const [savings, setSavings] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   useEffect(() => {
     api.savings.get().then((res) => {
@@ -45,11 +48,21 @@ export function SavingsCard({ remaining, onAnalyzeClick }: SavingsCardProps) {
   const isAhead = difference >= 0;
 
   return (
+    <>
     <Card className="!p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
-          Savings
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
+            Savings
+          </span>
+          <button
+            onClick={() => setShowInfoModal(true)}
+            className="p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors touch-manipulation"
+            title="How this works"
+          >
+            <Info size={12} className="text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300" />
+          </button>
+        </div>
         <Vault size={16} className="text-sage-600" />
       </div>
       
@@ -121,5 +134,62 @@ export function SavingsCard({ remaining, onAnalyzeClick }: SavingsCardProps) {
         </p>
       </div>
     </Card>
+
+    <Modal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} title="How Savings Tracking Works">
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200 mb-2">
+            Current Savings
+          </h3>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            This is your actual savings balance right now. Update it anytime throughout the month as you add or withdraw money.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200 mb-2">
+            Monthly Target
+          </h3>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mb-2">
+            Your target is calculated as:
+          </p>
+          <div className="bg-sand-100 dark:bg-charcoal-800 p-3 rounded text-xs font-mono space-y-1">
+            <div>Current Savings: ${savings.toFixed(2)}</div>
+            <div>+ Remaining Budget: ${remaining.toFixed(2)}</div>
+            <div className="border-t border-sand-300 dark:border-charcoal-600 pt-1 mt-1">
+              = Target: ${(savings + remaining).toFixed(2)}
+            </div>
+          </div>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mt-2">
+            This shows what you <strong>should</strong> have saved by month-end if you stick to your budget.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200 mb-2">
+            Progress Tracking
+          </h3>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            The progress bar and percentage show how close you are to your target. If you're ahead, you've saved more than planned. If you're behind, you may have overspent or not saved enough yet this month.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200 mb-2">
+            Why This Works
+          </h3>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            You don't need to remember your starting balance! The target adjusts based on your current budget. As long as you update your savings balance regularly, you'll always know if you're on track.
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-sand-300 dark:border-charcoal-700">
+          <Button onClick={() => setShowInfoModal(false)} className="w-full sm:w-auto">
+            Got it
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }
