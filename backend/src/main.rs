@@ -18,7 +18,6 @@ use axum::{
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 
-use crate::cache::CacheManager;
 use crate::openapi::ApiDoc;
 use crate::ratelimit::{RateLimitConfig, RateLimiter};
 use config::Config;
@@ -28,7 +27,6 @@ use handlers::{
 };
 use middleware::audit::audit_middleware;
 use middleware::auth::auth_middleware;
-use middleware::cache::{cache_middleware, CacheState};
 use middleware::ratelimit::{rate_limit_middleware, RateLimitState};
 use std::sync::Arc;
 use std::time::Duration;
@@ -53,14 +51,8 @@ async fn main() {
         cleanup_interval: Duration::from_secs(300),
     }));
 
-    let cache_manager = Arc::new(CacheManager::new(1000, 500, Duration::from_secs(300)));
-
     let rate_limit_state = Arc::new(RateLimitState {
         limiter: rate_limiter,
-    });
-
-    let cache_state = Arc::new(CacheState {
-        manager: cache_manager,
     });
 
     let public_routes = Router::new()
@@ -165,10 +157,6 @@ async fn main() {
         .layer(axum::middleware::from_fn_with_state(
             pool.clone(),
             audit_middleware,
-        ))
-        .route_layer(axum::middleware::from_fn_with_state(
-            cache_state.clone(),
-            cache_middleware,
         ))
         .route_layer(axum::middleware::from_fn_with_state(
             rate_limit_state,
