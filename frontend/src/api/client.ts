@@ -38,6 +38,21 @@ export const api = {
       }),
     logout: () => request<void>("/auth/logout", { method: "POST" }),
     me: () => request<{ id: number; username: string }>("/auth/me"),
+    changeUsername: (newUsername: string) =>
+      request<{ id: number; username: string }>("/auth/change-username", {
+        method: "PUT",
+        body: JSON.stringify({ new_username: newUsername }),
+      }),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      request<{ message: string }>("/auth/change-password", {
+        method: "PUT",
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      }),
+    clearAllData: (password: string) =>
+      request<{ message: string }>("/auth/clear-data", {
+        method: "DELETE",
+        body: JSON.stringify({ password }),
+      }),
   },
 
   months: {
