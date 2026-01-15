@@ -162,10 +162,6 @@ async fn main() {
         .fallback_service(ServeDir::new("/app/static"))
         .layer(cors)
         .with_state(pool.clone())
-        .layer(axum::middleware::from_fn_with_state(
-            pool.clone(),
-            audit_middleware,
-        ))
         .route_layer(axum::middleware::from_fn_with_state(
             cache_state.clone(),
             cache_middleware,
