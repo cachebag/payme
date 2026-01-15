@@ -4,7 +4,6 @@ import { MonthNav } from "../components/MonthNav";
 import { Summary } from "../components/Summary";
 import { SavingsCard } from "../components/SavingsCard";
 import { RetirementSavingsCard } from "../components/RetirementSavingsCard";
-import { ProjectedSavingsCard } from "../components/ProjectedSavingsCard";
 import { VarianceModal } from "../components/VarianceModal";
 import { IncomeSection } from "../components/IncomeSection";
 import { FixedExpenses } from "../components/FixedExpenses";
@@ -70,17 +69,12 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
           onDownloadPdf={downloadPdf}
         />
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
-            <div className="w-full sm:w-36">
-              <SavingsCard onSavingsChange={handleSavingsChange} />
-            </div>
-            <div className="w-full sm:w-36">
-              <ProjectedSavingsCard
-                savings={savings}
-                remaining={summary.remaining}
-                onAnalyzeClick={() => setShowVarianceModal(true)}
-              />
-            </div>
+          <div className="w-full sm:w-80">
+            <SavingsCard 
+              onSavingsChange={handleSavingsChange}
+              remaining={summary.remaining}
+              onAnalyzeClick={() => setShowVarianceModal(true)}
+            />
           </div>
           <div className="hidden lg:block">
             <Stats />
