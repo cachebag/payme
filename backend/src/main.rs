@@ -26,7 +26,6 @@ use handlers::{
     audit as audit_handlers, auth, budget, export, fixed_expenses, health, income, items, months,
     savings, stats,
 };
-use middleware::audit::audit_middleware;
 use middleware::auth::auth_middleware;
 use middleware::cache::{cache_middleware, CacheState};
 use middleware::ratelimit::{rate_limit_middleware, RateLimitState};
