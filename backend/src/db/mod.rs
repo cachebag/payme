@@ -33,6 +33,53 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
         .await
         .ok();
 
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS users_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            savings REAL NOT NULL DEFAULT 0,
+            retirement_savings REAL NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    sqlx::query(
+        r#"
+        INSERT OR IGNORE INTO users_new (id, username, password_hash, savings, retirement_savings, created_at)
+        SELECT id, username, password_hash, CAST(savings AS REAL), CAST(retirement_savings AS REAL), created_at
+        FROM users
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    sqlx::query("DROP TABLE IF EXISTS users_old")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("ALTER TABLE users RENAME TO users_old")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("ALTER TABLE users_new RENAME TO users")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("DROP TABLE IF EXISTS users_old")
+        .execute(pool)
+        .await
+        .ok();
+
     sqlx::query("UPDATE users SET retirement_savings = roth_ira WHERE retirement_savings = 0 AND roth_ira IS NOT NULL AND roth_ira > 0")
         .execute(pool)
         .await
