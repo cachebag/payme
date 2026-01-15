@@ -44,7 +44,7 @@ export function Settings({ onBack }: SettingsProps) {
       updateUsername(response.username);
       setUsernameSuccess(true);
       setTimeout(() => setUsernameSuccess(false), 3000);
-    } catch (error) {
+    } catch {
       setUsernameError("Failed to change username. It may already be taken.");
     } finally {
       setUsernameLoading(false);
@@ -74,7 +74,7 @@ export function Settings({ onBack }: SettingsProps) {
       setConfirmPassword("");
       setPasswordSuccess(true);
       setTimeout(() => setPasswordSuccess(false), 3000);
-    } catch (error) {
+    } catch {
       setPasswordError("Failed to change password. Check your current password.");
     } finally {
       setPasswordLoading(false);
@@ -93,7 +93,7 @@ export function Settings({ onBack }: SettingsProps) {
     try {
       await api.auth.clearAllData(deletePassword);
       await logout();
-    } catch (error) {
+    } catch {
       setDeleteError("Failed to clear data. Check your password.");
       setDeleteLoading(false);
     }
