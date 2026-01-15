@@ -71,6 +71,9 @@ async fn main() {
     let protected_routes = Router::new()
         .route("/api/auth/logout", post(auth::logout))
         .route("/api/auth/me", get(auth::me))
+        .route("/api/auth/change-username", put(auth::change_username))
+        .route("/api/auth/change-password", put(auth::change_password))
+        .route("/api/auth/clear-data", delete(auth::clear_all_data))
         .route("/api/export", get(auth::export_db))
         .route("/api/audit/logs", get(audit_handlers::list_audit_logs))
         .route(
