@@ -5,6 +5,23 @@ pub async fn create_pool(database_url: &str) -> Result<SqlitePool, sqlx::Error> 
         .max_connections(5)
         .connect(database_url)
         .await?;
+
+    sqlx::query("PRAGMA journal_mode = WAL")
+        .execute(&pool)
+        .await?;
+
+    sqlx::query("PRAGMA synchronous = NORMAL")
+        .execute(&pool)
+        .await?;
+
+    sqlx::query("PRAGMA cache_size = -64000")
+        .execute(&pool)
+        .await?;
+
+    sqlx::query("PRAGMA temp_store = MEMORY")
+        .execute(&pool)
+        .await?;
+
     Ok(pool)
 }
 
