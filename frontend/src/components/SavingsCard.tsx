@@ -6,12 +6,11 @@ import { Input } from "./ui/Input";
 import { ProgressBar } from "./ui/ProgressBar";
 
 interface SavingsCardProps {
-  onSavingsChange?: (savings: number) => void;
   remaining: number;
   onAnalyzeClick?: () => void;
 }
 
-export function SavingsCard({ onSavingsChange, remaining, onAnalyzeClick }: SavingsCardProps) {
+export function SavingsCard({ remaining, onAnalyzeClick }: SavingsCardProps) {
   const [savings, setSavings] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -19,9 +18,8 @@ export function SavingsCard({ onSavingsChange, remaining, onAnalyzeClick }: Savi
   useEffect(() => {
     api.savings.get().then((res) => {
       setSavings(res.savings);
-      onSavingsChange?.(res.savings);
     });
-  }, [onSavingsChange]);
+  }, []);
 
   const startEdit = () => {
     setEditValue(savings.toString());
@@ -38,7 +36,6 @@ export function SavingsCard({ onSavingsChange, remaining, onAnalyzeClick }: Savi
     if (isNaN(value)) return;
     await api.savings.update(value);
     setSavings(value);
-    onSavingsChange?.(value);
     setIsEditing(false);
   };
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Layout } from "../components/Layout";
 import { MonthNav } from "../components/MonthNav";
 import { Summary } from "../components/Summary";
@@ -18,7 +18,6 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onSettingsClick }: DashboardProps) {
-  const [savings, setSavings] = useState(0);
   const [showVarianceModal, setShowVarianceModal] = useState(false);
   const {
     summary,
@@ -31,10 +30,6 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
     closeMonth,
     downloadPdf,
   } = useMonth();
-
-  const handleSavingsChange = useCallback((value: number) => {
-    setSavings(value);
-  }, []);
 
   if (loading && !summary) {
     return (
@@ -71,7 +66,6 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="w-full sm:w-80">
             <SavingsCard 
-              onSavingsChange={handleSavingsChange}
               remaining={summary.remaining}
               onAnalyzeClick={() => setShowVarianceModal(true)}
             />
