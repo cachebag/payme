@@ -61,27 +61,31 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
 
   return (
     <Layout onSettingsClick={onSettingsClick}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <MonthNav
-            months={months}
-            selectedMonthId={selectedMonthId}
-            onSelect={selectMonth}
-            onClose={closeMonth}
-            onDownloadPdf={downloadPdf}
-          />
-          <div className="w-36">
-            <SavingsCard onSavingsChange={handleSavingsChange} />
+      <div className="space-y-4 mb-4">
+        <MonthNav
+          months={months}
+          selectedMonthId={selectedMonthId}
+          onSelect={selectMonth}
+          onClose={closeMonth}
+          onDownloadPdf={downloadPdf}
+        />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-36">
+              <SavingsCard onSavingsChange={handleSavingsChange} />
+            </div>
+            <div className="w-full sm:w-36">
+              <ProjectedSavingsCard
+                savings={savings}
+                remaining={summary.remaining}
+                onAnalyzeClick={() => setShowVarianceModal(true)}
+              />
+            </div>
           </div>
-          <div className="w-36">
-            <ProjectedSavingsCard
-              savings={savings}
-              remaining={summary.remaining}
-              onAnalyzeClick={() => setShowVarianceModal(true)}
-            />
+          <div className="hidden lg:block">
+            <Stats />
           </div>
         </div>
-        <Stats />
       </div>
 
       <div className="space-y-6">
