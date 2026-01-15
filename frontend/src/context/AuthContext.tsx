@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUsername: (username: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,15 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await api.auth.logout();
-    } catch {
-      // Logout failed, ignore
     } finally {
       setUser(null);
     }
   };
 
+  const updateUsername = (username: string) => {
+    if (user) {
+      setUser({ ...user, username });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUsername }}>
       {children}
     </AuthContext.Provider>
   );

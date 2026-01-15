@@ -14,7 +14,11 @@ import { Stats } from "../components/Stats";
 import { useMonth } from "../hooks/useMonth";
 import { Loader2 } from "lucide-react";
 
-export function Dashboard() {
+interface DashboardProps {
+  onSettingsClick: () => void;
+}
+
+export function Dashboard({ onSettingsClick }: DashboardProps) {
   const [savings, setSavings] = useState(0);
   const [showVarianceModal, setShowVarianceModal] = useState(false);
   const {
@@ -35,7 +39,7 @@ export function Dashboard() {
 
   if (loading && !summary) {
     return (
-      <Layout>
+      <Layout onSettingsClick={onSettingsClick}>
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="animate-spin text-charcoal-400" />
         </div>
@@ -45,7 +49,7 @@ export function Dashboard() {
 
   if (!summary) {
     return (
-      <Layout>
+      <Layout onSettingsClick={onSettingsClick}>
         <div className="text-center py-20 text-charcoal-500">
           Unable to load data
         </div>
@@ -56,7 +60,7 @@ export function Dashboard() {
   const isReadOnly = summary.month.is_closed;
 
   return (
-    <Layout>
+    <Layout onSettingsClick={onSettingsClick}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <MonthNav

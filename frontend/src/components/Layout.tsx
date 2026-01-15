@@ -1,5 +1,5 @@
 import { ReactNode, useRef, useState } from "react";
-import { Moon, Sun, LogOut, Download, Upload } from "lucide-react";
+import { Moon, Sun, LogOut, Download, Upload, Settings } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { api, UserExport } from "../api/client";
@@ -8,9 +8,10 @@ import { Button } from "./ui/Button";
 
 interface LayoutProps {
   children: ReactNode;
+  onSettingsClick?: () => void;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, onSettingsClick }: LayoutProps) {
   const { isDark, toggle } = useTheme();
   const { user, logout } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +113,15 @@ export function Layout({ children }: LayoutProps) {
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            {user && onSettingsClick && (
+              <button
+                onClick={onSettingsClick}
+                className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
+                title="Settings"
+              >
+                <Settings size={18} />
+              </button>
+            )}
             {user && (
               <button
                 onClick={logout}
