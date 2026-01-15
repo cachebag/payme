@@ -72,16 +72,16 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 bg-sand-50/80 dark:bg-charcoal-950/80 backdrop-blur-md border-b border-sand-200 dark:border-charcoal-800">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <span className="text-xl font-semibold tracking-tight text-charcoal-800 dark:text-sand-100">
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+          <span className="text-lg sm:text-xl font-semibold tracking-tight text-charcoal-800 dark:text-sand-100">
             payme
           </span>
           {user && (
-            <span className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            <span className="hidden sm:inline text-sm text-charcoal-600 dark:text-charcoal-300">
               Welcome, {user.username}
             </span>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {user && (
               <>
                 <input
@@ -93,15 +93,17 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
                 />
                 <button
                   onClick={handleImportClick}
-                  className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
+                  className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
                   title="Import data"
+                  aria-label="Import data"
                 >
                   <Upload size={18} />
                 </button>
                 <button
                   onClick={handleExport}
-                  className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
+                  className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
                   title="Export data"
+                  aria-label="Export data"
                 >
                   <Download size={18} />
                 </button>
@@ -109,15 +111,17 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
             )}
             <button
               onClick={toggle}
-              className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
+              className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+              aria-label="Toggle theme"
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             {user && onSettingsClick && (
               <button
                 onClick={onSettingsClick}
-                className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
+                className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
                 title="Settings"
+                aria-label="Settings"
               >
                 <Settings size={18} />
               </button>
@@ -125,7 +129,8 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
             {user && (
               <button
                 onClick={logout}
-                className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
+                className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+                aria-label="Logout"
               >
                 <LogOut size={18} />
               </button>
@@ -133,7 +138,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
           </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">{children}</main>
 
       <Modal isOpen={showImportConfirm} onClose={() => setShowImportConfirm(false)} title="Import Data">
         <div className="space-y-4">
@@ -147,11 +152,11 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
               <div>{pendingImport.months.length} months</div>
             </div>
           )}
-          <div className="flex gap-2">
-            <Button onClick={confirmImport} disabled={importing}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={confirmImport} disabled={importing} className="w-full sm:w-auto">
               {importing ? "Importing..." : "Replace My Data"}
             </Button>
-            <Button variant="ghost" onClick={() => setShowImportConfirm(false)}>
+            <Button variant="ghost" onClick={() => setShowImportConfirm(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
           </div>

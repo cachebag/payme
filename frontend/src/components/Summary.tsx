@@ -52,20 +52,20 @@ export function Summary({ totalIncome, totalFixed, totalSpent, remaining, extraC
           <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
             {item.label}
           </div>
-          <div className={`text-xl font-semibold ${item.color}`}>
+          <div className={`text-lg sm:text-xl font-semibold ${item.color}`}>
             ${Math.abs(item.value).toFixed(2)}
             {item.label === "Remaining" && item.value < 0 && (
               <span className="text-xs ml-1">deficit</span>
             )}
           </div>
         </div>
-        <item.icon size={20} className={item.color} />
+        <item.icon size={18} className={`${item.color} sm:w-5 sm:h-5`} />
       </div>
     </Card>
   );
 
   return (
-    <div className={`grid grid-cols-2 gap-4 ${extraCard ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
+    <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${extraCard ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
       {items.map(renderCard)}
       {extraCard}
       {itemsAfter.map(renderCard)}

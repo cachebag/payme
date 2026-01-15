@@ -47,17 +47,18 @@ export function MonthNav({
   if (!selectedMonth) return null;
 
   return (
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+      <div className="flex items-center gap-2 sm:gap-4">
         <button
           onClick={goPrev}
           disabled={currentIndex >= months.length - 1}
-          className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 disabled:opacity-30 transition-colors"
+          className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 disabled:opacity-30 transition-colors touch-manipulation"
+          aria-label="Previous month"
         >
           <ChevronLeft size={20} />
         </button>
         <div className="text-center">
-          <div className="text-2xl font-semibold text-charcoal-900 dark:text-sand-50">
+          <div className="text-xl sm:text-2xl font-semibold text-charcoal-900 dark:text-sand-50">
             {MONTH_NAMES[selectedMonth.month - 1]} {selectedMonth.year}
           </div>
           <div className="text-xs text-charcoal-500 dark:text-charcoal-400 flex items-center justify-center gap-1">
@@ -74,21 +75,22 @@ export function MonthNav({
         <button
           onClick={goNext}
           disabled={currentIndex <= 0}
-          className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 disabled:opacity-30 transition-colors"
+          className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 disabled:opacity-30 transition-colors touch-manipulation"
+          aria-label="Next month"
         >
           <ChevronRight size={20} />
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full sm:w-auto">
         {selectedMonth.is_closed && (
-          <Button variant="ghost" size="sm" onClick={onDownloadPdf}>
+          <Button variant="ghost" size="sm" onClick={onDownloadPdf} className="flex-1 sm:flex-none">
             <FileDown size={16} className="mr-2" />
             PDF
           </Button>
         )}
         {canClose && (
-          <Button variant="primary" size="sm" onClick={onClose}>
+          <Button variant="primary" size="sm" onClick={onClose} className="flex-1 sm:flex-none">
             Close Month
           </Button>
         )}

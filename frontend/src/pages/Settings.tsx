@@ -104,19 +104,19 @@ export function Settings({ onBack }: SettingsProps) {
       <div className="max-w-2xl mx-auto">
         <button
           onClick={onBack}
-          className="mb-6 flex items-center gap-2 text-sm text-charcoal-600 dark:text-charcoal-400 hover:text-charcoal-900 dark:hover:text-sand-100 transition-colors"
+          className="mb-4 sm:mb-6 flex items-center gap-2 text-sm text-charcoal-600 dark:text-charcoal-400 hover:text-charcoal-900 dark:hover:text-sand-100 transition-colors touch-manipulation"
         >
           <ArrowLeft size={16} />
           Back to Dashboard
         </button>
 
-        <h1 className="text-2xl font-semibold mb-8 text-charcoal-800 dark:text-sand-100">
+        <h1 className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8 text-charcoal-800 dark:text-sand-100">
           Settings
         </h1>
 
-        <div className="space-y-8">
-          <div className="bg-sand-100 dark:bg-charcoal-900 p-6 border border-sand-200 dark:border-charcoal-800">
-            <h2 className="text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
+        <div className="space-y-6 sm:space-y-8">
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
               Change Username
             </h2>
             <form onSubmit={handleChangeUsername} className="space-y-4">
@@ -140,8 +140,8 @@ export function Settings({ onBack }: SettingsProps) {
             </form>
           </div>
 
-          <div className="bg-sand-100 dark:bg-charcoal-900 p-6 border border-sand-200 dark:border-charcoal-800">
-            <h2 className="text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
               Change Password
             </h2>
             <form onSubmit={handleChangePassword} className="space-y-4">
@@ -181,8 +181,8 @@ export function Settings({ onBack }: SettingsProps) {
             </form>
           </div>
 
-          <div className="bg-terracotta-50 dark:bg-charcoal-900 p-6 border-2 border-terracotta-300 dark:border-terracotta-800">
-            <h2 className="text-lg font-medium mb-2 text-terracotta-800 dark:text-terracotta-300">
+          <div className="bg-terracotta-50 dark:bg-charcoal-900 p-4 sm:p-6 border-2 border-terracotta-300 dark:border-terracotta-800">
+            <h2 className="text-base sm:text-lg font-medium mb-2 text-terracotta-800 dark:text-terracotta-300">
               Danger Zone
             </h2>
             <p className="text-sm text-charcoal-600 dark:text-charcoal-400 mb-4">
@@ -229,8 +229,8 @@ export function Settings({ onBack }: SettingsProps) {
           {deleteError && (
             <p className="text-sm text-terracotta-600">{deleteError}</p>
           )}
-          <div className="flex gap-2">
-            <Button variant="danger" onClick={handleClearData} disabled={deleteLoading}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="danger" onClick={handleClearData} disabled={deleteLoading} className="w-full sm:w-auto">
               {deleteLoading ? "Deleting..." : "Yes, Delete Everything"}
             </Button>
             <Button
@@ -241,6 +241,7 @@ export function Settings({ onBack }: SettingsProps) {
                 setDeleteError("");
               }}
               disabled={deleteLoading}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
