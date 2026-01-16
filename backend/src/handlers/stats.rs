@@ -42,23 +42,24 @@ pub async fn get_stats(
 
     for (month_id, year, month) in &months {
         let income: (f64,) = sqlx::query_as(
-            "SELECT COALESCE(SUM(amount), 0) FROM income_entries WHERE month_id = ?",
+            "SELECT COALESCE(SUM(amount), 0.0) FROM income_entries WHERE month_id = ?",
         )
         .bind(month_id)
         .fetch_one(&pool)
         .await?;
 
         let spent: (f64,) =
-            sqlx::query_as("SELECT COALESCE(SUM(amount), 0) FROM items WHERE month_id = ?")
+            sqlx::query_as("SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ?")
                 .bind(month_id)
                 .fetch_one(&pool)
                 .await?;
 
-        let fixed: (f64,) =
-            sqlx::query_as("SELECT COALESCE(SUM(amount), 0) FROM fixed_expenses WHERE user_id = ?")
-                .bind(claims.sub)
-                .fetch_one(&pool)
-                .await?;
+        let fixed: (f64,) = sqlx::query_as(
+            "SELECT COALESCE(SUM(amount), 0.0) FROM fixed_expenses WHERE user_id = ?",
+        )
+        .bind(claims.sub)
+        .fetch_one(&pool)
+        .await?;
 
         total_spending += spent.0;
         total_income_all += income.0;
@@ -99,7 +100,7 @@ pub async fn get_stats(
 
         for (cat_id, cat_label) in categories {
             let current_spent: (f64,) = sqlx::query_as(
-                "SELECT COALESCE(SUM(amount), 0) FROM items WHERE month_id = ? AND category_id = ?",
+                "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ?",
             )
             .bind(current_month_id)
             .bind(cat_id)
@@ -108,7 +109,7 @@ pub async fn get_stats(
 
             let previous_spent: f64 = if let Some(prev_id) = previous_month_id {
                 let result: (f64,) = sqlx::query_as(
-                    "SELECT COALESCE(SUM(amount), 0) FROM items WHERE month_id = ? AND category_id = ?",
+                    "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ?",
                 )
                 .bind(prev_id)
                 .bind(cat_id)
