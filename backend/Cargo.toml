@@ -30,3 +30,8 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
 validator = { version = "0.20.0", features = ["derive"] }
 url = "2.5.7"
+
+[dev-dependencies]
+axum-test = "18"
+tower = { version = "0.5", features = ["util"] }
+tempfile = "3"
