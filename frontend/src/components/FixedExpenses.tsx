@@ -5,7 +5,8 @@ import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
-
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 interface FixedExpensesProps {
   expenses: FixedExpense[];
   onUpdate: () => void;
@@ -17,6 +18,11 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+
+  const { currencySymbol } = useCurrency(); 
+
+  const { t } = useTranslation();
+
 
   const handleAdd = async () => {
     if (!label || !amount) return;
@@ -61,7 +67,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
-            Fixed Expenses
+            {t("fixed_expenses.main_label")}
           </h3>
           <button
             onClick={() => setIsManaging(true)}
@@ -81,13 +87,13 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
                 {expense.label}
               </span>
               <span className="text-sm text-charcoal-600 dark:text-charcoal-400">
-                ${expense.amount.toFixed(2)}
+                {expense.amount.toFixed(2)}{currencySymbol}
               </span>
             </div>
           ))}
           {expenses.length === 0 && (
             <div className="text-sm text-charcoal-400 dark:text-charcoal-600 py-4 text-center">
-              No fixed expenses
+              {t("fixed_expenses.no_fixed_expenses")}
             </div>
           )}
         </div>
@@ -95,16 +101,16 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
         {expenses.length > 0 && (
           <div className="mt-4 pt-3 border-t border-sand-300 dark:border-charcoal-700 flex justify-between">
             <span className="text-sm font-medium text-charcoal-600 dark:text-sand-300">
-              Total
+              {t("fixed_expenses.total")}
             </span>
             <span className="text-sm font-semibold text-charcoal-800 dark:text-sand-100">
-              ${total.toFixed(2)}
+              {total.toFixed(2)}{currencySymbol}
             </span>
           </div>
         )}
       </Card>
 
-      <Modal isOpen={isManaging} onClose={() => setIsManaging(false)} title="Manage Fixed Expenses">
+      <Modal isOpen={isManaging} onClose={() => setIsManaging(false)} title={t("fixed_expenses.modal.manage_fixed_expenses")}>
         <div className="space-y-3">
           {expenses.map((expense) => (
             <div key={expense.id}>
@@ -112,7 +118,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="Label"
+                      placeholder={t("fixed_expenses.input.label")}
                       value={label}
                       onChange={(e) => setLabel(e.target.value)}
                     />
@@ -120,7 +126,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
                   <div className="w-24">
                     <Input
                       type="number"
-                      placeholder="Amount"
+                      placeholder={t("fixed_expenses.input.amount")}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                     />
@@ -165,7 +171,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
             <div className="flex items-end gap-2 pt-2">
               <div className="flex-1">
                 <Input
-                  placeholder="Label"
+                  placeholder={t("fixed_expenses.input.label")}
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                 />
@@ -173,7 +179,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
               <div className="w-24">
                 <Input
                   type="number"
-                  placeholder="Amount"
+                  placeholder={t("fixed_expenses.input.amount")}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
@@ -193,7 +199,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
               className="w-full mt-2"
             >
               <Plus size={16} className="mr-2" />
-              Add Expense
+              {t("fixed_expenses.button.add_expense")} 
             </Button>
           )}
         </div>

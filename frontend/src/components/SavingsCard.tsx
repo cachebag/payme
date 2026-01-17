@@ -3,6 +3,8 @@ import { Vault, Pencil, Check, X } from "lucide-react";
 import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface SavingsCardProps {
   onSavingsChange?: (savings: number) => void;
@@ -12,6 +14,10 @@ export function SavingsCard({ onSavingsChange }: SavingsCardProps) {
   const [savings, setSavings] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+
+  const { currencySymbol } = useCurrency();
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     api.savings.get().then((res) => {
@@ -43,7 +49,7 @@ export function SavingsCard({ onSavingsChange }: SavingsCardProps) {
     <Card className="!p-3">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
-          Savings
+          {t("savings_card.text.savings")}
         </span>
         <Vault size={14} className="text-sage-600" />
       </div>
@@ -72,7 +78,7 @@ export function SavingsCard({ onSavingsChange }: SavingsCardProps) {
       ) : (
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-sage-700 dark:text-sage-400">
-            ${savings.toFixed(2)}
+            {savings.toFixed(2)}{currencySymbol}
           </span>
           <button
             onClick={startEdit}

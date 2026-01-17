@@ -5,7 +5,8 @@ import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
 import { Button } from "./ui/Button";
-
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 interface ItemsSectionProps {
   monthId: number;
   items: ItemWithCategory[];
@@ -27,6 +28,9 @@ export function ItemsSection({
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
+  
+  const { currencySymbol } = useCurrency();
+  const { t } = useTranslation();
 
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
@@ -80,7 +84,7 @@ export function ItemsSection({
     <Card className="col-span-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
-          Spending Items
+          {t("items.text.spending_items")}
         </h3>
         {!isReadOnly && !isAdding && (
           <button
@@ -100,16 +104,16 @@ export function ItemsSection({
       {isAdding && categories.length === 0 && (
         <div className="mb-4 p-4 bg-sand-100 dark:bg-charcoal-800 text-center">
           <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mb-1">
-            No budget categories yet.
+            {t("items.text.no_budget_categories_yet")}. 
           </p>
           <p className="text-xs text-charcoal-400 dark:text-charcoal-500">
-            Add some in the Budget section first.
+            {t("items.text.add_some_in_the_Budget_section_first")}.
           </p>
           <button
             onClick={resetForm}
             className="mt-3 text-xs text-charcoal-500 hover:text-charcoal-700 dark:hover:text-charcoal-300"
           >
-            Close
+            {t("items.button.close")}
           </button>
         </div>
       )}
@@ -118,13 +122,13 @@ export function ItemsSection({
         <div className="mb-4 p-4 bg-sand-100 dark:bg-charcoal-800">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <Input
-              placeholder="Description"
+              placeholder={t("items.input.description")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
             <Input
               type="number"
-              placeholder="Amount"
+              placeholder={t("items.input.amount")}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
@@ -142,11 +146,11 @@ export function ItemsSection({
           <div className="flex gap-2 mt-3">
             <Button size="sm" onClick={handleAdd}>
               <Check size={16} className="mr-1" />
-              Add
+              {t("items.button.add")}
             </Button>
             <Button size="sm" variant="ghost" onClick={resetForm}>
               <X size={16} className="mr-1" />
-              Cancel
+              {t("items.button.cancel")}
             </Button>
           </div>
         </div>
@@ -157,16 +161,16 @@ export function ItemsSection({
           <thead>
             <tr className="border-b border-sand-300 dark:border-charcoal-700">
               <th className="text-left py-2 font-medium text-charcoal-600 dark:text-sand-400">
-                Date
+                {t("items.table.date")}
               </th>
               <th className="text-left py-2 font-medium text-charcoal-600 dark:text-sand-400">
-                Description
+                {t("items.table.description")}
               </th>
               <th className="text-left py-2 font-medium text-charcoal-600 dark:text-sand-400">
-                Category
+                {t("items.table.category")}
               </th>
               <th className="text-right py-2 font-medium text-charcoal-600 dark:text-sand-400">
-                Amount
+                {t("items.table.amount")}
               </th>
               {!isReadOnly && <th className="w-20"></th>}
             </tr>
@@ -189,7 +193,7 @@ export function ItemsSection({
                     </td>
                     <td className="py-2">
                       <Input
-                        placeholder="Description"
+                        placeholder={t("items.input.description")}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         className="text-xs"
@@ -243,7 +247,7 @@ export function ItemsSection({
                       </span>
                     </td>
                     <td className="py-2 text-right font-medium text-terracotta-600 dark:text-terracotta-400">
-                      ${item.amount.toFixed(2)}
+                      {item.amount.toFixed(2)}{currencySymbol}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2">
@@ -272,7 +276,7 @@ export function ItemsSection({
 
         {items.length === 0 && (
           <div className="text-sm text-charcoal-400 dark:text-charcoal-600 py-8 text-center">
-            No spending items
+            {t("items.text.no_spending_items")}
           </div>
         )}
       </div>

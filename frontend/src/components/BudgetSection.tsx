@@ -6,7 +6,8 @@ import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { ProgressBar } from "./ui/ProgressBar";
 import { Modal } from "./ui/Modal";
-
+import { useTranslation } from 'react-i18next';
+import { useCurrency } from "../hooks/useCurrency";
 interface BudgetSectionProps {
   monthId: number;
   budgets: MonthlyBudgetWithCategory[];
@@ -28,6 +29,10 @@ export function BudgetSection({
   const [editingBudgetId, setEditingBudgetId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+  
+  const { currencySymbol } = useCurrency();
+
+  const { t } = useTranslation();
 
   const handleAddCategory = async () => {
     if (!label || !amount) return;
@@ -84,7 +89,7 @@ export function BudgetSection({
       <Card>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
-            Budget
+            {t("budget.main_label")}
           </h3>
           <button
             onClick={() => setIsManaging(true)}
@@ -105,7 +110,7 @@ export function BudgetSection({
                   <div className="w-24">
                     <Input
                       type="number"
-                      placeholder="Budget"
+                      placeholder={t("budget.input.label")}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                     />
@@ -131,7 +136,7 @@ export function BudgetSection({
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
-                        ${budget.spent_amount.toFixed(2)} / ${budget.allocated_amount.toFixed(2)}
+                        {budget.spent_amount.toFixed(2)}{currencySymbol} / {budget.allocated_amount.toFixed(2)}{currencySymbol}
                       </span>
                       {!isReadOnly && (
                         <button
@@ -150,15 +155,15 @@ export function BudgetSection({
           ))}
           {budgets.length === 0 && (
             <div className="text-sm text-charcoal-400 dark:text-charcoal-600 py-4 text-center">
-              No budget categories
+              {t("budget.text.no_budget_categories")}
             </div>
           )}
         </div>
       </Card>
 
-      <Modal isOpen={isManaging} onClose={() => setIsManaging(false)} title="Manage Categories">
+      <Modal isOpen={isManaging} onClose={() => setIsManaging(false)} title={t("budget.modal.manage_categories")}>
         <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-4">
-          Categories define your budget types. Default amounts apply to new months.
+          {t("budget.text.categories_define_your_budget_types")}. {t("budget.text.default_amounts_apply_to_new_months")}.
         </p>
         <div className="space-y-3">
           {categories.map((cat) => (
@@ -167,7 +172,7 @@ export function BudgetSection({
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="Label"
+                      placeholder={t("budget.input.label")} 
                       value={label}
                       onChange={(e) => setLabel(e.target.value)}
                     />
@@ -175,7 +180,7 @@ export function BudgetSection({
                   <div className="w-24">
                     <Input
                       type="number"
-                      placeholder="Default"
+                      placeholder={t("budget.input.default")}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                     />
@@ -198,7 +203,7 @@ export function BudgetSection({
                   <span className="text-sm">{cat.label}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-charcoal-500">
-                      ${cat.default_amount.toFixed(2)}
+                      {cat.default_amount.toFixed(2)}{currencySymbol}
                     </span>
                     <button
                       onClick={() => startEditCategory(cat)}
@@ -222,7 +227,7 @@ export function BudgetSection({
             <div className="flex items-end gap-2 pt-2">
               <div className="flex-1">
                 <Input
-                  placeholder="Category name"
+                  placeholder={t("budget.input.category_name")}
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                 />
@@ -230,7 +235,7 @@ export function BudgetSection({
               <div className="w-24">
                 <Input
                   type="number"
-                  placeholder="Default"
+                  placeholder={t("budget.input.default")}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
@@ -250,7 +255,7 @@ export function BudgetSection({
               className="w-full mt-2"
             >
               <Plus size={16} className="mr-2" />
-              Add Category
+              {t("budget.button.add_category")}
             </Button>
           )}
         </div>

@@ -11,6 +11,8 @@ import {
 import { api, StatsResponse } from "../api/client";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { useTranslation } from 'react-i18next';
+import { useCurrency } from "../hooks/useCurrency";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -21,6 +23,9 @@ export function Stats() {
   const [isOpen, setIsOpen] = useState(false);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const { t } = useTranslation();
+  const { currencySymbol }  = useCurrency();
 
   const loadStats = async () => {
     setLoading(true);
@@ -52,30 +57,30 @@ export function Stats() {
     <>
       <Button variant="ghost" size="sm" onClick={() => setIsOpen(true)}>
         <BarChart3 size={16} className="mr-2" />
-        Stats
+        {t("stats.main_label")}
       </Button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Statistics">
         {loading ? (
-          <div className="py-8 text-center text-charcoal-500">Loading...</div>
+          <div className="py-8 text-center text-charcoal-500">{t("stats.text.loading")}...</div>
         ) : stats ? (
           <div className="space-y-6">
             {trendData.length > 1 && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-sand-100 dark:bg-charcoal-800">
                   <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-                    Avg Monthly Spending
+                    {t("stats.text.avg_monthly_spending")}
                   </div>
                   <div className="text-lg font-semibold text-terracotta-600 dark:text-terracotta-400">
-                    ${stats.average_monthly_spending.toFixed(2)}
+                    {stats.average_monthly_spending.toFixed(2)}{currencySymbol}
                   </div>
                 </div>
                 <div className="p-4 bg-sand-100 dark:bg-charcoal-800">
                   <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-                    Avg Monthly Income
+                    {t("stats.text.avg_monthly_income")}
                   </div>
                   <div className="text-lg font-semibold text-sage-600 dark:text-sage-400">
-                    ${stats.average_monthly_income.toFixed(2)}
+                    {stats.average_monthly_income.toFixed(2)}{currencySymbol}
                   </div>
                 </div>
               </div>
@@ -84,7 +89,7 @@ export function Stats() {
             {trendData.length > 1 && (
               <div>
                 <h4 className="text-sm font-medium mb-3 text-charcoal-700 dark:text-sand-200">
-                  Monthly Trends
+                  {t("stats.text.montly_trends")}
                 </h4>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
@@ -130,7 +135,7 @@ export function Stats() {
             {trendData.length > 1 && stats.category_comparisons.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium mb-3 text-charcoal-700 dark:text-sand-200">
-                  Category Comparison (vs Last Month)
+                  {t("stats.text.category_comparsion_vs_(last_month)")}
                 </h4>
                 <div className="space-y-2">
                   {stats.category_comparisons.map((cat) => (
@@ -143,7 +148,7 @@ export function Stats() {
                       </span>
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-charcoal-600 dark:text-charcoal-400">
-                          ${cat.current_month_spent.toFixed(2)}
+                          {cat.current_month_spent.toFixed(2)}{currencySymbol}
                         </span>
                         {cat.change_amount !== 0 && (
                           <div
@@ -160,7 +165,7 @@ export function Stats() {
                             )}
                             {cat.change_percent !== null
                               ? `${Math.abs(cat.change_percent).toFixed(0)}%`
-                              : `$${Math.abs(cat.change_amount).toFixed(0)}`}
+                              : `${Math.abs(cat.change_amount).toFixed(0)}`}
                           </div>
                         )}
                       </div>
@@ -173,10 +178,10 @@ export function Stats() {
             {trendData.length <= 1 && (
               <div className="py-8 text-center">
                 <p className="text-charcoal-600 dark:text-charcoal-300 mb-2">
-                  Welcome! Seems this is your first month on payme.
+                  {t("stats.text.welcome_seems_this_is_your_first_month_on_payme")}.
                 </p>
                 <p className="text-sm text-charcoal-400 dark:text-charcoal-500">
-                  Check back in here next month ;)
+                  {t("stats.text.check_back_in_here_next_month")};)
                 </p>
               </div>
             )}
@@ -184,10 +189,10 @@ export function Stats() {
         ) : (
           <div className="py-8 text-center">
             <p className="text-charcoal-600 dark:text-charcoal-300 mb-2">
-              Welcome! Seems this is your first month on payme.
+              {t("stats.text.welcome_seems_this_is_your_first_month_on_payme")}.
             </p>
             <p className="text-sm text-charcoal-400 dark:text-charcoal-500">
-              Check back in here next month ;)
+              {t("stats.text.check_back_in_here_next_month")};)
             </p>
           </div>
         )}

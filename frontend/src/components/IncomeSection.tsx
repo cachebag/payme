@@ -4,6 +4,8 @@ import { IncomeEntry, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface IncomeSectionProps {
   monthId: number;
@@ -17,6 +19,10 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+
+  const { currencySymbol } = useCurrency(); 
+
+  const { t } = useTranslation();
 
   const handleAdd = async () => {
     if (!label || !amount) return;
@@ -58,7 +64,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
     <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
-          Income
+          {t("income.main_label")}
         </h3>
         {!isReadOnly && !isAdding && (
           <button
@@ -77,7 +83,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
               <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <Input
-                    placeholder="Label"
+                    placeholder={t("income.input.label")}
                     value={label}
                     onChange={(e) => setLabel(e.target.value)}
                   />
@@ -85,7 +91,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
                 <div className="w-24">
                   <Input
                     type="number"
-                    placeholder="Amount"
+                    placeholder={t("income.input.amount")}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                   />
@@ -110,7 +116,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-sage-600 dark:text-sage-400">
-                    ${entry.amount.toFixed(2)}
+                    {entry.amount.toFixed(2)}{currencySymbol}
                   </span>
                   {!isReadOnly && (
                     <>
@@ -138,7 +144,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
           <div className="flex items-end gap-2 pt-2">
             <div className="flex-1">
               <Input
-                placeholder="Label"
+                placeholder={t("income.input.label")}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
               />
@@ -146,7 +152,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
             <div className="w-24">
               <Input
                 type="number"
-                placeholder="Amount"
+                placeholder={t("income.input.amount")}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
@@ -162,7 +168,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
 
         {entries.length === 0 && !isAdding && (
           <div className="text-sm text-charcoal-400 dark:text-charcoal-600 py-4 text-center">
-            No income entries
+            {t("income.text.no_income_entries")}
           </div>
         )}
       </div>

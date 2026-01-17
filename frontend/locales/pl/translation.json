@@ -1,0 +1,196 @@
+{
+  "budget": {
+    "button": {
+      "add_category": "Dodaj kategorie"
+    },
+    "input": {
+      "category_name": "Nazwa kategori",
+      "default": "Domyślna",
+      "label": "Nazwa "
+    },
+    "main_label": "Budżet",
+    "modal": {
+      "manage_categories": "Zarządzaj kategoriami"
+    },
+    "text": {
+      "categories_define_your_budget_types": "Kategorie definiują twoje typy budżetu",
+      "default_amounts_apply_to_new_months": "Domyślna wartość zalicza się do nowych miesięcy",
+      "no_budget_categories": "Brak kategori budżetowych"
+    }
+  },
+  "fixed_expenses": {
+    "button": {
+      "add_expense": "Dodaj wydatek"
+    },
+    "input": {
+      "amount": "Kwota",
+      "label": "Nazwa"
+    },
+    "main_label": "Stałe wydatki",
+    "modal": {
+      "manage_fixed_expenses": "Zarządzaj stałymi wydatkami"
+    },
+    "no_fixed_expenses": "Brak stałych wydatków",
+    "total": "Suma"
+  },
+  "income": {
+    "input": {
+      "amount": "Kwota",
+      "label": "Nazwa"
+    },
+    "main_label": "Przychody",
+    "text": {
+      "no_income_entries": "Brak przychodów"
+    }
+  },
+  "items": {
+    "button": {
+      "add": "Dodaj",
+      "cancel": "Anuluj",
+      "close": "Zamknij"
+    },
+    "input": {
+      "amount": "Kwota",
+      "description": "Opis"
+    },
+    "table": {
+      "amount": "Kwota",
+      "category": "Kategoria",
+      "date": "Data",
+      "description": "Opis"
+    },
+    "text": {
+      "add_some_in_the_Budget_section_first": "Dodaj coś do sekcji budżetu",
+      "no_budget_categories_yet": "Brak kategori budżetowych",
+      "no_spending_items": "Brak wydatków",
+      "spending_items": "Wydatki"
+    }
+  },
+  "layout": {
+    "button": {
+      "cancel": "Anuluj",
+      "export_data": "Eksportuj",
+      "import_data": "Zaimportuj",
+      "importing": "Imprtuje",
+      "replace_my_data": "Zamień moje dane"
+    },
+    "categories": "Kategorie",
+    "fixed_expenses": "Stałe wydatki",
+    "modal": {
+      "import_data": "Importuj dane"
+    },
+    "months": "Miesiące",
+    "text": {
+      "this_will_replace_all_your_current_data_with_the_imported_file": "Zamień moje dane na dane z pliku",
+      "welcome": "Witaj"
+    }
+  },
+  "login": {
+    "create_account": "Utwórz konto",
+    "password": "Hasło",
+    "sign_in": "Zaloguj się",
+    "username": "Nazwa użytkownika"
+  },
+  "month": {
+    "button": {
+      "close_month": "Zamknij miesiąc"
+    },
+    "name": {
+      "apr": "Kwiecień",
+      "aug": "Sierpień",
+      "dec": "Grudzień",
+      "feb": "Luty",
+      "jan": "Styczeń",
+      "jul": "Lipiec",
+      "jun": "Czerwiec",
+      "mar": "Marzec",
+      "may": "Maj",
+      "nov": "Listopad",
+      "oct": "Październik",
+      "sep": "Wrzesień"
+    },
+    "text": {
+      "active": "Aktywny",
+      "closed": "Zamknięty"
+    }
+  },
+  "projected_saving_card": {
+    "text": {
+      "why_this_amount": "Dlaczego taka ilość"
+    }
+  },
+  "projected_savings_card": {
+    "text": {
+      "projected": "Przewidywane"
+    }
+  },
+  "register": {
+    "already_have_account": "Masz już konto",
+    "confirm_password": "Powtórz hasło",
+    "create_account": "Utwórz konto",
+    "password": "Hasło",
+    "select_currency": "Wybierz walute",
+    "username": "Nazwa użytkownika"
+  },
+  "retirment_savings_card": {
+    "text": {
+      "retirment_savings": "Oszczędności emerytalne"
+    }
+  },
+  "savings_card": {
+    "text": {
+      "savings": "Oszczędności"
+    }
+  },
+  "stats": {
+    "main_label": "Statystyka",
+    "text": {
+      "avg_monthly_income": "Średnie miesięczne przychodyy",
+      "avg_monthly_spending": "Średnie miesięczne wydatki",
+      "category_comparsion_vs_(last_month)": "Porównanie kategorii vs (ostatni miesiąc)",
+      "check_back_in_here_next_month": "Zajrzyj tutaj w przyszłym miesiącu",
+      "loading": "Ładowanie",
+      "montly_trends": "Trendy miesięczne",
+      "welcome_seems_this_is_your_first_month_on_payme": "Witaj, wygląda na to że to twój pierwszy miesiąc na payme"
+    }
+  },
+  "summary": {
+    "text": {
+      "deficit": "Deficyt",
+      "fixed": "Stałe wydatki",
+      "income": "Przychody",
+      "remaining": "Pozostało",
+      "spent": "Wydano"
+    }
+  },
+  "variance": {
+    "modal": {
+      "budget_analysis": "Analiza budżetu"
+    },
+    "text": {
+      "budget_overruns": "Przekroczenia budżetu",
+      "categories_are": "kategori jest",
+      "category_is": "Kategoria jest",
+      "great_discipline": "Niezła dyscyplina",
+      "heres_whats_affecting_your_projected_savings": "Co wpłyneło na twoje planowane oszczędności",
+      "income": "Przychód",
+      "income_is": "Przychód jest",
+      "income_shortfall": "Niedobór dochodów",
+      "less_than_needed_to_cover_expenses": "Mniej niż wymagane żeby pokryć wydatki",
+      "more_categories_under_budget": "Wiecej kategori poniżej budżetu",
+      "more_than_planned_across_your_categories": "wiecej niż w kategoriach budżetu",
+      "needed": "potrzebnych",
+      "net_impact": "Impakt na budżet",
+      "over_budget": "Ponad budżet ",
+      "total_over_budget": "Suma ponad budżet",
+      "total_under_budget": "Suma poniżej budżetu",
+      "under_budget": "poniżej budżetu",
+      "under_budget_(good!)": "poniżej budżetu(Nieźle!)",
+      "unplaned_spending": "Nieplanowane wydatki",
+      "you_are": "Jesteś",
+      "you_are_ahead_of_budget": "Przekraczasz budżet",
+      "you_are_right_on_track": "Jesteś na dobrej drodze",
+      "you_saved": "Oszczędziłeś"
+    }
+  }
+}

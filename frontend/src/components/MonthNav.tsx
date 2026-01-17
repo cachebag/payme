@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, FileDown, Lock } from "lucide-react";
 import { Month } from "../api/client";
 import { Button } from "./ui/Button";
+import { useTranslation } from "react-i18next";
 
 interface MonthNavProps {
   months: Month[];
@@ -9,11 +10,6 @@ interface MonthNavProps {
   onClose: () => void;
   onDownloadPdf: () => void;
 }
-
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
 
 export function MonthNav({
   months,
@@ -24,6 +20,13 @@ export function MonthNav({
 }: MonthNavProps) {
   const selectedMonth = months.find((m) => m.id === selectedMonthId);
   const currentIndex = months.findIndex((m) => m.id === selectedMonthId);
+
+  const { t } = useTranslation();
+
+  const MONTH_NAMES = [
+    t("month.name.jan"), t("month.name.feb"), t("month.name.mar"), t("month.name.apr"), t("month.name.may"), t("month.name.jun"),
+    t("month.name.jul"), t("month.name.aug"), t("month.name.sep"), t("month.name.oct"), t("month.name.nov"), t("month.name.dec"),
+  ];
 
   const now = new Date();
   const isCurrentCalendarMonth =
@@ -64,10 +67,10 @@ export function MonthNav({
             {selectedMonth.is_closed ? (
               <>
                 <Lock size={12} />
-                closed
+                {t("month.text.closed")}
               </>
             ) : (
-              "active"
+              t("month.text.active")
             )}
           </div>
         </div>
@@ -89,7 +92,7 @@ export function MonthNav({
         )}
         {canClose && (
           <Button variant="primary" size="sm" onClick={onClose}>
-            Close Month
+            {t("month.button.close_month")}
           </Button>
         )}
       </div>

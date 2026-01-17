@@ -1,5 +1,7 @@
 import { TrendingUp, HelpCircle } from "lucide-react";
 import { Card } from "./ui/Card";
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface ProjectedSavingsCardProps {
   savings: number;
@@ -10,23 +12,27 @@ interface ProjectedSavingsCardProps {
 export function ProjectedSavingsCard({ savings, remaining, onAnalyzeClick }: ProjectedSavingsCardProps) {
   const projected = savings + remaining;
 
+  const { currencySymbol } = useCurrency();
+
+  const { t } = useTranslation();
+
   return (
     <Card className="!p-3">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
-          Projected
+        {t("projected_savings_card.text.projected")}
         </span>
         <TrendingUp size={14} className="text-sage-600" />
       </div>
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-sage-700 dark:text-sage-400">
-          ${projected.toFixed(2)}
+          {projected.toFixed(2)}{currencySymbol}
         </span>
         {onAnalyzeClick && (
           <button
             onClick={onAnalyzeClick}
             className="p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors"
-            title="Why this amount?"
+            title={t("projected_saving_card.text.why_this_amount")}
           >
             <HelpCircle size={14} className="text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300" />
           </button>

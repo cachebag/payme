@@ -1,0 +1,196 @@
+{
+  "budget": {
+    "button": {
+      "add_category": "Add category"
+    },
+    "input": {
+      "category_name": "Category name",
+      "default": "Default",
+      "label": "Label"
+    },
+    "main_label": "Budget",
+    "modal": {
+      "manage_categories": "Manage categories"
+    },
+    "text": {
+      "categories_define_your_budget_types": "Define your budget types",
+      "default_amounts_apply_to_new_months": "Default amounts apply to new months",
+      "no_budget_categories": "No budget categories"
+    }
+  },
+  "fixed_expenses": {
+    "button": {
+      "add_expense": "Add expense"
+    },
+    "input": {
+      "amount": "Amount",
+      "label": "Label"
+    },
+    "main_label": "Fixed expenses",
+    "modal": {
+      "manage_fixed_expenses": "Manage fixed expenses"
+    },
+    "no_fixed_expenses": "No fixed expenses",
+    "total": "Total"
+  },
+  "income": {
+    "input": {
+      "amount": "Amount",
+      "label": "Label"
+    },
+    "main_label": "Income",
+    "text": {
+      "no_income_entries": "No income entries"
+    }
+  },
+  "items": {
+    "button": {
+      "add": "Add",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "input": {
+      "amount": "Amount",
+      "description": "Description"
+    },
+    "table": {
+      "amount": "Amount",
+      "category": "Category",
+      "date": "Date",
+      "description": "Description"
+    },
+    "text": {
+      "add_some_in_the_Budget_section_first": "Add some in the Budget section first",
+      "no_budget_categories_yet": "No budget categories yet",
+      "no_spending_items": "No spending items",
+      "spending_items": "Spending items"
+    }
+  },
+  "layout": {
+    "button": {
+      "cancel": "Cancel",
+      "export_data": "Export data",
+      "import_data": "Import data",
+      "importing": "Importing",
+      "replace_my_data": "Replace my data"
+    },
+    "categories": "Categories",
+    "fixed_expenses": "Fixed expenses",
+    "modal": {
+      "import_data": "Import data"
+    },
+    "months": "Months",
+    "text": {
+      "this_will_replace_all_your_current_data_with_the_imported_file": "This will replace all your current data with the imported file",
+      "welcome": "Welcome"
+    }
+  },
+  "login": {
+    "create_account": "Create account",
+    "password": "Password",
+    "sign_in": "Sign in",
+    "username": "Username"
+  },
+  "month": {
+    "button": {
+      "close_month": "Close month"
+    },
+    "name": {
+      "apr": "Apr",
+      "aug": "Aug",
+      "dec": "Dec",
+      "feb": "Feb",
+      "jan": "Jan",
+      "jul": "Jul",
+      "jun": "Jun",
+      "mar": "Mar",
+      "may": "May",
+      "nov": "Nov",
+      "oct": "Oct",
+      "sep": "Sep"
+    },
+    "text": {
+      "active": "Active",
+      "closed": "Closed"
+    }
+  },
+  "projected_saving_card": {
+    "text": {
+      "why_this_amount": "Why this amount"
+    }
+  },
+  "projected_savings_card": {
+    "text": {
+      "projected": "Projected"
+    }
+  },
+  "register": {
+    "already_have_account": "Already have account",
+    "confirm_password": "Config password",
+    "create_account": "Create account",
+    "password": "Password",
+    "select_currency": "Select your currency",
+    "username": "Username"
+  },
+  "retirment_savings_card": {
+    "text": {
+      "retirment_savings": "Retirment savings"
+    }
+  },
+  "savings_card": {
+    "text": {
+      "savings": "Savings"
+    }
+  },
+  "stats": {
+    "main_label": "Stats",
+    "text": {
+      "avg_monthly_income": "AVG monthly income",
+      "avg_monthly_spending": "AVG monthly spending",
+      "category_comparsion_vs_(last_month)": "Category comparsion vs (Last month)",
+      "check_back_in_here_next_month": "Check back in here next month",
+      "loading": "Loading",
+      "montly_trends": "Monthly trends",
+      "welcome_seems_this_is_your_first_month_on_payme": "Welcome, seems this is your first month on payme"
+    }
+  },
+  "summary": {
+    "text": {
+      "deficit": "Deficit",
+      "fixed": "Fixed",
+      "income": "Income",
+      "remaining": "Remaining",
+      "spent": "Spent"
+    }
+  },
+  "variance": {
+    "modal": {
+      "budget_analysis": "Budget analysis"
+    },
+    "text": {
+      "budget_overruns": "Budget overruns",
+      "categories_are": "categories are",
+      "category_is": "Category is",
+      "great_discipline": "Great discipline",
+      "heres_whats_affecting_your_projected_savings": "Here's what's affecting your projected savings",
+      "income": "Income",
+      "income_is": "Income is",
+      "income_shortfall": "Income shortfall",
+      "less_than_needed_to_cover_expenses": "Less than needed to cover expenses",
+      "more_categories_under_budget": "More categories under budget",
+      "more_than_planned_across_your_categories": "more than planned across your categories",
+      "needed": "needed",
+      "net_impact": "Net impact",
+      "over_budget": "Over budget",
+      "total_over_budget": "Total over budget",
+      "total_under_budget": "Total under budget",
+      "under_budget": "under budget",
+      "under_budget_(good!)": "under budget (Good!)",
+      "unplaned_spending": "Unplaned spending",
+      "you_are": "You're",
+      "you_are_ahead_of_budget": "You're ahead of budget",
+      "you_are_right_on_track": "You're right on track",
+      "you_saved": "You saved"
+    }
+  }
+}

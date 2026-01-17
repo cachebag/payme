@@ -3,11 +3,17 @@ import { TrendingUp, Pencil, Check, X } from "lucide-react";
 import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 
 export function RetirementSavingsCard() {
   const [amount, setAmount] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+
+  const { currencySymbol } = useCurrency();
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     api.retirementSavings.get().then((res) => setAmount(res.retirement_savings));
@@ -36,7 +42,7 @@ export function RetirementSavingsCard() {
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-            Retirement Savings
+            {t("retirment_savings_card.text.retirment_savings")}
           </div>
           {isEditing ? (
             <div className="flex items-center gap-2">
@@ -63,7 +69,7 @@ export function RetirementSavingsCard() {
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-xl font-semibold text-sage-600 dark:text-sage-400">
-                ${amount.toFixed(2)}
+                {amount.toFixed(2)}{currencySymbol}
               </span>
               <button
                 onClick={startEdit}

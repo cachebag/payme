@@ -1,6 +1,8 @@
 import { TrendingDown, Wallet, CreditCard, PiggyBank } from "lucide-react";
 import { Card } from "./ui/Card";
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface SummaryProps {
   totalIncome: number;
@@ -13,15 +15,19 @@ interface SummaryProps {
 export function Summary({ totalIncome, totalFixed, totalSpent, remaining, extraCard }: SummaryProps) {
   const isPositive = remaining >= 0;
 
+  const { currencySymbol } = useCurrency();
+
+  const { t } = useTranslation();
+
   const items = [
     {
-      label: "Income",
+      label: t("summary.text.income"),
       value: totalIncome,
       icon: Wallet,
       color: "text-sage-600 dark:text-sage-400",
     },
     {
-      label: "Fixed",
+      label: t("summary.text.fixed"),
       value: totalFixed,
       icon: CreditCard,
       color: "text-charcoal-600 dark:text-charcoal-400",
@@ -30,13 +36,13 @@ export function Summary({ totalIncome, totalFixed, totalSpent, remaining, extraC
 
   const itemsAfter = [
     {
-      label: "Spent",
+      label: t("summary.text.spent"),
       value: totalSpent,
       icon: TrendingDown,
       color: "text-terracotta-600 dark:text-terracotta-400",
     },
     {
-      label: "Remaining",
+      label: t("summary.text.remaining"),
       value: remaining,
       icon: isPositive ? PiggyBank : TrendingDown,
       color: isPositive
@@ -53,9 +59,9 @@ export function Summary({ totalIncome, totalFixed, totalSpent, remaining, extraC
             {item.label}
           </div>
           <div className={`text-xl font-semibold ${item.color}`}>
-            ${Math.abs(item.value).toFixed(2)}
+            {Math.abs(item.value).toFixed(2)}{currencySymbol}
             {item.label === "Remaining" && item.value < 0 && (
-              <span className="text-xs ml-1">deficit</span>
+              <span className="text-xs ml-1">{t("summary.text.deficit")}</span>
             )}
           </div>
         </div>

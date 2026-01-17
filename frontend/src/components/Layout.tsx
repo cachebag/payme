@@ -5,7 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { api, UserExport } from "../api/client";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
-
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 interface LayoutProps {
   children: ReactNode;
 }
@@ -17,6 +18,8 @@ export function Layout({ children }: LayoutProps) {
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [pendingImport, setPendingImport] = useState<UserExport | null>(null);
   const [importing, setImporting] = useState(false);
+
+  const { t } = useTranslation();
 
   const handleExport = async () => {
     const data = await api.exportJson();
@@ -77,12 +80,13 @@ export function Layout({ children }: LayoutProps) {
           </span>
           {user && (
             <span className="text-sm text-charcoal-600 dark:text-charcoal-300">
-              Welcome, {user.username}
+              {t('layout.text.welcome')}, {user.username}
             </span>
           )}
           <div className="flex items-center gap-2">
             {user && (
               <>
+                <LanguageSwitcher/>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -93,14 +97,14 @@ export function Layout({ children }: LayoutProps) {
                 <button
                   onClick={handleImportClick}
                   className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
-                  title="Import data"
+                  title={t("layout.button.import_data")}
                 >
                   <Upload size={18} />
                 </button>
                 <button
                   onClick={handleExport}
                   className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer"
-                  title="Export data"
+                  title={t("layout.button.export_data")}
                 >
                   <Download size={18} />
                 </button>
@@ -125,24 +129,24 @@ export function Layout({ children }: LayoutProps) {
       </header>
       <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
 
-      <Modal isOpen={showImportConfirm} onClose={() => setShowImportConfirm(false)} title="Import Data">
+      <Modal isOpen={showImportConfirm} onClose={() => setShowImportConfirm(false)} title={t("layout.modal.import_data")}>
         <div className="space-y-4">
           <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
-            This will replace all your current data with the imported file.
+              {t("layout.text.this_will_replace_all_your_current_data_with_the_imported_file")}.
           </p>
           {pendingImport && (
             <div className="text-xs text-charcoal-500 dark:text-charcoal-400 p-3 bg-sand-100 dark:bg-charcoal-800">
-              <div>{pendingImport.categories.length} categories</div>
-              <div>{pendingImport.fixed_expenses.length} fixed expenses</div>
-              <div>{pendingImport.months.length} months</div>
+              <div>{pendingImport.categories.length} {t("layout.categories")}</div>
+              <div>{pendingImport.fixed_expenses.length} {t("layout.fixed_expenses")}</div>
+              <div>{pendingImport.months.length} {t("layout.months")}</div>
             </div>
           )}
           <div className="flex gap-2">
             <Button onClick={confirmImport} disabled={importing}>
-              {importing ? "Importing..." : "Replace My Data"}
+              {importing ? t("layout.button.importing") + "..." : t("layout.button.replace_my_data")}
             </Button>
             <Button variant="ghost" onClick={() => setShowImportConfirm(false)}>
-              Cancel
+              {t("layout.button.cancel")}
             </Button>
           </div>
         </div>
