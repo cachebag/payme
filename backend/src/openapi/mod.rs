@@ -3,7 +3,7 @@ use crate::handlers::audit::{ActivitySummary, ActivitySummaryResponse, AuditList
 use utoipa::OpenApi;
 
 use crate::handlers::{
-    auth::{AuthRequest, AuthResponse},
+    auth::{LoginRequest, RegisterRequest, AuthResponse},
     budget::{CreateCategory, UpdateCategory, UpdateMonthlyBudget},
     export::{
         BudgetExport, CategoryExport, FixedExpenseExport, IncomeExport, ItemExport, MonthExport,
@@ -64,7 +64,8 @@ use crate::models::{
         AuditListResponse,
         ActivitySummary,
         ActivitySummaryResponse,
-        AuthRequest,
+        RegisterRequest, 
+        LoginRequest,
         AuthResponse,
         MonthlyBudget,
         UpdateMonthlyBudget,

@@ -16,7 +16,8 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
             username TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             savings REAL NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            created_at TEXT NOT NULL DEFAULT (datetime('now')), 
+            currency TEXT NOT NULL DEFAULT "USD" 
         )
         "#,
     )
@@ -177,6 +178,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at)")
         .execute(pool)
         .await?;
+
 
     Ok(())
 }
