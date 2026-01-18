@@ -13,6 +13,10 @@ use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{Item, ItemWithCategory};
 
+fn default_savings_destination() -> String {
+    "none".to_string()
+}
+
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateItem {
     pub category_id: i64,
@@ -21,7 +25,7 @@ pub struct CreateItem {
     #[validate(range(min = 0.0))]
     pub amount: f64,
     pub spent_on: NaiveDate,
-    #[serde(default)]
+    #[serde(default = "default_savings_destination")]
     pub savings_destination: String,
 }
 

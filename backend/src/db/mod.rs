@@ -137,12 +137,14 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
-    sqlx::query("ALTER TABLE items ADD COLUMN savings_destination TEXT NOT NULL DEFAULT 'none'")
+    // Ensure savings_destination column exists for existing tables (idempotent migration)
+    // This is safe to run multiple times - it only adds if not present
+    let _ = sqlx::query("ALTER TABLE items ADD COLUMN savings_destination TEXT NOT NULL DEFAULT 'none'")
         .execute(pool)
-        .await
-        .ok();
+        .await;
 
-    sqlx::query("UPDATE items SET savings_destination = CASE WHEN add_to_savings = 1 THEN 'savings' ELSE 'none' END")
+    // Clean up any empty or null values in the savings_destination column
+    sqlx::query("UPDATE items SET savings_destination = 'none' WHERE savings_destination = '' OR savings_destination IS NULL")
         .execute(pool)
         .await
         .ok();
