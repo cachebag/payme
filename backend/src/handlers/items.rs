@@ -191,12 +191,10 @@ pub async fn update_item(
                 .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
     }
 
-    // Handle savings balance adjustments
     let old_dest = existing.savings_destination.as_str();
     let new_dest = savings_destination.as_str();
 
     if old_dest != new_dest || (old_dest != "none" && existing.amount != amount) {
-        // Remove from old destination
         match old_dest {
             "savings" => {
                 sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
@@ -215,7 +213,6 @@ pub async fn update_item(
             _ => {}
         }
 
-        // Add to new destination
         match new_dest {
             "savings" => {
                 sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
