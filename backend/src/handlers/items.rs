@@ -111,7 +111,6 @@ pub async fn create_item(
     .fetch_one(&pool)
     .await?;
 
-    // If add_to_savings is true, add the amount to user's savings
     if payload.add_to_savings {
         sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
             .bind(payload.amount)
@@ -182,23 +181,19 @@ pub async fn update_item(
                 .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
     }
 
-    // Handle savings balance adjustments
     if existing.add_to_savings && !add_to_savings {
-        // Was going to savings, now isn't - remove from savings
         sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
             .bind(existing.amount)
             .bind(claims.sub)
             .execute(&pool)
             .await?;
     } else if !existing.add_to_savings && add_to_savings {
-        // Wasn't going to savings, now is - add to savings
         sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
             .bind(amount)
             .bind(claims.sub)
             .execute(&pool)
             .await?;
     } else if existing.add_to_savings && add_to_savings && existing.amount != amount {
-        // Still going to savings but amount changed - adjust the difference
         let adjustment = amount - existing.amount;
         sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
             .bind(adjustment)
@@ -252,7 +247,6 @@ pub async fn delete_item(
 ) -> Result<StatusCode, PaymeError> {
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
-    // Get the item to check if it was adding to savings
     let item: Item = sqlx::query_as(
         "SELECT id, month_id, category_id, description, amount, spent_on, add_to_savings FROM items WHERE id = ? AND month_id = ?",
     )
@@ -262,7 +256,6 @@ pub async fn delete_item(
     .await?
     .ok_or(PaymeError::NotFound)?;
 
-    // If it was adding to savings, remove from savings balance
     if item.add_to_savings {
         sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
             .bind(item.amount)
