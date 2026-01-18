@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { ItemWithCategory, BudgetCategory, api } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../utils/currencyFormatter";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
@@ -21,6 +23,8 @@ export function ItemsSection({
   isReadOnly,
   onUpdate,
 }: ItemsSectionProps) {
+  const { user } = useAuth();
+  const currency = user?.currency || "USD";
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [description, setDescription] = useState("");
@@ -243,7 +247,7 @@ export function ItemsSection({
                       </span>
                     </td>
                     <td className="py-2 text-right font-medium text-terracotta-600 dark:text-terracotta-400">
-                      ${item.amount.toFixed(2)}
+                      {formatCurrency(item.amount, currency)}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2">

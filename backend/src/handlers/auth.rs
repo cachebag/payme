@@ -14,6 +14,7 @@ use validator::Validate;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
+use crate::models::User;
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct AuthRequest {
@@ -157,7 +158,7 @@ pub async fn logout(jar: CookieJar) -> impl IntoResponse {
     get,
     path = "/api/auth/me",
     responses(
-        (status = 200, description = "Current user retrieved", body = AuthResponse),
+        (status = 200, description = "Current user retrieved", body = crate::models::User),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
     ),
@@ -168,17 +169,16 @@ pub async fn logout(jar: CookieJar) -> impl IntoResponse {
 pub async fn me(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
-) -> Result<Json<AuthResponse>, PaymeError> {
-    let user: (i64, String) = sqlx::query_as("SELECT id, username FROM users WHERE id = ?")
-        .bind(claims.sub)
-        .fetch_optional(&pool)
-        .await?
-        .ok_or(PaymeError::NotFound)?;
+) -> Result<Json<crate::models::User>, PaymeError> {
+    let user = sqlx::query_as::<_, crate::models::User>(
+        "SELECT id, username, savings, savings_goal, retirement_savings, currency FROM users WHERE id = ?"
+    )
+    .bind(claims.sub)
+    .fetch_optional(&pool)
+    .await?
+    .ok_or(PaymeError::NotFound)?;
 
-    Ok(Json(AuthResponse {
-        id: user.0,
-        username: user.1,
-    }))
+    Ok(Json(user))
 }
 
 pub async fn export_db(
@@ -358,4 +358,76 @@ pub async fn clear_all_data(
         jar.add(cookie),
         Json(serde_json::json!({"message": "All data cleared"})),
     ))
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct CurrencyRequest {
+    pub currency: String,
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/auth/currency",
+    request_body = CurrencyRequest,
+    responses(
+        (status = 200, description = "Currency updated successfully", body = crate::models::User),
+        (status = 400, description = "Invalid currency"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth",
+    summary = "Update user currency",
+    description = "Updates the authenticated user's preferred currency."
+)]
+pub async fn update_currency(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Json(payload): Json<CurrencyRequest>,
+) -> Result<Json<crate::models::User>, PaymeError> {
+    let currency = payload.currency.to_uppercase();
+    
+    // Validate currency code (basic validation for common currencies)
+    let valid_currencies = vec!["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN", "BRL", "ZAR"];
+    if !valid_currencies.contains(&currency.as_str()) {
+        return Err(PaymeError::BadRequest(format!("Unsupported currency: {}", currency)));
+    }
+
+    sqlx::query("UPDATE users SET currency = ? WHERE id = ?")
+        .bind(&currency)
+        .bind(claims.sub)
+        .execute(&pool)
+        .await?;
+
+    let user = sqlx::query_as::<_, crate::models::User>(
+        "SELECT id, username, savings, savings_goal, retirement_savings, currency FROM users WHERE id = ?"
+    )
+    .bind(claims.sub)
+    .fetch_one(&pool)
+    .await?;
+
+    Ok(Json(user))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/auth/currency",
+    responses(
+        (status = 200, description = "User currency retrieved", body = crate::models::User),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth",
+    summary = "Get user currency",
+    description = "Retrieves the authenticated user's preferred currency."
+)]
+pub async fn get_currency(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<crate::models::User>, PaymeError> {
+    let user = sqlx::query_as::<_, crate::models::User>(
+        "SELECT id, username, savings, savings_goal, retirement_savings, currency FROM users WHERE id = ?"
+    )
+    .bind(claims.sub)
+    .fetch_one(&pool)
+    .await?;
+
+    Ok(Json(user))
 }

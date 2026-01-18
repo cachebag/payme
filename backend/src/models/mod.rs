@@ -3,6 +3,16 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct User {
+    pub id: i64,
+    pub username: String,
+    pub savings: f64,
+    pub savings_goal: f64,
+    pub retirement_savings: f64,
+    pub currency: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct FixedExpense {
     pub id: i64,
     pub user_id: i64,

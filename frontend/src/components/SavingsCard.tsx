@@ -6,6 +6,8 @@ import { Input } from "./ui/Input";
 import { ProgressBar } from "./ui/ProgressBar";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../utils/currencyFormatter";
 
 interface SavingsCardProps {
   onSavingsChange?: (savings: number) => void;
@@ -13,6 +15,8 @@ interface SavingsCardProps {
 }
 
 export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
+  const { user } = useAuth();
+  const currency = user?.currency || "USD";
   const [savings, setSavings] = useState<number>(0);
   const [savingsGoal, setSavingsGoal] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -115,7 +119,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
       ) : (
         <div className="flex items-center justify-between mb-3">
           <span className="text-lg sm:text-xl font-semibold text-sage-700 dark:text-sage-400">
-            ${savings.toFixed(2)}
+            {formatCurrency(savings, currency)}
           </span>
           <button
             onClick={startEdit}
@@ -153,7 +157,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
         ) : (
           <div className="flex items-center justify-between text-xs">
             <span className="text-charcoal-500 dark:text-charcoal-400">
-              Goal: ${target.toFixed(2)}
+              Goal: {formatCurrency(target, currency)}
             </span>
             <button
               onClick={startEditGoal}
@@ -171,7 +175,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
             {isAhead ? '✓' : '⚠️'} {Math.abs(percentage - 100).toFixed(1)}% {isAhead ? 'ahead' : 'behind'}
           </span>
           <span className="text-charcoal-500 dark:text-charcoal-400">
-            {isAhead ? '+' : ''}{difference.toFixed(2)}
+            {formatCurrency(difference, currency)}
           </span>
         </div>
         
