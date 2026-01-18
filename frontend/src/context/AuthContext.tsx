@@ -1,10 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api } from "../api/client";
-
-interface User {
-  id: number;
-  username: string;
-}
+import { api, User } from "../api/client";
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +8,7 @@ interface AuthContextType {
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUsername: (username: string) => void;
+  updateCurrency: (currency: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,8 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const user = await api.auth.login(username, password);
-    setUser(user);
+    await api.auth.login(username, password);
+    // After login, fetch full user data with currency
+    const fullUser = await api.auth.me();
+    setUser(fullUser);
   };
 
   const register = async (username: string, password: string) => {
@@ -53,8 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateCurrency = async (currency: string) => {
+    const updatedUser = await api.auth.updateCurrency(currency);
+    setUser(updatedUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUsername }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUsername, updateCurrency }}>
       {children}
     </AuthContext.Provider>
   );

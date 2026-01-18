@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select";
 import { Modal } from "../components/ui/Modal";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
@@ -11,21 +12,40 @@ interface SettingsProps {
   onBack: () => void;
 }
 
+const AVAILABLE_CURRENCIES = [
+  { value: "USD", label: "US Dollar ($)" },
+  { value: "EUR", label: "Euro (€)" },
+  { value: "GBP", label: "British Pound (£)" },
+  { value: "JPY", label: "Japanese Yen (¥)" },
+  { value: "CAD", label: "Canadian Dollar (C$)" },
+  { value: "AUD", label: "Australian Dollar (A$)" },
+  { value: "CHF", label: "Swiss Franc (CHF)" },
+  { value: "CNY", label: "Chinese Yuan (¥)" },
+  { value: "INR", label: "Indian Rupee (₹)" },
+  { value: "MXN", label: "Mexican Peso ($)" },
+  { value: "BRL", label: "Brazilian Real (R$)" },
+  { value: "ZAR", label: "South African Rand (R)" },
+];
+
 export function Settings({ onBack }: SettingsProps) {
-  const { user, logout, updateUsername } = useAuth();
+  const { user, logout, updateUsername, updateCurrency } = useAuth();
   const [newUsername, setNewUsername] = useState(user?.username || "");
+  const [selectedCurrency, setSelectedCurrency] = useState(user?.currency || "USD");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [usernameLoading, setUsernameLoading] = useState(false);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [usernameError, setUsernameError] = useState("");
+  const [currencyError, setCurrencyError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [usernameSuccess, setUsernameSuccess] = useState(false);
+  const [currencySuccess, setCurrencySuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const handleChangeUsername = async (e: React.FormEvent) => {
@@ -48,6 +68,23 @@ export function Settings({ onBack }: SettingsProps) {
       setUsernameError("Failed to change username. It may already be taken.");
     } finally {
       setUsernameLoading(false);
+    }
+  };
+
+  const handleChangeCurrency = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCurrencyError("");
+    setCurrencySuccess(false);
+
+    setCurrencyLoading(true);
+    try {
+      await updateCurrency(selectedCurrency);
+      setCurrencySuccess(true);
+      setTimeout(() => setCurrencySuccess(false), 3000);
+    } catch {
+      setCurrencyError("Failed to update currency.");
+    } finally {
+      setCurrencyLoading(false);
     }
   };
 
@@ -136,6 +173,30 @@ export function Settings({ onBack }: SettingsProps) {
               )}
               <Button type="submit" disabled={usernameLoading || newUsername === user?.username}>
                 {usernameLoading ? "Saving..." : "Save Username"}
+              </Button>
+            </form>
+          </div>
+
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
+              Currency
+            </h2>
+            <form onSubmit={handleChangeCurrency} className="space-y-4">
+              <Select
+                label="Select Currency"
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                disabled={currencyLoading}
+                options={AVAILABLE_CURRENCIES}
+              />
+              {currencyError && (
+                <p className="text-sm text-terracotta-600">{currencyError}</p>
+              )}
+              {currencySuccess && (
+                <p className="text-sm text-sage-600">Currency updated successfully</p>
+              )}
+              <Button type="submit" disabled={currencyLoading || selectedCurrency === user?.currency}>
+                {currencyLoading ? "Updating..." : "Update Currency"}
               </Button>
             </form>
           </div>

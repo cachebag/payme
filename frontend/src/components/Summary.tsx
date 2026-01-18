@@ -1,6 +1,8 @@
 import { TrendingDown, Wallet, CreditCard, PiggyBank } from "lucide-react";
 import { Card } from "./ui/Card";
 import { ReactNode } from "react";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../utils/currencyFormatter";
 
 interface SummaryProps {
   totalIncome: number;
@@ -11,6 +13,8 @@ interface SummaryProps {
 }
 
 export function Summary({ totalIncome, totalFixed, totalSpent, remaining, extraCard }: SummaryProps) {
+  const { user } = useAuth();
+  const currency = user?.currency || "USD";
   const isPositive = remaining >= 0;
 
   const items = [
@@ -53,7 +57,7 @@ export function Summary({ totalIncome, totalFixed, totalSpent, remaining, extraC
             {item.label}
           </div>
           <div className={`text-lg sm:text-xl font-semibold ${item.color}`}>
-            ${Math.abs(item.value).toFixed(2)}
+            {formatCurrency(Math.abs(item.value), currency)}
             {item.label === "Remaining" && item.value < 0 && (
               <span className="text-xs ml-1">deficit</span>
             )}

@@ -37,9 +37,9 @@ export const api = {
         body: JSON.stringify({ username, password }),
       }),
     logout: () => request<void>("/auth/logout", { method: "POST" }),
-    me: () => request<{ id: number; username: string }>("/auth/me"),
+    me: () => request<User>("/auth/me"),
     changeUsername: (newUsername: string) =>
-      request<{ id: number; username: string }>("/auth/change-username", {
+      request<User>("/auth/change-username", {
         method: "PUT",
         body: JSON.stringify({ new_username: newUsername }),
       }),
@@ -47,6 +47,12 @@ export const api = {
       request<{ message: string }>("/auth/change-password", {
         method: "PUT",
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      }),
+    getCurrency: () => request<User>("/auth/currency"),
+    updateCurrency: (currency: string) =>
+      request<User>("/auth/currency", {
+        method: "PUT",
+        body: JSON.stringify({ currency }),
       }),
     clearAllData: (password: string) =>
       request<{ message: string }>("/auth/clear-data", {
@@ -217,6 +223,15 @@ export interface UserExport {
     budgets: { category_label: string; allocated_amount: number }[];
     items: { category_label: string; description: string; amount: number; spent_on: string }[];
   }[];
+}
+
+export interface User {
+  id: number;
+  username: string;
+  savings: number;
+  savings_goal: number;
+  retirement_savings: number;
+  currency: string;
 }
 
 export interface Month {

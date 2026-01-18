@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { IncomeEntry, api } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../utils/currencyFormatter";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
@@ -13,6 +15,8 @@ interface IncomeSectionProps {
 }
 
 export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: IncomeSectionProps) {
+  const { user } = useAuth();
+  const currency = user?.currency || "USD";
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
@@ -110,7 +114,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-sage-600 dark:text-sage-400">
-                    ${entry.amount.toFixed(2)}
+                    {formatCurrency(entry.amount, currency)}
                   </span>
                   {!isReadOnly && (
                     <>

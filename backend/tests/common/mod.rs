@@ -41,6 +41,7 @@ async fn run_migrations(pool: &SqlitePool) {
             savings REAL NOT NULL DEFAULT 0,
             savings_goal REAL NOT NULL DEFAULT 0,
             retirement_savings REAL NOT NULL DEFAULT 0,
+            currency TEXT NOT NULL DEFAULT 'USD',
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
         "#,

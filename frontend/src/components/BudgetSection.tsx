@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Plus, Trash2, Edit2, Check, X, Settings } from "lucide-react";
 import { MonthlyBudgetWithCategory, BudgetCategory, api } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../utils/currencyFormatter";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
@@ -22,6 +24,8 @@ export function BudgetSection({
   isReadOnly,
   onUpdate,
 }: BudgetSectionProps) {
+  const { user } = useAuth();
+  const currency = user?.currency || "USD";
   const [isManaging, setIsManaging] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
@@ -131,7 +135,7 @@ export function BudgetSection({
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
-                        ${budget.spent_amount.toFixed(2)} / ${budget.allocated_amount.toFixed(2)}
+                        {formatCurrency(budget.spent_amount, currency)} / {formatCurrency(budget.allocated_amount, currency)}
                       </span>
                       {!isReadOnly && (
                         <button
@@ -198,7 +202,7 @@ export function BudgetSection({
                   <span className="text-sm">{cat.label}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-charcoal-500">
-                      ${cat.default_amount.toFixed(2)}
+                      {formatCurrency(cat.default_amount, currency)}
                     </span>
                     <button
                       onClick={() => startEditCategory(cat)}
