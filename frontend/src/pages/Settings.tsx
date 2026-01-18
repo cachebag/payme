@@ -165,43 +165,43 @@ export function Settings({ onBack }: SettingsProps) {
 
           <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
             <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
-              {/* Currency Preference Section */}
-              <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
-                <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
-                  Currency Preference
-                </h2>
-                <form onSubmit={handleChangeCurrency} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-2">
-                      Display Currency
-                    </label>
-                    <select
-                      value={selectedCurrency}
-                      onChange={(e) => setSelectedCurrency(e.target.value as Currency)}
-                      disabled={currencyLoading}
-                      className="w-full px-3 py-2 bg-white dark:bg-charcoal-800 border border-sand-300 dark:border-charcoal-700 text-charcoal-800 dark:text-sand-100 rounded focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50"
-                    >
-                      {Object.entries(SUPPORTED_CURRENCIES).map(([code, info]) => (
-                        <option key={code} value={code}>
-                          {info.symbol} {code} - {info.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-2 text-sm text-charcoal-600 dark:text-charcoal-400">
-                      All amounts will be displayed in your selected currency
-                    </p>
-                  </div>
-                  {currencyError && (
-                    <p className="text-sm text-terracotta-600">{currencyError}</p>
-                  )}
-                  {currencySuccess && (
-                    <p className="text-sm text-sage-600">Currency changed successfully</p>
-                  )}
-                  <Button type="submit" disabled={currencyLoading || selectedCurrency === user?.currency}>
-                    {currencyLoading ? "Saving..." : "Save Currency"}
-                  </Button>
-                </form>
+              Currency Preference
+            </h2>
+            <form onSubmit={handleChangeCurrency} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-2">
+                  Display Currency
+                </label>
+                <select
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency(e.target.value as Currency)}
+                  disabled={currencyLoading}
+                  className="w-full px-3 py-2 bg-white dark:bg-charcoal-800 border border-sand-300 dark:border-charcoal-700 text-charcoal-800 dark:text-sand-100 rounded focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50"
+                >
+                  {Object.entries(SUPPORTED_CURRENCIES).map(([code, info]) => (
+                    <option key={code} value={code}>
+                      {info.symbol} {code} - {info.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-charcoal-600 dark:text-charcoal-400">
+                  All amounts will be displayed in your selected currency
+                </p>
               </div>
+              {currencyError && (
+                <p className="text-sm text-terracotta-600">{currencyError}</p>
+              )}
+              {currencySuccess && (
+                <p className="text-sm text-sage-600">Currency changed successfully</p>
+              )}
+              <Button type="submit" disabled={currencyLoading || selectedCurrency === user?.currency}>
+                {currencyLoading ? "Saving..." : "Save Currency"}
+              </Button>
+            </form>
+          </div>
+
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
               Change Password
             </h2>
             <form onSubmit={handleChangePassword} className="space-y-4">
