@@ -1,7 +1,7 @@
 use utoipa::OpenApi;
 
 use crate::handlers::{
-    auth::{AuthRequest, AuthResponse},
+    auth::{AuthRequest, AuthResponse, ChangeCurrencyRequest},
     budget::{CreateCategory, UpdateCategory, UpdateMonthlyBudget},
     export::{
         BudgetExport, CategoryExport, FixedExpenseExport, IncomeExport, ItemExport, MonthExport,
@@ -24,6 +24,7 @@ use crate::models::{
         crate::handlers::auth::login,
         crate::handlers::auth::logout,
         crate::handlers::auth::me,
+        crate::handlers::auth::change_currency,
         crate::handlers::export::export_json,
         crate::handlers::export::import_json,
         crate::handlers::budget::list_monthly_budgets,
@@ -58,6 +59,7 @@ use crate::models::{
     components(schemas(
         AuthRequest,
         AuthResponse,
+        ChangeCurrencyRequest,
         MonthlyBudget,
         UpdateMonthlyBudget,
         IncomeEntry,

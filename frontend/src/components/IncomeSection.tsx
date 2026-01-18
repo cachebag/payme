@@ -4,6 +4,7 @@ import { IncomeEntry, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface IncomeSectionProps {
   monthId: number;
@@ -17,6 +18,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+  const { format } = useCurrency();
 
   const handleAdd = async () => {
     if (!label || !amount) return;
@@ -110,7 +112,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-sage-600 dark:text-sage-400">
-                    ${entry.amount.toFixed(2)}
+                    {format(entry.amount)}
                   </span>
                   {!isReadOnly && (
                     <>

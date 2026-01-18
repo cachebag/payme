@@ -27,19 +27,19 @@ async function request<T>(
 export const api = {
   auth: {
     register: (username: string, password: string) =>
-      request<{ id: number; username: string }>("/auth/register", {
+      request<{ id: number; username: string; currency: string }>("/auth/register", {
         method: "POST",
         body: JSON.stringify({ username, password }),
       }),
     login: (username: string, password: string) =>
-      request<{ id: number; username: string }>("/auth/login", {
+      request<{ id: number; username: string; currency: string }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ username, password }),
       }),
     logout: () => request<void>("/auth/logout", { method: "POST" }),
-    me: () => request<{ id: number; username: string }>("/auth/me"),
+    me: () => request<{ id: number; username: string; currency: string }>("/auth/me"),
     changeUsername: (newUsername: string) =>
-      request<{ id: number; username: string }>("/auth/change-username", {
+      request<{ id: number; username: string; currency: string }>("/auth/change-username", {
         method: "PUT",
         body: JSON.stringify({ new_username: newUsername }),
       }),
@@ -48,6 +48,11 @@ export const api = {
         method: "PUT",
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       }),
+    changeCurrency: (currency: string) =>
+      request<{ id: number; username: string; currency: string }>("/auth/change-currency", {
+        method: "PUT",
+        body: JSON.stringify({ currency }),
+  }),  
     clearAllData: (password: string) =>
       request<{ message: string }>("/auth/clear-data", {
         method: "DELETE",

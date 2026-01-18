@@ -1,5 +1,6 @@
 import { TrendingUp, HelpCircle } from "lucide-react";
 import { Card } from "./ui/Card";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface ProjectedSavingsCardProps {
   savings: number;
@@ -9,6 +10,7 @@ interface ProjectedSavingsCardProps {
 
 export function ProjectedSavingsCard({ savings, remaining, onAnalyzeClick }: ProjectedSavingsCardProps) {
   const projected = savings + remaining;
+  const { format } = useCurrency();
 
   return (
     <Card className="!p-3">
@@ -20,7 +22,7 @@ export function ProjectedSavingsCard({ savings, remaining, onAnalyzeClick }: Pro
       </div>
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-sage-700 dark:text-sage-400">
-          ${projected.toFixed(2)}
+          {format(projected)}
         </span>
         {onAnalyzeClick && (
           <button

@@ -4,6 +4,7 @@ import { api } from "../api/client";
 interface User {
   id: number;
   username: string;
+  currency: string;
 }
 
 interface AuthContextType {
@@ -13,6 +14,7 @@ interface AuthContextType {
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUsername: (username: string) => void;
+  updateCurrency: (currency: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,11 +55,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUsername }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const updateCurrency = (currency: string) => {
+  if (user) {
+    setUser({ ...user, currency });
+  }
+};
+
+return (
+  <AuthContext.Provider value={{ user, loading, login, register, logout, updateUsername, updateCurrency }}>
+    {children}
+  </AuthContext.Provider>
+);
 }
 
 export function useAuth() {
