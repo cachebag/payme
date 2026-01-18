@@ -30,6 +30,9 @@ export function Settings({ onBack }: SettingsProps) {
   const [deleteError, setDeleteError] = useState("");
   const [usernameSuccess, setUsernameSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
+  const [currencySuccess, setCurrencySuccess] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState(currency.code);
 
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +105,21 @@ export function Settings({ onBack }: SettingsProps) {
     }
   };
 
+  const handleSaveCurrency = () => {
+    setCurrencyLoading(true);
+    setCurrencySuccess(false);
+
+    // Apply the currency change
+    setCurrency(selectedCurrency);
+
+    // Simulate a brief loading state for UX consistency
+    setTimeout(() => {
+      setCurrencyLoading(false);
+      setCurrencySuccess(true);
+      setTimeout(() => setCurrencySuccess(false), 3000);
+    }, 300);
+  };
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
@@ -125,18 +143,25 @@ export function Settings({ onBack }: SettingsProps) {
             <div className="space-y-4">
               <Select
                 label="Display Currency"
-                value={currency.code}
-                onChange={(e) => setCurrency(e.target.value)}
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
                 options={SUPPORTED_CURRENCIES.map((c) => ({
                   value: c.code,
                   label: `${c.symbol} ${c.code} - ${c.name}`,
                 }))}
+                disabled={currencyLoading}
               />
               <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
                 All monetary values will be displayed in {currency.name} ({currency.symbol}).
                 <br />
                 Example: {formatCurrency(1234.56)}
               </p>
+              {currencySuccess && (
+                <p className="text-sm text-sage-600">Currency changed successfully</p>
+              )}
+              <Button onClick={handleSaveCurrency} disabled={currencyLoading || selectedCurrency === currency.code}>
+                {currencyLoading ? "Saving..." : "Save Currency"}
+              </Button>
             </div>
           </div>
 

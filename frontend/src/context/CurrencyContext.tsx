@@ -21,6 +21,9 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
   { code: "MXN", symbol: "MX$", name: "Mexican Peso", locale: "es-MX", position: "before" },
   { code: "BRL", symbol: "R$", name: "Brazilian Real", locale: "pt-BR", position: "before" },
   { code: "KRW", symbol: "₩", name: "South Korean Won", locale: "ko-KR", position: "before" },
+  { code: "MYR", symbol: "RM", name: "Malaysian Ringgit", locale: "ms-MY", position: "before" },
+  { code: "EGP", symbol: "EGP", name: "Egyptian Pound", locale: "en-EG", position: "before" },
+  { code: "SAR", symbol: "SAR", name: "Saudi Riyal", locale: "en-SA", position: "before" },
 ];
 
 interface CurrencyContextType {
@@ -60,6 +63,10 @@ function getDefaultCurrency(): Currency {
     "es-MX": "MXN",
     "pt-BR": "BRL",
     "ko-KR": "KRW",
+    "ms-MY": "MYR",
+    "en-MY": "MYR",
+    "en-EG": "EGP",
+    "en-SA": "SAR",
   };
 
   const detectedCode = localeMap[browserLocale] || DEFAULT_CURRENCY_CODE;
