@@ -1,6 +1,7 @@
 import { Modal } from "./ui/Modal";
 import { MonthlyBudgetWithCategory } from "../api/client";
 import { TrendingUp, TrendingDown, AlertCircle, PartyPopper } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface VarianceModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export function VarianceModal({
   totalFixed,
   totalBudgeted,
 }: VarianceModalProps) {
+  const { formatCurrency } = useCurrency();
   const overBudget: BudgetVariance[] = [];
   const underBudget: BudgetVariance[] = [];
   const unplanned: BudgetVariance[] = [];
@@ -76,7 +78,7 @@ export function VarianceModal({
               </p>
               {netVariance < 0 && (
                 <p className="text-sm text-sage-600 dark:text-sage-500">
-                  You've saved ${Math.abs(netVariance).toFixed(2)} more than planned across your categories.
+                  You've saved {formatCurrency(Math.abs(netVariance))} more than planned across your categories.
                 </p>
               )}
               {underBudget.length > 0 && (
@@ -91,7 +93,7 @@ export function VarianceModal({
             <AlertCircle className="text-terracotta-600 shrink-0" size={24} />
             <div>
               <p className="font-semibold text-terracotta-700 dark:text-terracotta-400">
-                You're ${(totalOverspend + totalUnplanned + incomeShortfall).toFixed(2)} over budget
+                You're {formatCurrency(totalOverspend + totalUnplanned + incomeShortfall)} over budget
               </p>
               <p className="text-sm text-terracotta-600 dark:text-terracotta-500">
                 Here's what's affecting your projected savings:
@@ -115,10 +117,10 @@ export function VarianceModal({
                   <span className="text-charcoal-700 dark:text-charcoal-300">{item.label}</span>
                   <div className="text-right">
                     <span className="text-terracotta-600 dark:text-terracotta-400 font-medium">
-                      +${item.variance.toFixed(2)}
+                      +{formatCurrency(item.variance)}
                     </span>
                     <span className="text-charcoal-500 dark:text-charcoal-500 text-xs ml-2">
-                      (${item.spent.toFixed(2)} / ${item.allocated.toFixed(2)})
+                      ({formatCurrency(item.spent)} / {formatCurrency(item.allocated)})
                     </span>
                   </div>
                 </div>
@@ -141,7 +143,7 @@ export function VarianceModal({
                 >
                   <span className="text-charcoal-700 dark:text-charcoal-300">{item.label}</span>
                   <span className="text-amber-600 dark:text-amber-400 font-medium">
-                    ${item.spent.toFixed(2)}
+                    {formatCurrency(item.spent)}
                   </span>
                 </div>
               ))}
@@ -157,10 +159,10 @@ export function VarianceModal({
             </h3>
             <div className="p-2 bg-terracotta-50 dark:bg-terracotta-900/20 rounded text-sm">
               <p className="text-charcoal-700 dark:text-charcoal-300">
-                Income is <span className="font-medium text-terracotta-600 dark:text-terracotta-400">${incomeShortfall.toFixed(2)}</span> less than needed to cover expenses
+                Income is <span className="font-medium text-terracotta-600 dark:text-terracotta-400">{formatCurrency(incomeShortfall)}</span> less than needed to cover expenses
               </p>
               <p className="text-xs text-charcoal-500 mt-1">
-                Income: ${totalIncome.toFixed(2)} | Needed: ${incomeNeeded.toFixed(2)}
+                Income: {formatCurrency(totalIncome)} | Needed: {formatCurrency(incomeNeeded)}
               </p>
             </div>
           </div>
@@ -181,10 +183,10 @@ export function VarianceModal({
                   <span className="text-charcoal-700 dark:text-charcoal-300">{item.label}</span>
                   <div className="text-right">
                     <span className="text-sage-600 dark:text-sage-400 font-medium">
-                      -${Math.abs(item.variance).toFixed(2)}
+                      -{formatCurrency(Math.abs(item.variance))}
                     </span>
                     <span className="text-charcoal-500 dark:text-charcoal-500 text-xs ml-2">
-                      (${item.spent.toFixed(2)} / ${item.allocated.toFixed(2)})
+                      ({formatCurrency(item.spent)} / {formatCurrency(item.allocated)})
                     </span>
                   </div>
                 </div>
@@ -202,19 +204,19 @@ export function VarianceModal({
           <div className="flex justify-between text-sm">
             <span className="text-charcoal-600 dark:text-charcoal-400">Total over budget:</span>
             <span className="text-terracotta-600 dark:text-terracotta-400 font-medium">
-              +${(totalOverspend + totalUnplanned).toFixed(2)}
+              +{formatCurrency(totalOverspend + totalUnplanned)}
             </span>
           </div>
           <div className="flex justify-between text-sm mt-1">
             <span className="text-charcoal-600 dark:text-charcoal-400">Total under budget:</span>
             <span className="text-sage-600 dark:text-sage-400 font-medium">
-              -${totalSaved.toFixed(2)}
+              -{formatCurrency(totalSaved)}
             </span>
           </div>
           <div className="flex justify-between text-sm mt-2 pt-2 border-t border-sand-200 dark:border-charcoal-800">
             <span className="font-medium text-charcoal-700 dark:text-charcoal-300">Net impact:</span>
             <span className={`font-semibold ${netVariance > 0 ? "text-terracotta-600 dark:text-terracotta-400" : "text-sage-600 dark:text-sage-400"}`}>
-              {netVariance > 0 ? "+" : "-"}${Math.abs(netVariance).toFixed(2)}
+              {netVariance > 0 ? "+" : "-"}{formatCurrency(Math.abs(netVariance))}
             </span>
           </div>
         </div>
