@@ -16,19 +16,19 @@
     "recharts": "*"
   },
   "devDependencies": {
+    "@eslint/js": "*",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/vite": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
     "@vitejs/plugin-react": "*",
     "eslint": "*",
-    "@eslint/js": "*",
-    "typescript-eslint": "*",
     "eslint-plugin-react-hooks": "*",
     "eslint-plugin-react-refresh": "*",
     "globals": "*",
     "tailwindcss": "*",
     "typescript": "*",
+    "typescript-eslint": "*",
     "vite": "*"
   }
 }
-

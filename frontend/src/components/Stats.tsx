@@ -11,6 +11,7 @@ import {
 import { api, StatsResponse } from "../api/client";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../context/CurrencyContext";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -18,6 +19,7 @@ const MONTH_NAMES = [
 ];
 
 export function Stats() {
+  const { formatCurrency, getCurrencySymbol } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,7 +69,7 @@ export function Stats() {
                     Avg Monthly Spending
                   </div>
                   <div className="text-lg font-semibold text-terracotta-600 dark:text-terracotta-400">
-                    ${stats.average_monthly_spending.toFixed(2)}
+                    {formatCurrency(stats.average_monthly_spending)}
                   </div>
                 </div>
                 <div className="p-4 bg-sand-100 dark:bg-charcoal-800">
@@ -75,7 +77,7 @@ export function Stats() {
                     Avg Monthly Income
                   </div>
                   <div className="text-lg font-semibold text-sage-600 dark:text-sage-400">
-                    ${stats.average_monthly_income.toFixed(2)}
+                    {formatCurrency(stats.average_monthly_income)}
                   </div>
                 </div>
               </div>
@@ -143,7 +145,7 @@ export function Stats() {
                       </span>
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-charcoal-600 dark:text-charcoal-400">
-                          ${cat.current_month_spent.toFixed(2)}
+                          {formatCurrency(cat.current_month_spent)}
                         </span>
                         {cat.change_amount !== 0 && (
                           <div
@@ -160,7 +162,7 @@ export function Stats() {
                             )}
                             {cat.change_percent !== null
                               ? `${Math.abs(cat.change_percent).toFixed(0)}%`
-                              : `$${Math.abs(cat.change_amount).toFixed(0)}`}
+                              : `${getCurrencySymbol()}${Math.abs(cat.change_amount).toFixed(0)}`}
                           </div>
                         )}
                       </div>
