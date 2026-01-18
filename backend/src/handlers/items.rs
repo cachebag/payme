@@ -22,7 +22,7 @@ pub struct CreateItem {
     pub amount: f64,
     pub spent_on: NaiveDate,
     #[serde(default)]
-    pub add_to_savings: bool,
+    pub savings_destination: String,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
@@ -33,7 +33,7 @@ pub struct UpdateItem {
     #[validate(range(min = 0.0))]
     pub amount: Option<f64>,
     pub spent_on: Option<NaiveDate>,
-    pub add_to_savings: Option<bool>,
+    pub savings_destination: Option<String>,
 }
 
 #[utoipa::path(
@@ -56,7 +56,7 @@ pub async fn list_items(
 
     let items: Vec<ItemWithCategory> = sqlx::query_as(
         r#"
-        SELECT i.id, i.month_id, i.category_id, bc.label as category_label, i.description, i.amount, i.spent_on, i.add_to_savings
+        SELECT i.id, i.month_id, i.category_id, bc.label as category_label, i.description, i.amount, i.spent_on, i.savings_destination
         FROM items i
         JOIN budget_categories bc ON i.category_id = bc.id
         WHERE i.month_id = ?
@@ -100,23 +100,34 @@ pub async fn create_item(
             .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
 
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO items (month_id, category_id, description, amount, spent_on, add_to_savings) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+        "INSERT INTO items (month_id, category_id, description, amount, spent_on, savings_destination) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
     )
     .bind(month_id)
     .bind(payload.category_id)
     .bind(&payload.description)
     .bind(payload.amount)
     .bind(payload.spent_on)
-    .bind(payload.add_to_savings)
+    .bind(&payload.savings_destination)
     .fetch_one(&pool)
     .await?;
 
-    if payload.add_to_savings {
-        sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
-            .bind(payload.amount)
-            .bind(claims.sub)
-            .execute(&pool)
-            .await?;
+    // Add to appropriate savings account based on savings_destination
+    match payload.savings_destination.as_str() {
+        "savings" => {
+            sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
+                .bind(payload.amount)
+                .bind(claims.sub)
+                .execute(&pool)
+                .await?;
+        }
+        "retirement_savings" => {
+            sqlx::query("UPDATE users SET retirement_savings = retirement_savings + ? WHERE id = ?")
+                .bind(payload.amount)
+                .bind(claims.sub)
+                .execute(&pool)
+                .await?;
+        }
+        _ => {} // "none" or unknown - don't add to any savings
     }
 
     Ok(Json(Item {
@@ -126,7 +137,7 @@ pub async fn create_item(
         description: payload.description,
         amount: payload.amount,
         spent_on: payload.spent_on,
-        add_to_savings: payload.add_to_savings,
+        savings_destination: payload.savings_destination,
     }))
 }
 
@@ -157,7 +168,7 @@ pub async fn update_item(
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let existing: Item = sqlx::query_as(
-        "SELECT id, month_id, category_id, description, amount, spent_on, add_to_savings FROM items WHERE id = ? AND month_id = ?",
+        "SELECT id, month_id, category_id, description, amount, spent_on, savings_destination FROM items WHERE id = ? AND month_id = ?",
     )
     .bind(item_id)
     .bind(month_id)
@@ -169,7 +180,7 @@ pub async fn update_item(
     let description = payload.description.unwrap_or(existing.description);
     let amount = payload.amount.unwrap_or(existing.amount);
     let spent_on = payload.spent_on.unwrap_or(existing.spent_on);
-    let add_to_savings = payload.add_to_savings.unwrap_or(existing.add_to_savings);
+    let savings_destination = payload.savings_destination.unwrap_or(existing.savings_destination.clone());
 
     if payload.category_id.is_some() {
         let _category: (i64,) =
@@ -181,35 +192,58 @@ pub async fn update_item(
                 .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
     }
 
-    if existing.add_to_savings && !add_to_savings {
-        sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
-            .bind(existing.amount)
-            .bind(claims.sub)
-            .execute(&pool)
-            .await?;
-    } else if !existing.add_to_savings && add_to_savings {
-        sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
-            .bind(amount)
-            .bind(claims.sub)
-            .execute(&pool)
-            .await?;
-    } else if existing.add_to_savings && add_to_savings && existing.amount != amount {
-        let adjustment = amount - existing.amount;
-        sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
-            .bind(adjustment)
-            .bind(claims.sub)
-            .execute(&pool)
-            .await?;
+    // Handle savings balance adjustments
+    let old_dest = existing.savings_destination.as_str();
+    let new_dest = savings_destination.as_str();
+
+    if old_dest != new_dest || (old_dest != "none" && existing.amount != amount) {
+        // Remove from old destination
+        match old_dest {
+            "savings" => {
+                sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
+                    .bind(existing.amount)
+                    .bind(claims.sub)
+                    .execute(&pool)
+                    .await?;
+            }
+            "retirement_savings" => {
+                sqlx::query("UPDATE users SET retirement_savings = retirement_savings - ? WHERE id = ?")
+                    .bind(existing.amount)
+                    .bind(claims.sub)
+                    .execute(&pool)
+                    .await?;
+            }
+            _ => {}
+        }
+
+        // Add to new destination
+        match new_dest {
+            "savings" => {
+                sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
+                    .bind(amount)
+                    .bind(claims.sub)
+                    .execute(&pool)
+                    .await?;
+            }
+            "retirement_savings" => {
+                sqlx::query("UPDATE users SET retirement_savings = retirement_savings + ? WHERE id = ?")
+                    .bind(amount)
+                    .bind(claims.sub)
+                    .execute(&pool)
+                    .await?;
+            }
+            _ => {}
+        }
     }
 
     sqlx::query(
-        "UPDATE items SET category_id = ?, description = ?, amount = ?, spent_on = ?, add_to_savings = ? WHERE id = ?",
+        "UPDATE items SET category_id = ?, description = ?, amount = ?, spent_on = ?, savings_destination = ? WHERE id = ?",
     )
     .bind(category_id)
     .bind(&description)
     .bind(amount)
     .bind(spent_on)
-    .bind(add_to_savings)
+    .bind(&savings_destination)
     .bind(item_id)
     .execute(&pool)
     .await?;
@@ -221,7 +255,7 @@ pub async fn update_item(
         description,
         amount,
         spent_on,
-        add_to_savings,
+        savings_destination,
     }))
 }
 
@@ -248,7 +282,7 @@ pub async fn delete_item(
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let item: Item = sqlx::query_as(
-        "SELECT id, month_id, category_id, description, amount, spent_on, add_to_savings FROM items WHERE id = ? AND month_id = ?",
+        "SELECT id, month_id, category_id, description, amount, spent_on, savings_destination FROM items WHERE id = ? AND month_id = ?",
     )
     .bind(item_id)
     .bind(month_id)
@@ -256,12 +290,22 @@ pub async fn delete_item(
     .await?
     .ok_or(PaymeError::NotFound)?;
 
-    if item.add_to_savings {
-        sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
-            .bind(item.amount)
-            .bind(claims.sub)
-            .execute(&pool)
-            .await?;
+    match item.savings_destination.as_str() {
+        "savings" => {
+            sqlx::query("UPDATE users SET savings = savings - ? WHERE id = ?")
+                .bind(item.amount)
+                .bind(claims.sub)
+                .execute(&pool)
+                .await?;
+        }
+        "retirement_savings" => {
+            sqlx::query("UPDATE users SET retirement_savings = retirement_savings - ? WHERE id = ?")
+                .bind(item.amount)
+                .bind(claims.sub)
+                .execute(&pool)
+                .await?;
+        }
+        _ => {}
     }
 
     sqlx::query("DELETE FROM items WHERE id = ? AND month_id = ?")

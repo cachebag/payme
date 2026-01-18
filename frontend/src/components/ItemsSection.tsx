@@ -27,7 +27,7 @@ export function ItemsSection({
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
-  const [addToSavings, setAddToSavings] = useState(false);
+  const [savingsDestination, setSavingsDestination] = useState("none");
 
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
@@ -36,7 +36,7 @@ export function ItemsSection({
       amount: parseFloat(amount),
       category_id: parseInt(categoryId),
       spent_on: spentOn,
-      add_to_savings: addToSavings,
+      savings_destination: savingsDestination,
     });
     resetForm();
     await onUpdate();
@@ -49,7 +49,7 @@ export function ItemsSection({
       amount: parseFloat(amount),
       category_id: parseInt(categoryId),
       spent_on: spentOn,
-      add_to_savings: addToSavings,
+      savings_destination: savingsDestination,
     });
     resetForm();
     await onUpdate();
@@ -66,7 +66,7 @@ export function ItemsSection({
     setAmount(item.amount.toString());
     setCategoryId(item.category_id.toString());
     setSpentOn(item.spent_on);
-    setAddToSavings(item.add_to_savings);
+    setSavingsDestination(item.savings_destination);
   };
 
   const resetForm = () => {
@@ -75,7 +75,7 @@ export function ItemsSection({
     setAmount("");
     setCategoryId("");
     setSpentOn(new Date().toISOString().split("T")[0]);
-    setAddToSavings(false);
+    setSavingsDestination("none");
     setIsAdding(false);
   };
 
@@ -144,17 +144,21 @@ export function ItemsSection({
               onChange={(e) => setSpentOn(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2 mt-3 mb-3">
-            <input
-              type="checkbox"
-              id="add-to-savings"
-              checked={addToSavings}
-              onChange={(e) => setAddToSavings(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="add-to-savings" className="text-sm text-charcoal-700 dark:text-sand-300">
-              Add to savings
-            </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 mb-3">
+            <div>
+              <label className="text-sm text-charcoal-700 dark:text-sand-300 mb-1 block">
+                Where should this money go?
+              </label>
+              <Select
+                options={[
+                  { value: "none", label: "Outgoings (spent)" },
+                  { value: "savings", label: "Savings" },
+                  { value: "retirement_savings", label: "Retirement Savings" },
+                ]}
+                value={savingsDestination}
+                onChange={(e) => setSavingsDestination(e.target.value)}
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleAdd}>
@@ -184,6 +188,9 @@ export function ItemsSection({
               </th>
               <th className="text-right py-2 font-medium text-charcoal-600 dark:text-sand-400">
                 Amount
+              </th>
+              <th className="text-center py-2 font-medium text-charcoal-600 dark:text-sand-400">
+                Destination
               </th>
               {!isReadOnly && <th className="w-20"></th>}
             </tr>
@@ -230,14 +237,16 @@ export function ItemsSection({
                       />
                     </td>
                     <td className="py-2">
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="checkbox"
-                          checked={addToSavings}
-                          onChange={(e) => setAddToSavings(e.target.checked)}
-                          className="rounded w-3 h-3"
-                        />
-                      </div>
+                      <Select
+                        options={[
+                          { value: "none", label: "Outgoings" },
+                          { value: "savings", label: "Savings" },
+                          { value: "retirement_savings", label: "Retirement" },
+                        ]}
+                        value={savingsDestination}
+                        onChange={(e) => setSavingsDestination(e.target.value)}
+                        className="text-xs"
+                      />
                     </td>
                     <td className="py-2">
                       <div className="flex gap-1 justify-end">
@@ -270,16 +279,21 @@ export function ItemsSection({
                       </span>
                     </td>
                     <td className={`py-2 text-right font-medium ${
-                      item.add_to_savings 
-                        ? 'text-sage-600 dark:text-sage-400' 
-                        : 'text-terracotta-600 dark:text-terracotta-400'
+                      item.savings_destination === "none"
+                        ? 'text-terracotta-600 dark:text-terracotta-400' 
+                        : 'text-sage-600 dark:text-sage-400'
                     }`}>
-                      {item.add_to_savings && '→ '} ${item.amount.toFixed(2)}
+                      {item.savings_destination !== "none" && '→ '} ${item.amount.toFixed(2)}
                     </td>
                     <td className="py-2 text-center">
-                      {item.add_to_savings && (
+                      {item.savings_destination === "savings" && (
                         <span className="text-xs px-2 py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200">
                           Savings
+                        </span>
+                      )}
+                      {item.savings_destination === "retirement_savings" && (
+                        <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200">
+                          Retirement
                         </span>
                       )}
                     </td>

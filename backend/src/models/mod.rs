@@ -52,7 +52,7 @@ pub struct Item {
     pub description: String,
     pub amount: f64,
     pub spent_on: NaiveDate,
-    pub add_to_savings: bool,
+    pub savings_destination: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -88,7 +88,7 @@ pub struct ItemWithCategory {
     pub description: String,
     pub amount: f64,
     pub spent_on: NaiveDate,
-    pub add_to_savings: bool,
+    pub savings_destination: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
