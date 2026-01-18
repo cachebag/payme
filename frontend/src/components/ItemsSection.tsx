@@ -151,7 +151,7 @@ export function ItemsSection({
               </label>
               <Select
                 options={[
-                  { value: "none", label: "Outgoings (spent)" },
+                  { value: "none", label: "Spent" },
                   { value: "savings", label: "Savings" },
                   { value: "retirement_savings", label: "Retirement Savings" },
                 ]}
@@ -286,6 +286,11 @@ export function ItemsSection({
                       {item.savings_destination !== "none" && '→ '} ${item.amount.toFixed(2)}
                     </td>
                     <td className="py-2 text-center">
+                      {item.savings_destination === "none" && (
+                        <span className="text-xs px-2 py-1 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200">
+                          Spent
+                        </span>
+                      )}
                       {item.savings_destination === "savings" && (
                         <span className="text-xs px-2 py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200">
                           Savings

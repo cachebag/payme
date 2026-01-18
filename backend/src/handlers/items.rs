@@ -111,7 +111,6 @@ pub async fn create_item(
     .fetch_one(&pool)
     .await?;
 
-    // Add to appropriate savings account based on savings_destination
     match payload.savings_destination.as_str() {
         "savings" => {
             sqlx::query("UPDATE users SET savings = savings + ? WHERE id = ?")
@@ -127,7 +126,7 @@ pub async fn create_item(
                 .execute(&pool)
                 .await?;
         }
-        _ => {} // "none" or unknown - don't add to any savings
+        _ => {} 
     }
 
     Ok(Json(Item {
