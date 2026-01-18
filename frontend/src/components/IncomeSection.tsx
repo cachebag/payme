@@ -4,6 +4,7 @@ import { IncomeEntry, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface IncomeSectionProps {
   monthId: number;
@@ -13,6 +14,7 @@ interface IncomeSectionProps {
 }
 
 export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: IncomeSectionProps) {
+  const { formatCurrency } = useCurrency();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
@@ -110,7 +112,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-sage-600 dark:text-sage-400">
-                    ${entry.amount.toFixed(2)}
+                    {formatCurrency(entry.amount)}
                   </span>
                   {!isReadOnly && (
                     <>
