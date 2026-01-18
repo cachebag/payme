@@ -30,6 +30,11 @@ pub struct AuthResponse {
     pub currency: String,
 }
 
+#[derive(Serialize, ToSchema)]
+pub struct CurrencyChangeResponse {
+    pub currency: String,
+}
+
 #[utoipa::path(
     post,
     path = "/api/auth/register",
@@ -181,7 +186,7 @@ pub async fn me(
     Ok(Json(AuthResponse {
         id: user.0,
         username: user.1,
-        currency: user.2, // ADDED
+        currency: user.2,
     }))
 }
 
@@ -244,7 +249,6 @@ pub async fn change_username(
         .execute(&pool)
         .await?;
 
-    // ADDED: Fetch currency
     let currency: (String,) = sqlx::query_as("SELECT currency FROM users WHERE id = ?")
         .bind(claims.sub)
         .fetch_one(&pool)
@@ -253,7 +257,7 @@ pub async fn change_username(
     Ok(Json(AuthResponse {
         id: claims.sub,
         username: payload.new_username,
-        currency: currency.0, // ADDED
+        currency: currency.0,
     }))
 }
 
@@ -370,10 +374,20 @@ pub async fn clear_all_data(
         Json(serde_json::json!({"message": "All data cleared"})),
     ))
 }
+const SUPPORTED_CURRENCIES: &[&str] = &["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR"];
+
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct ChangeCurrencyRequest {
-    #[validate(length(min = 3, max = 3))]
+    #[validate(custom = "validate_currency")]
     pub currency: String,
+}
+
+fn validate_currency(currency: &str) -> Result<(), validator::ValidationError> {
+    if SUPPORTED_CURRENCIES.contains(&currency) {
+        Ok(())
+    } else {
+        Err(validator::ValidationError::new("invalid_currency"))
+    }
 }
 
 #[utoipa::path(
@@ -381,7 +395,7 @@ pub struct ChangeCurrencyRequest {
     path = "/api/auth/change-currency",
     request_body = ChangeCurrencyRequest,
     responses(
-        (status = 200, description = "Currency changed successfully", body = AuthResponse),
+        (status = 200, description = "Currency changed successfully", body = CurrencyChangeResponse),
         (status = 500, description = "Internal server error")
     ),
     tag = "Auth",
@@ -392,7 +406,7 @@ pub async fn change_currency(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
     Json(payload): Json<ChangeCurrencyRequest>,
-) -> Result<Json<AuthResponse>, PaymeError> {
+) -> Result<Json<CurrencyChangeResponse>, PaymeError> {
     payload.validate()?;
 
     sqlx::query("UPDATE users SET currency = ? WHERE id = ?")
@@ -401,14 +415,7 @@ pub async fn change_currency(
         .execute(&pool)
         .await?;
 
-    let user: (String,) = sqlx::query_as("SELECT username FROM users WHERE id = ?")
-        .bind(claims.sub)
-        .fetch_one(&pool)
-        .await?;
-
-    Ok(Json(AuthResponse {
-        id: claims.sub,
-        username: user.0,
+    Ok(Json(CurrencyChangeResponse {
         currency: payload.currency,
     }))
 }
