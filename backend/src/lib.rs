@@ -32,6 +32,7 @@ pub fn create_app(pool: SqlitePool) -> Router {
         .route("/api/auth/me", get(auth::me))
         .route("/api/auth/change-username", put(auth::change_username))
         .route("/api/auth/change-password", put(auth::change_password))
+        .route("/api/auth/change-currency", put(auth::change_currency))
         .route("/api/auth/clear-data", delete(auth::clear_all_data))
         .route("/api/export", get(auth::export_db))
         .route("/api/months", get(months::list_months))

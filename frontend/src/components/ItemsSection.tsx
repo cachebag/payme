@@ -5,6 +5,7 @@ import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface ItemsSectionProps {
   monthId: number;
@@ -27,6 +28,7 @@ export function ItemsSection({
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
+  const { format } = useCurrency();
 
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
@@ -243,7 +245,7 @@ export function ItemsSection({
                       </span>
                     </td>
                     <td className="py-2 text-right font-medium text-terracotta-600 dark:text-terracotta-400">
-                      ${item.amount.toFixed(2)}
+                      {format(item.amount)}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2">

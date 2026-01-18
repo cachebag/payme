@@ -6,6 +6,7 @@ import { Input } from "./ui/Input";
 import { ProgressBar } from "./ui/ProgressBar";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../hooks/useCurrency";
 
 interface SavingsCardProps {
   onSavingsChange?: (savings: number) => void;
@@ -20,6 +21,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
   const [editGoalValue, setEditGoalValue] = useState("");
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const { format } = useCurrency();
 
   useEffect(() => {
     api.savings.get().then((res) => {
@@ -115,7 +117,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
       ) : (
         <div className="flex items-center justify-between mb-3">
           <span className="text-lg sm:text-xl font-semibold text-sage-700 dark:text-sage-400">
-            ${savings.toFixed(2)}
+            {format(savings)}
           </span>
           <button
             onClick={startEdit}
@@ -153,7 +155,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
         ) : (
           <div className="flex items-center justify-between text-xs">
             <span className="text-charcoal-500 dark:text-charcoal-400">
-              Goal: ${target.toFixed(2)}
+              Goal: {format(target)}
             </span>
             <button
               onClick={startEditGoal}
@@ -171,7 +173,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
             {isAhead ? '✓' : '⚠️'} {Math.abs(percentage - 100).toFixed(1)}% {isAhead ? 'ahead' : 'behind'}
           </span>
           <span className="text-charcoal-500 dark:text-charcoal-400">
-            {isAhead ? '+' : ''}{difference.toFixed(2)}
+            {isAhead ? '+' : ''}{format(Math.abs(difference))}
           </span>
         </div>
         
