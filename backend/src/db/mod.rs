@@ -128,6 +128,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
             description TEXT NOT NULL,
             amount REAL NOT NULL,
             spent_on TEXT NOT NULL,
+            add_to_savings INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE,
             FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE CASCADE
         )
@@ -135,6 +136,11 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     )
     .execute(pool)
     .await?;
+
+    sqlx::query("ALTER TABLE items ADD COLUMN add_to_savings INTEGER NOT NULL DEFAULT 0")
+        .execute(pool)
+        .await
+        .ok();
 
     sqlx::query(
         r#"

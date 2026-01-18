@@ -27,6 +27,7 @@ export function ItemsSection({
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
+  const [addToSavings, setAddToSavings] = useState(false);
 
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
@@ -35,6 +36,7 @@ export function ItemsSection({
       amount: parseFloat(amount),
       category_id: parseInt(categoryId),
       spent_on: spentOn,
+      add_to_savings: addToSavings,
     });
     resetForm();
     await onUpdate();
@@ -47,6 +49,7 @@ export function ItemsSection({
       amount: parseFloat(amount),
       category_id: parseInt(categoryId),
       spent_on: spentOn,
+      add_to_savings: addToSavings,
     });
     resetForm();
     await onUpdate();
@@ -63,6 +66,7 @@ export function ItemsSection({
     setAmount(item.amount.toString());
     setCategoryId(item.category_id.toString());
     setSpentOn(item.spent_on);
+    setAddToSavings(item.add_to_savings);
   };
 
   const resetForm = () => {
@@ -71,6 +75,7 @@ export function ItemsSection({
     setAmount("");
     setCategoryId("");
     setSpentOn(new Date().toISOString().split("T")[0]);
+    setAddToSavings(false);
     setIsAdding(false);
   };
 
@@ -139,7 +144,19 @@ export function ItemsSection({
               onChange={(e) => setSpentOn(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex items-center gap-2 mt-3 mb-3">
+            <input
+              type="checkbox"
+              id="add-to-savings"
+              checked={addToSavings}
+              onChange={(e) => setAddToSavings(e.target.checked)}
+              className="rounded"
+            />
+            <label htmlFor="add-to-savings" className="text-sm text-charcoal-700 dark:text-sand-300">
+              Add to savings
+            </label>
+          </div>
+          <div className="flex gap-2">
             <Button size="sm" onClick={handleAdd}>
               <Check size={16} className="mr-1" />
               Add
@@ -167,6 +184,9 @@ export function ItemsSection({
               </th>
               <th className="text-right py-2 font-medium text-charcoal-600 dark:text-sand-400">
                 Amount
+              </th>
+              <th className="text-center py-2 font-medium text-charcoal-600 dark:text-sand-400">
+                Savings
               </th>
               {!isReadOnly && <th className="w-20"></th>}
             </tr>
@@ -213,6 +233,16 @@ export function ItemsSection({
                       />
                     </td>
                     <td className="py-2">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={addToSavings}
+                          onChange={(e) => setAddToSavings(e.target.checked)}
+                          className="rounded w-3 h-3"
+                        />
+                      </div>
+                    </td>
+                    <td className="py-2">
                       <div className="flex gap-1 justify-end">
                         <button
                           onClick={() => handleUpdate(item.id)}
@@ -242,8 +272,19 @@ export function ItemsSection({
                         {item.category_label}
                       </span>
                     </td>
-                    <td className="py-2 text-right font-medium text-terracotta-600 dark:text-terracotta-400">
-                      ${item.amount.toFixed(2)}
+                    <td className={`py-2 text-right font-medium ${
+                      item.add_to_savings 
+                        ? 'text-sage-600 dark:text-sage-400' 
+                        : 'text-terracotta-600 dark:text-terracotta-400'
+                    }`}>
+                      {item.add_to_savings && '→ '} ${item.amount.toFixed(2)}
+                    </td>
+                    <td className="py-2 text-center">
+                      {item.add_to_savings && (
+                        <span className="text-xs px-2 py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200">
+                          ✓
+                        </span>
+                      )}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2">

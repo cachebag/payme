@@ -133,7 +133,7 @@ export const api = {
     list: (monthId: number) => request<ItemWithCategory[]>(`/months/${monthId}/items`),
     create: (
       monthId: number,
-      data: { category_id: number; description: string; amount: number; spent_on: string }
+      data: { category_id: number; description: string; amount: number; spent_on: string; add_to_savings?: boolean }
     ) =>
       request<Item>(`/months/${monthId}/items`, {
         method: "POST",
@@ -147,6 +147,7 @@ export const api = {
         description?: string;
         amount?: number;
         spent_on?: string;
+        add_to_savings?: boolean;
       }
     ) =>
       request<Item>(`/months/${monthId}/items/${itemId}`, {
@@ -272,6 +273,7 @@ export interface Item {
   description: string;
   amount: number;
   spent_on: string;
+  add_to_savings: boolean;
 }
 
 export interface ItemWithCategory extends Item {

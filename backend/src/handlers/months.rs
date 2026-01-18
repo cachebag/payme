@@ -194,7 +194,7 @@ async fn get_month_summary(
 
     let items: Vec<ItemWithCategory> = sqlx::query_as(
         r#"
-        SELECT i.id, i.month_id, i.category_id, bc.label as category_label, i.description, i.amount, i.spent_on
+        SELECT i.id, i.month_id, i.category_id, bc.label as category_label, i.description, i.amount, i.spent_on, i.add_to_savings
         FROM items i
         JOIN budget_categories bc ON i.category_id = bc.id
         WHERE i.month_id = ?
