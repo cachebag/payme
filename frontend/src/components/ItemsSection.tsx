@@ -185,9 +185,6 @@ export function ItemsSection({
               <th className="text-right py-2 font-medium text-charcoal-600 dark:text-sand-400">
                 Amount
               </th>
-              <th className="text-center py-2 font-medium text-charcoal-600 dark:text-sand-400">
-                Savings
-              </th>
               {!isReadOnly && <th className="w-20"></th>}
             </tr>
           </thead>
@@ -282,7 +279,7 @@ export function ItemsSection({
                     <td className="py-2 text-center">
                       {item.add_to_savings && (
                         <span className="text-xs px-2 py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200">
-                          ✓
+                          Savings
                         </span>
                       )}
                     </td>
