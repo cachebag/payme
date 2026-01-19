@@ -30,6 +30,7 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
     refresh,
     closeMonth,
     downloadPdf,
+    refreshTrigger,
   } = useMonth();
 
   if (loading && !summary) {
@@ -68,6 +69,7 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
           <div className="w-full sm:w-80">
             <SavingsCard 
               remaining={summary.remaining}
+              refreshTrigger={refreshTrigger}
             />
           </div>
           <div className="hidden lg:block">
@@ -82,7 +84,7 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
           totalFixed={summary.total_fixed}
           totalSpent={summary.total_spent}
           remaining={summary.remaining}
-          extraCard={<RetirementSavingsCard />}
+          extraCard={<RetirementSavingsCard refreshTrigger={refreshTrigger} />}
         />
 
         <CustomSavingsGoals />

@@ -4,14 +4,14 @@ import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 
-export function RetirementSavingsCard() {
+export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: number }) {
   const [amount, setAmount] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
     api.retirementSavings.get().then((res) => setAmount(res.retirement_savings));
-  }, []);
+  }, [refreshTrigger]);
 
   const startEdit = () => {
     setEditValue(amount.toString());

@@ -10,9 +10,10 @@ import { Button } from "./ui/Button";
 interface SavingsCardProps {
   onSavingsChange?: (savings: number) => void;
   remaining: number;
+  refreshTrigger?: number;
 }
 
-export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
+export function SavingsCard({ onSavingsChange, remaining, refreshTrigger }: SavingsCardProps) {
   const [savings, setSavings] = useState<number>(0);
   const [savingsGoal, setSavingsGoal] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +28,7 @@ export function SavingsCard({ onSavingsChange, remaining }: SavingsCardProps) {
       setSavingsGoal(res.savings_goal);
       onSavingsChange?.(res.savings);
     });
-  }, [onSavingsChange]);
+  }, [onSavingsChange, refreshTrigger]);
 
   const startEdit = () => {
     setEditValue(savings.toString());

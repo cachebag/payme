@@ -7,6 +7,7 @@ export function useMonth() {
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
   const [selectedMonthId, setSelectedMonthId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const loadMonths = useCallback(async () => {
     const [monthsList, cats] = await Promise.all([
@@ -33,6 +34,7 @@ export function useMonth() {
   const refresh = useCallback(async () => {
     await loadMonths();
     await loadMonth(selectedMonthId);
+    setRefreshTrigger(prev => prev + 1);
   }, [loadMonths, loadMonth, selectedMonthId]);
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export function useMonth() {
     refresh,
     closeMonth,
     downloadPdf,
+    refreshTrigger,
   };
 }
 
