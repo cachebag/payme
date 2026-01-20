@@ -138,6 +138,7 @@ async fn run_migrations(pool: &SqlitePool) {
             description TEXT NOT NULL,
             amount REAL NOT NULL,
             spent_on TEXT NOT NULL,
+            savings_destination TEXT NOT NULL DEFAULT 'none',
             FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE,
             FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE CASCADE
         )
@@ -292,13 +293,14 @@ pub async fn create_test_item(
     spent_on: &str,
 ) -> i64 {
     sqlx::query_scalar::<_, i64>(
-        "INSERT INTO items (month_id, category_id, description, amount, spent_on) VALUES (?, ?, ?, ?, ?) RETURNING id",
+        "INSERT INTO items (month_id, category_id, description, amount, spent_on, savings_destination) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
     )
     .bind(month_id)
     .bind(category_id)
     .bind(description)
     .bind(amount)
     .bind(spent_on)
+    .bind("none")
     .fetch_one(pool)
     .await
     .expect("Failed to create test item")

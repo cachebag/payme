@@ -100,7 +100,7 @@ pub async fn get_stats(
 
         for (cat_id, cat_label) in categories {
             let current_spent: (f64,) = sqlx::query_as(
-                "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ?",
+                "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ? AND savings_destination = 'none'",
             )
             .bind(current_month_id)
             .bind(cat_id)
@@ -109,7 +109,7 @@ pub async fn get_stats(
 
             let previous_spent: f64 = if let Some(prev_id) = previous_month_id {
                 let result: (f64,) = sqlx::query_as(
-                    "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ?",
+                    "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ? AND savings_destination = 'none'",
                 )
                 .bind(prev_id)
                 .bind(cat_id)

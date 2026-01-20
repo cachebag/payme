@@ -137,9 +137,11 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
-    let _ = sqlx::query("ALTER TABLE items ADD COLUMN savings_destination TEXT NOT NULL DEFAULT 'none'")
-        .execute(pool)
-        .await;
+    let _ = sqlx::query(
+        "ALTER TABLE items ADD COLUMN savings_destination TEXT NOT NULL DEFAULT 'none'",
+    )
+    .execute(pool)
+    .await;
 
     sqlx::query("UPDATE items SET savings_destination = 'none' WHERE savings_destination = '' OR savings_destination IS NULL")
         .execute(pool)

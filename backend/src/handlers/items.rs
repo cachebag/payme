@@ -124,13 +124,15 @@ pub async fn create_item(
                 .await?;
         }
         "retirement_savings" => {
-            sqlx::query("UPDATE users SET retirement_savings = retirement_savings + ? WHERE id = ?")
-                .bind(payload.amount)
-                .bind(claims.sub)
-                .execute(&pool)
-                .await?;
+            sqlx::query(
+                "UPDATE users SET retirement_savings = retirement_savings + ? WHERE id = ?",
+            )
+            .bind(payload.amount)
+            .bind(claims.sub)
+            .execute(&pool)
+            .await?;
         }
-        _ => {} 
+        _ => {}
     }
 
     Ok(Json(Item {
@@ -183,7 +185,9 @@ pub async fn update_item(
     let description = payload.description.unwrap_or(existing.description);
     let amount = payload.amount.unwrap_or(existing.amount);
     let spent_on = payload.spent_on.unwrap_or(existing.spent_on);
-    let savings_destination = payload.savings_destination.unwrap_or(existing.savings_destination.clone());
+    let savings_destination = payload
+        .savings_destination
+        .unwrap_or(existing.savings_destination.clone());
 
     if payload.category_id.is_some() {
         let _category: (i64,) =
@@ -208,11 +212,13 @@ pub async fn update_item(
                     .await?;
             }
             "retirement_savings" => {
-                sqlx::query("UPDATE users SET retirement_savings = retirement_savings - ? WHERE id = ?")
-                    .bind(existing.amount)
-                    .bind(claims.sub)
-                    .execute(&pool)
-                    .await?;
+                sqlx::query(
+                    "UPDATE users SET retirement_savings = retirement_savings - ? WHERE id = ?",
+                )
+                .bind(existing.amount)
+                .bind(claims.sub)
+                .execute(&pool)
+                .await?;
             }
             _ => {}
         }
@@ -226,11 +232,13 @@ pub async fn update_item(
                     .await?;
             }
             "retirement_savings" => {
-                sqlx::query("UPDATE users SET retirement_savings = retirement_savings + ? WHERE id = ?")
-                    .bind(amount)
-                    .bind(claims.sub)
-                    .execute(&pool)
-                    .await?;
+                sqlx::query(
+                    "UPDATE users SET retirement_savings = retirement_savings + ? WHERE id = ?",
+                )
+                .bind(amount)
+                .bind(claims.sub)
+                .execute(&pool)
+                .await?;
             }
             _ => {}
         }
@@ -299,11 +307,13 @@ pub async fn delete_item(
                 .await?;
         }
         "retirement_savings" => {
-            sqlx::query("UPDATE users SET retirement_savings = retirement_savings - ? WHERE id = ?")
-                .bind(item.amount)
-                .bind(claims.sub)
-                .execute(&pool)
-                .await?;
+            sqlx::query(
+                "UPDATE users SET retirement_savings = retirement_savings - ? WHERE id = ?",
+            )
+            .bind(item.amount)
+            .bind(claims.sub)
+            .execute(&pool)
+            .await?;
         }
         _ => {}
     }
