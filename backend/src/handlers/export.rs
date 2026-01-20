@@ -131,7 +131,7 @@ pub async fn export_json(
         .await?;
 
         let items: Vec<Item> = sqlx::query_as(
-            "SELECT id, month_id, category_id, description, amount, spent_on FROM items WHERE month_id = ?",
+            "SELECT id, month_id, category_id, description, amount, spent_on, savings_destination FROM items WHERE month_id = ?",
         )
         .bind(m.id)
         .fetch_all(&pool)

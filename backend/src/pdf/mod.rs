@@ -156,6 +156,7 @@ mod tests {
                 description: "Groceries".to_string(),
                 amount: 150.0,
                 spent_on: NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
+                savings_destination: "none".to_string(),
             }],
             total_income: 5000.0,
             total_fixed: 1500.0,

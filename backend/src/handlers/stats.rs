@@ -49,7 +49,7 @@ pub async fn get_stats(
         .await?;
 
         let spent: (f64,) =
-            sqlx::query_as("SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ?")
+            sqlx::query_as("SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND savings_destination = 'none'")
                 .bind(month_id)
                 .fetch_one(&pool)
                 .await?;

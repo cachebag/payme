@@ -210,7 +210,7 @@ async fn get_month_summary(
         .map(|mut b| {
             b.spent_amount = items
                 .iter()
-                .filter(|i| i.category_id == b.category_id)
+                .filter(|i| i.category_id == b.category_id && i.savings_destination == "none")
                 .map(|i| i.amount)
                 .sum();
             b
@@ -220,7 +220,12 @@ async fn get_month_summary(
     let total_income: f64 = income_entries.iter().map(|i| i.amount).sum();
     let total_fixed: f64 = fixed_expenses.iter().map(|e| e.amount).sum();
     let total_budgeted: f64 = budgets.iter().map(|b| b.allocated_amount).sum();
-    let total_spent: f64 = items.iter().map(|i| i.amount).sum();
+    // Only count items as "spent" if they're not being transferred to savings
+    let total_spent: f64 = items
+        .iter()
+        .filter(|i| i.savings_destination == "none")
+        .map(|i| i.amount)
+        .sum();
     let remaining = total_income - total_fixed - total_spent;
 
     Ok(Json(MonthSummary {
