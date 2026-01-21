@@ -53,3 +53,5 @@ coverage/
 *.tmp
 *.temp
 .cache/
+
+frontend/package-lock.json
