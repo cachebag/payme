@@ -5,6 +5,7 @@ import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface ItemsSectionProps {
   monthId: number;
@@ -21,6 +22,7 @@ export function ItemsSection({
   isReadOnly,
   onUpdate,
 }: ItemsSectionProps) {
+  const { formatCurrency } = useCurrency();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [description, setDescription] = useState("");
@@ -301,6 +303,8 @@ export function ItemsSection({
                           Retirement
                         </span>
                       )}
+                    <td className="py-2 text-right font-medium text-terracotta-600 dark:text-terracotta-400">
+                      {formatCurrency(item.amount)}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2">

@@ -3,6 +3,7 @@ import { TrendingUp, Pencil, Check, X } from "lucide-react";
 import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
+import { useCurrency } from "../context/CurrencyContext";
 
 export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: number }) {
   const [amount, setAmount] = useState<number>(0);
@@ -63,7 +64,7 @@ export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: num
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-xl font-semibold text-sage-600 dark:text-sage-400">
-                ${amount.toFixed(2)}
+                {formatCurrency(amount)}
               </span>
               <button
                 onClick={startEdit}

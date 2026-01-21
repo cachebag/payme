@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select";
 import { Modal } from "../components/ui/Modal";
 import { useAuth } from "../context/AuthContext";
+import { useCurrency, SUPPORTED_CURRENCIES } from "../context/CurrencyContext";
 import { api } from "../api/client";
 import { ArrowLeft } from "lucide-react";
 
@@ -13,6 +15,7 @@ interface SettingsProps {
 
 export function Settings({ onBack }: SettingsProps) {
   const { user, logout, updateUsername } = useAuth();
+  const { currency, setCurrency, formatCurrency } = useCurrency();
   const [newUsername, setNewUsername] = useState(user?.username || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -27,6 +30,8 @@ export function Settings({ onBack }: SettingsProps) {
   const [deleteError, setDeleteError] = useState("");
   const [usernameSuccess, setUsernameSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [currencySuccess, setCurrencySuccess] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState(currency.code);
 
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +104,11 @@ export function Settings({ onBack }: SettingsProps) {
     }
   };
 
+  const handleSaveCurrency = () => {
+    setCurrency(selectedCurrency);
+    setCurrencySuccess(true);
+  };
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
@@ -115,6 +125,34 @@ export function Settings({ onBack }: SettingsProps) {
         </h1>
 
         <div className="space-y-6 sm:space-y-8">
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
+              Currency
+            </h2>
+            <div className="space-y-4">
+              <Select
+                label="Display Currency"
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                options={SUPPORTED_CURRENCIES.map((c) => ({
+                  value: c.code,
+                  label: `${c.symbol} ${c.code} - ${c.name}`,
+                }))}
+              />
+              <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
+                All monetary values will be displayed in {currency.name} ({currency.symbol}).
+                <br />
+                Example: {formatCurrency(1234.56)}
+              </p>
+              {currencySuccess && (
+                <p className="text-sm text-sage-600">Currency changed successfully</p>
+              )}
+              <Button onClick={handleSaveCurrency} disabled={selectedCurrency === currency.code}>
+                Save Currency
+              </Button>
+            </div>
+          </div>
+
           <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
             <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
               Change Username
