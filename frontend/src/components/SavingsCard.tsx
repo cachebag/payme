@@ -23,6 +23,8 @@ export function SavingsCard({ onSavingsChange, remaining, refreshTrigger }: Savi
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
+  const { formatCurrency } = useCurrency();
+
   useEffect(() => {
     api.savings.get().then((res) => {
       setSavings(res.savings);

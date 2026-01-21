@@ -280,12 +280,12 @@ export function ItemsSection({
                         {item.category_label}
                       </span>
                     </td>
-                    <td className={`py-2 text-right font-medium ${
-                      item.savings_destination === "none"
-                        ? 'text-terracotta-600 dark:text-terracotta-400' 
+                    <td className={`py-2 text-right font-medium ${item.savings_destination === "none"
+                        ? 'text-terracotta-600 dark:text-terracotta-400'
                         : 'text-sage-600 dark:text-sage-400'
-                    }`}>
-                      {item.savings_destination !== "none" && '→ '} ${item.amount.toFixed(2)}
+                      }`}>
+                      {item.savings_destination !== "none" && '→ '}
+                      {formatCurrency(item.amount)}
                     </td>
                     <td className="py-2 text-center">
                       {item.savings_destination === "none" && (
@@ -303,8 +303,6 @@ export function ItemsSection({
                           Retirement
                         </span>
                       )}
-                    <td className="py-2 text-right font-medium text-terracotta-600 dark:text-terracotta-400">
-                      {formatCurrency(item.amount)}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2">

@@ -10,6 +10,8 @@ export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: num
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
 
+  const { formatCurrency } = useCurrency();
+
   useEffect(() => {
     api.retirementSavings.get().then((res) => setAmount(res.retirement_savings));
   }, [refreshTrigger]);
@@ -80,4 +82,3 @@ export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: num
     </Card>
   );
 }
-
