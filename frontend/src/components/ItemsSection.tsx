@@ -245,7 +245,7 @@ export function ItemsSection({
                           { value: "savings", label: "Savings" },
                           { value: "retirement_savings", label: "Retirement" },
                         ]}
-                        value={savingsDestination}
+                        value={item.savings_destination}
                         onChange={(e) => setSavingsDestination(e.target.value)}
                         className="text-xs"
                       />
