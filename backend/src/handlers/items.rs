@@ -199,9 +199,23 @@ pub async fn update_item(
                 .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
     }
 
+    // Update the item first to ensure data consistency
+    sqlx::query(
+        "UPDATE items SET category_id = ?, description = ?, amount = ?, spent_on = ?, savings_destination = ? WHERE id = ?",
+    )
+    .bind(category_id)
+    .bind(&description)
+    .bind(amount)
+    .bind(spent_on)
+    .bind(&savings_destination)
+    .bind(item_id)
+    .execute(&pool)
+    .await?;
+
     let old_dest = existing.savings_destination.as_str();
     let new_dest = savings_destination.as_str();
 
+    // Adjust balances only after successful item update
     if old_dest != new_dest || (old_dest != "none" && existing.amount != amount) {
         match old_dest {
             "savings" => {
@@ -243,18 +257,6 @@ pub async fn update_item(
             _ => {}
         }
     }
-
-    sqlx::query(
-        "UPDATE items SET category_id = ?, description = ?, amount = ?, spent_on = ?, savings_destination = ? WHERE id = ?",
-    )
-    .bind(category_id)
-    .bind(&description)
-    .bind(amount)
-    .bind(spent_on)
-    .bind(&savings_destination)
-    .bind(item_id)
-    .execute(&pool)
-    .await?;
 
     Ok(Json(Item {
         id: item_id,

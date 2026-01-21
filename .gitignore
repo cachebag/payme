@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 target/
 
 # Build output
@@ -53,5 +52,3 @@ coverage/
 *.tmp
 *.temp
 .cache/
-
-#frontend/package-lock.json
