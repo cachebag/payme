@@ -5,6 +5,7 @@ import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface FixedExpensesProps {
   expenses: FixedExpense[];
@@ -12,6 +13,7 @@ interface FixedExpensesProps {
 }
 
 export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
+  const { formatCurrency } = useCurrency();
   const [isManaging, setIsManaging] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -81,7 +83,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
                 {expense.label}
               </span>
               <span className="text-sm text-charcoal-600 dark:text-charcoal-400">
-                ${expense.amount.toFixed(2)}
+                {formatCurrency(expense.amount)}
               </span>
             </div>
           ))}
@@ -98,7 +100,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
               Total
             </span>
             <span className="text-sm font-semibold text-charcoal-800 dark:text-sand-100">
-              ${total.toFixed(2)}
+              {formatCurrency(total)}
             </span>
           </div>
         )}
@@ -142,7 +144,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
                 <div className="flex items-center justify-between py-2 border-b border-sand-200 dark:border-charcoal-800">
                   <span className="text-sm">{expense.label}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">${expense.amount.toFixed(2)}</span>
+                    <span className="text-sm">{formatCurrency(expense.amount)}</span>
                     <button
                       onClick={() => startEdit(expense)}
                       className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"

@@ -6,6 +6,7 @@ import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { ProgressBar } from "./ui/ProgressBar";
 import { Modal } from "./ui/Modal";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface BudgetSectionProps {
   monthId: number;
@@ -22,6 +23,7 @@ export function BudgetSection({
   isReadOnly,
   onUpdate,
 }: BudgetSectionProps) {
+  const { formatCurrency } = useCurrency();
   const [isManaging, setIsManaging] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
@@ -131,7 +133,7 @@ export function BudgetSection({
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
-                        ${budget.spent_amount.toFixed(2)} / ${budget.allocated_amount.toFixed(2)}
+                        {formatCurrency(budget.spent_amount)} / {formatCurrency(budget.allocated_amount)}
                       </span>
                       {!isReadOnly && (
                         <button
@@ -198,7 +200,7 @@ export function BudgetSection({
                   <span className="text-sm">{cat.label}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-charcoal-500">
-                      ${cat.default_amount.toFixed(2)}
+                      {formatCurrency(cat.default_amount)}
                     </span>
                     <button
                       onClick={() => startEditCategory(cat)}
