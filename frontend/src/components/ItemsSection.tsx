@@ -241,7 +241,7 @@ export function ItemsSection({
                     <td className="py-2">
                       <Select
                         options={[
-                          { value: "none", label: "Outgoings" },
+                          { value: "none", label: "Spent" },
                           { value: "savings", label: "Savings" },
                           { value: "retirement_savings", label: "Retirement" },
                         ]}
