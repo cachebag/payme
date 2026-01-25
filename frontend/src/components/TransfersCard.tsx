@@ -94,7 +94,7 @@ export function TransfersCard({
     <Card className="col-span-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
-          Transfered Items
+          Transferred Items
         </h3>
         {!isReadOnly && !isAdding && (
           <button
@@ -194,11 +194,11 @@ export function TransfersCard({
               <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
                 Category
               </th>
-              <th className="text-right py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
-                Amount
-              </th>
               <th className="text-center py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
                 Destination
+              </th>
+              <th className="text-right py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
+                Amount
               </th>
               {!isReadOnly && <th className="w-16 md:w-20"></th>}
             </tr>
@@ -236,15 +236,6 @@ export function TransfersCard({
                       />
                     </td>
                     <td className="py-2">
-                      <Input
-                        type="number"
-                        placeholder="Amount"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="text-xs text-right"
-                      />
-                    </td>
-                    <td className="py-2">
                       <Select
                         options={[
                           { value: "savings", label: "Savings" },
@@ -253,6 +244,15 @@ export function TransfersCard({
                         value={savingsDestination}
                         onChange={(e) => setSavingsDestination(e.target.value)}
                         className="text-xs"
+                      />
+                    </td>
+                    <td className="py-2">
+                      <Input
+                        type="number"
+                        placeholder="Amount"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="text-xs text-right"
                       />
                     </td>
                     <td className="py-2">
@@ -288,9 +288,6 @@ export function TransfersCard({
                         {item.category_label}
                       </span>
                     </td>
-                    <td className="py-2 px-1 text-right font-medium text-xs md:text-sm whitespace-nowrap text-sage-600 dark:text-sage-400">
-                      → {formatCurrency(item.amount)}
-                    </td>
                     <td className="py-2 px-1 text-center">
                       {item.savings_destination === "savings" && (
                         <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200 whitespace-nowrap">
@@ -302,6 +299,9 @@ export function TransfersCard({
                           Retirement
                         </span>
                       )}
+                    </td>
+                    <td className="py-2 px-1 text-right font-medium text-xs md:text-sm whitespace-nowrap text-sage-600 dark:text-sage-400">
+                      → {formatCurrency(item.amount)}
                     </td>
                     {!isReadOnly && (
                       <td className="py-2 px-1">
