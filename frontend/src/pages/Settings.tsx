@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCurrency, SUPPORTED_CURRENCIES } from "../context/CurrencyContext";
 import { useUIPreferences } from "../context/UIPreferencesContext";
 import { api } from "../api/client";
-import { ArrowLeft, HelpCircle } from "lucide-react";
+import { ArrowLeft, HelpCircle, ChevronDown } from "lucide-react";
 
 interface SettingsProps {
   onBack: () => void;
@@ -35,6 +35,7 @@ export function Settings({ onBack }: SettingsProps) {
   const [currencySuccess, setCurrencySuccess] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(currency.code);
   const [showTransfersTooltip, setShowTransfersTooltip] = useState(false);
+  const [showTransfersHelp, setShowTransfersHelp] = useState(false);
 
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,8 +208,46 @@ export function Settings({ onBack }: SettingsProps) {
                   />
                 </button>
               </div>
-            </div>
-          </div>
+            </div>            
+            <div className="mt-6 pt-6 border-t border-sand-200 dark:border-charcoal-700">
+              <button
+                onClick={() => setShowTransfersHelp(!showTransfersHelp)}
+                className="flex items-center gap-2 w-full text-sm font-medium text-charcoal-800 dark:text-sand-100 hover:text-charcoal-600 dark:hover:text-sand-200 transition-colors"
+              >
+                <span>How to Use</span>
+                <ChevronDown 
+                  size={16} 
+                  className={`transition-transform ${showTransfersHelp ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {showTransfersHelp && (
+                <div className="mt-4 space-y-3 text-xs text-charcoal-600 dark:text-charcoal-300">
+                  <div>
+                    <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">What are transfers?</p>
+                    <p>Track portions of your budgeted spending that you plan to transfer to savings or retirement accounts instead of spending.</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">When to use transfers:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>You have extra budget left and want to save it</li>
+                      <li>You want to contribute to retirement beyond regular deductions</li>
+                      <li>You want to track discretionary savings separately</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">How to add a transfer:</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>First, add a budgeted item in your budget section with the amount you want to transfer</li>
+                      <li>Then, open the "Transferred Items" card on the dashboard</li>
+                      <li>Click the <span className="inline-block">+</span> button to create a transfer</li>
+                      <li>Fill in the description, amount, category, and date (matching your budgeted item)</li>
+                      <li>Choose the destination: Savings or Retirement</li>
+                      <li>Click confirm</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+            </div>          </div>
 
           <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
             <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
