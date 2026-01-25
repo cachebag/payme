@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCurrency, SUPPORTED_CURRENCIES } from "../context/CurrencyContext";
 import { useUIPreferences } from "../context/UIPreferencesContext";
 import { api } from "../api/client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, HelpCircle } from "lucide-react";
 
 interface SettingsProps {
   onBack: () => void;
@@ -34,6 +34,7 @@ export function Settings({ onBack }: SettingsProps) {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [currencySuccess, setCurrencySuccess] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(currency.code);
+  const [showTransfersTooltip, setShowTransfersTooltip] = useState(false);
 
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,10 +162,32 @@ export function Settings({ onBack }: SettingsProps) {
             </h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-sm font-medium text-charcoal-700 dark:text-sand-300 block mb-1">
-                    Enable Transferred Items
-                  </label>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-sm font-medium text-charcoal-700 dark:text-sand-300">
+                      Enable Transferred Items
+                    </label>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowTransfersTooltip(!showTransfersTooltip)}
+                        className="text-charcoal-500 hover:text-charcoal-700 dark:text-charcoal-400 dark:hover:text-sand-300 transition-colors cursor-pointer"
+                      >
+                        <HelpCircle size={16} />
+                      </button>
+                      {showTransfersTooltip && (
+                        <div 
+                          className="absolute bottom-full left-0 mb-2 w-48 p-3 bg-charcoal-800 dark:bg-sand-100 text-sand-100 dark:text-charcoal-800 text-xs rounded shadow-lg z-10 whitespace-normal"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="font-medium mb-1">Transfer Management</p>
+                          <p className="mb-1">Track budgeted items transferred to savings or retirement.</p>
+                          <p>When enabled: You can add, edit, and delete transfers.</p>
+                          <p className="mt-1">When disabled: View only. Card hides once all transfers are deleted.</p>
+                          <div className="absolute top-full left-4 w-2 h-2 bg-charcoal-800 dark:bg-sand-100 transform rotate-45"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
                     Allow adding, editing, and deleting transferred items
                   </p>
