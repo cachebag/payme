@@ -31,7 +31,6 @@ export function TransfersCard({
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
   const [savingsDestination, setSavingsDestination] = useState("savings");
 
-  // Filter to only show transfer items (savings or retirement)
   const transferItems = items.filter(
     (item) =>
       item.savings_destination === "savings" ||
