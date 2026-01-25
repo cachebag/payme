@@ -13,6 +13,7 @@ import { BudgetSection } from "../components/BudgetSection";
 import { ItemsSection } from "../components/ItemsSection";
 import { Stats } from "../components/Stats";
 import { useMonth } from "../hooks/useMonth";
+import { useUIPreferences } from "../context/UIPreferencesContext";
 import { Loader2 } from "lucide-react";
 
 interface DashboardProps {
@@ -21,6 +22,7 @@ interface DashboardProps {
 
 export function Dashboard({ onSettingsClick }: DashboardProps) {
   const [showVarianceModal, setShowVarianceModal] = useState(false);
+  const { transfersEnabled } = useUIPreferences();
   const {
     summary,
     months,
@@ -116,13 +118,15 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
           onUpdate={refresh}
         />
 
-        <TransfersCard 
-          monthId={summary.month.id}
-          items={summary.items}
-          categories={categories}
-          isReadOnly={isReadOnly}
-          onUpdate={refresh}
-        />
+        {(transfersEnabled || summary.items.some(item => item.savings_destination === "savings" || item.savings_destination === "retirement_savings")) && (
+          <TransfersCard 
+            monthId={summary.month.id}
+            items={summary.items}
+            categories={categories}
+            isReadOnly={isReadOnly}
+            onUpdate={refresh}
+          />
+        )}
       </div>
 
       <footer className="mt-12 py-4 text-center text-xs text-charcoal-400 dark:text-charcoal-600">

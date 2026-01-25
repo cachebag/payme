@@ -6,6 +6,7 @@ import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
 import { Button } from "./ui/Button";
 import { useCurrency } from "../context/CurrencyContext";
+import { useUIPreferences } from "../context/UIPreferencesContext";
 
 interface TransfersCardProps {
   monthId: number;
@@ -23,6 +24,7 @@ export function TransfersCard({
   onUpdate,
 }: TransfersCardProps) {
   const { formatCurrency } = useCurrency();
+  const { transfersEnabled } = useUIPreferences();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [description, setDescription] = useState("");
@@ -95,7 +97,7 @@ export function TransfersCard({
         <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
           Transferred Items
         </h3>
-        {!isReadOnly && !isAdding && (
+        {!isReadOnly && !isAdding && transfersEnabled && (
           <button
             onClick={() => {
               setIsAdding(true);
@@ -302,7 +304,7 @@ export function TransfersCard({
                     <td className="py-2 px-1 text-right font-medium text-xs md:text-sm whitespace-nowrap text-sage-600 dark:text-sage-400">
                       → {formatCurrency(item.amount)}
                     </td>
-                    {!isReadOnly && (
+                    {!isReadOnly && transfersEnabled && (
                       <td className="py-2 px-1">
                         <div className="flex gap-0.5 md:gap-1 justify-end">
                           <button

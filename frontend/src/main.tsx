@@ -5,14 +5,17 @@ import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
+import { UIPreferencesProvider } from "./context/UIPreferencesContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
       <CurrencyProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <UIPreferencesProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </UIPreferencesProvider>
       </CurrencyProvider>
     </ThemeProvider>
   </StrictMode>

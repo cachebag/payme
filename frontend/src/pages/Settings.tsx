@@ -6,6 +6,7 @@ import { Select } from "../components/ui/Select";
 import { Modal } from "../components/ui/Modal";
 import { useAuth } from "../context/AuthContext";
 import { useCurrency, SUPPORTED_CURRENCIES } from "../context/CurrencyContext";
+import { useUIPreferences } from "../context/UIPreferencesContext";
 import { api } from "../api/client";
 import { ArrowLeft } from "lucide-react";
 
@@ -16,6 +17,7 @@ interface SettingsProps {
 export function Settings({ onBack }: SettingsProps) {
   const { user, logout, updateUsername } = useAuth();
   const { currency, setCurrency, formatCurrency } = useCurrency();
+  const { transfersEnabled, setTransfersEnabled } = useUIPreferences();
   const [newUsername, setNewUsername] = useState(user?.username || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -150,6 +152,38 @@ export function Settings({ onBack }: SettingsProps) {
               <Button onClick={handleSaveCurrency} disabled={selectedCurrency === currency.code}>
                 Save Currency
               </Button>
+            </div>
+          </div>
+
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
+              Transferred Items
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-charcoal-700 dark:text-sand-300 block mb-1">
+                    Enable Transferred Items
+                  </label>
+                  <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
+                    Allow adding, editing, and deleting transferred items
+                  </p>
+                </div>
+                <button
+                  onClick={() => setTransfersEnabled(!transfersEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    transfersEnabled
+                      ? "bg-sage-600 dark:bg-sage-500"
+                      : "bg-charcoal-300 dark:bg-charcoal-600"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      transfersEnabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
 
