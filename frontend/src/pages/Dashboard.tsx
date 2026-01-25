@@ -5,6 +5,7 @@ import { Summary } from "../components/Summary";
 import { SavingsCard } from "../components/SavingsCard";
 import { RetirementSavingsCard } from "../components/RetirementSavingsCard";
 import { CustomSavingsGoals } from "../components/CustomSavingsGoals";
+import { TransfersCard } from "../components/TransfersCard";
 import { VarianceModal } from "../components/VarianceModal";
 import { IncomeSection } from "../components/IncomeSection";
 import { FixedExpenses } from "../components/FixedExpenses";
@@ -108,6 +109,14 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
         </div>
 
         <ItemsSection
+          monthId={summary.month.id}
+          items={summary.items}
+          categories={categories}
+          isReadOnly={isReadOnly}
+          onUpdate={refresh}
+        />
+
+        <TransfersCard 
           monthId={summary.month.id}
           items={summary.items}
           categories={categories}
