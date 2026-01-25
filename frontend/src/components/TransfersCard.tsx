@@ -94,7 +94,7 @@ export function TransfersCard({
     <Card className="col-span-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
-          Transfers & Allocations
+          Transfered Items
         </h3>
         {!isReadOnly && !isAdding && (
           <button
