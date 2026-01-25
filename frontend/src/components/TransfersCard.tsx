@@ -38,17 +38,6 @@ export function TransfersCard({
       item.savings_destination === "retirement_savings"
   );
 
-  // Calculate totals by destination
-  const savingsTotal = transferItems
-    .filter((item) => item.savings_destination === "savings")
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  const retirementTotal = transferItems
-    .filter((item) => item.savings_destination === "retirement_savings")
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  const transfersTotal = savingsTotal + retirementTotal;
-
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
     await api.items.create(monthId, {
@@ -345,38 +334,6 @@ export function TransfersCard({
           </div>
         )}
       </div>
-
-      {/* Summary footer */}
-      {transferItems.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-sand-300 dark:border-charcoal-700">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-                Total to Savings
-              </div>
-              <div className="text-lg font-semibold text-sage-600 dark:text-sage-400">
-                {formatCurrency(savingsTotal, { absolute: true })}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-                Total to Retirement
-              </div>
-              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                {formatCurrency(retirementTotal, { absolute: true })}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">
-                Total Transfers
-              </div>
-              <div className="text-lg font-semibold text-charcoal-700 dark:text-sand-300">
-                {formatCurrency(transfersTotal, { absolute: true })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </Card>
   );
 }
