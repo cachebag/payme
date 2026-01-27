@@ -36,6 +36,7 @@ export function Settings({ onBack }: SettingsProps) {
   const [selectedCurrency, setSelectedCurrency] = useState(currency.code);
   const [showTransfersModal, setShowTransfersModal] = useState(false);
 
+
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
     setUsernameError("");
@@ -194,7 +195,8 @@ export function Settings({ onBack }: SettingsProps) {
                   />
                 </button>
               </div>
-            </div>          </div>
+            </div>
+          </div>
 
           <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
             <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
