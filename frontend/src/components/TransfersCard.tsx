@@ -29,7 +29,6 @@ export function TransfersCard({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
   const [savingsDestination, setSavingsDestination] = useState("savings");
 
@@ -40,11 +39,12 @@ export function TransfersCard({
   );
 
   const handleAdd = async () => {
-    if (!description || !amount || !categoryId) return;
+    if (!description || !amount) return;
+    const catId = categories.length > 0 ? categories[0].id : 1;
     await api.items.create(monthId, {
       description,
       amount: parseFloat(amount),
-      category_id: parseInt(categoryId),
+      category_id: catId,
       spent_on: spentOn,
       savings_destination: savingsDestination,
     });
@@ -53,11 +53,12 @@ export function TransfersCard({
   };
 
   const handleUpdate = async (id: number) => {
-    if (!description || !amount || !categoryId) return;
+    if (!description || !amount) return;
+    const catId = categories.length > 0 ? categories[0].id : 1;
     await api.items.update(monthId, id, {
       description,
       amount: parseFloat(amount),
-      category_id: parseInt(categoryId),
+      category_id: catId,
       spent_on: spentOn,
       savings_destination: savingsDestination,
     });
@@ -74,7 +75,6 @@ export function TransfersCard({
     setEditingId(item.id);
     setDescription(item.description);
     setAmount(item.amount.toString());
-    setCategoryId(item.category_id.toString());
     setSpentOn(item.spent_on);
     setSavingsDestination(item.savings_destination);
   };
@@ -83,13 +83,10 @@ export function TransfersCard({
     setEditingId(null);
     setDescription("");
     setAmount("");
-    setCategoryId("");
     setSpentOn(new Date().toISOString().split("T")[0]);
     setSavingsDestination("savings");
     setIsAdding(false);
   };
-
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.label }));
 
   return (
     <Card className="col-span-full">
@@ -101,9 +98,6 @@ export function TransfersCard({
           <button
             onClick={() => {
               setIsAdding(true);
-              if (categories.length > 0) {
-                setCategoryId(categories[0].id.toString());
-              }
             }}
             className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
           >
@@ -112,26 +106,9 @@ export function TransfersCard({
         )}
       </div>
 
-      {isAdding && categories.length === 0 && (
-        <div className="mb-4 p-4 bg-sand-100 dark:bg-charcoal-800 text-center rounded-lg">
-          <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mb-1">
-            No budget categories yet.
-          </p>
-          <p className="text-xs text-charcoal-400 dark:text-charcoal-500">
-            Add some in the Budget section first.
-          </p>
-          <button
-            onClick={resetForm}
-            className="mt-3 px-4 py-2 text-xs text-charcoal-500 hover:text-charcoal-700 dark:hover:text-charcoal-300 hover:bg-sand-200 dark:hover:bg-charcoal-700 active:bg-sand-300 dark:active:bg-charcoal-600 transition-colors rounded touch-manipulation"
-          >
-            Close
-          </button>
-        </div>
-      )}
-
-      {isAdding && categories.length > 0 && (
+      {isAdding && (
         <div className="mb-4 p-4 bg-sand-100 dark:bg-charcoal-800">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Input
               placeholder="Description"
               value={description}
@@ -142,11 +119,6 @@ export function TransfersCard({
               placeholder="Amount"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-            />
-            <Select
-              options={categoryOptions}
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
             />
             <Input
               type="date"
@@ -192,9 +164,6 @@ export function TransfersCard({
               <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
                 Description
               </th>
-              <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
-                Category
-              </th>
               <th className="text-center py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
                 Destination
               </th>
@@ -225,14 +194,6 @@ export function TransfersCard({
                         placeholder="Description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="text-xs"
-                      />
-                    </td>
-                    <td className="py-2">
-                      <Select
-                        options={categoryOptions}
-                        value={categoryId}
-                        onChange={(e) => setCategoryId(e.target.value)}
                         className="text-xs"
                       />
                     </td>
@@ -283,11 +244,6 @@ export function TransfersCard({
                       <div className="max-w-[120px] md:max-w-none truncate">
                         {item.description}
                       </div>
-                    </td>
-                    <td className="py-2 px-1">
-                      <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 bg-sand-200 dark:bg-charcoal-800 text-charcoal-600 dark:text-sand-400 whitespace-nowrap">
-                        {item.category_label}
-                      </span>
                     </td>
                     <td className="py-2 px-1 text-center">
                       {item.savings_destination === "savings" && (

@@ -362,10 +362,9 @@ export function Settings({ onBack }: SettingsProps) {
             <div>
               <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">How to add a transfer:</p>
               <ol className="list-decimal list-inside space-y-1 text-xs">
-                <li>First, add a budgeted item in your budget section with the amount you want to transfer</li>
-                <li>Then, open the "Transferred Items" card on the dashboard</li>
+                <li>Open the "Transferred Items" card on the dashboard</li>
                 <li>Click the <span className="inline-block">+</span> button to create a transfer</li>
-                <li>Fill in the description, amount, category, and date (matching your budgeted item)</li>
+                <li>Fill in the description, amount, and date</li>
                 <li>Choose the destination: Savings or Retirement</li>
                 <li>Click confirm</li>
               </ol>
