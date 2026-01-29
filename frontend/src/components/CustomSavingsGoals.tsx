@@ -4,6 +4,7 @@ import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { ProgressBar } from "./ui/ProgressBar";
 import { Button } from "./ui/Button";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface SavingsGoal {
   id: string;
@@ -13,6 +14,8 @@ interface SavingsGoal {
 }
 
 export function CustomSavingsGoals() {
+  const { formatCurrency, getCurrencySymbol } = useCurrency();
+  
   // Load goals from localStorage on mount using lazy initializer
   const [goals, setGoals] = useState<SavingsGoal[]>(() => {
     const savedGoals = localStorage.getItem("customSavingsGoals");
@@ -132,7 +135,7 @@ export function CustomSavingsGoals() {
                   
                   {editingGoalId === goal.id ? (
                     <div className="flex items-center gap-1 mb-2">
-                      <span className="text-xs text-charcoal-500 dark:text-charcoal-400">$</span>
+                      <span className="text-xs text-charcoal-500 dark:text-charcoal-400">{getCurrencySymbol()}</span>
                       <Input
                         type="number"
                         value={editCurrentAmount}
@@ -157,10 +160,10 @@ export function CustomSavingsGoals() {
                   ) : (
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-sm font-medium text-sage-700 dark:text-sage-400">
-                        ${goal.currentAmount.toFixed(2)}
+                        {formatCurrency(goal.currentAmount)}
                       </span>
                       <span className="text-xs text-charcoal-400 dark:text-charcoal-500">
-                        / ${goal.targetAmount.toFixed(2)}
+                        / {formatCurrency(goal.targetAmount)}
                       </span>
                       <button
                         onClick={() => startEditAmount(goal.id, goal.currentAmount)}
@@ -196,7 +199,7 @@ export function CustomSavingsGoals() {
                     </span>
                     {!isComplete && (
                       <span className="text-xs text-charcoal-400 dark:text-charcoal-500">
-                        ${remaining.toFixed(2)} to go
+                        {formatCurrency(remaining)} to go
                       </span>
                     )}
                   </div>
