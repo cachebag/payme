@@ -88,7 +88,6 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <SavingsCard 
-            remaining={summary.remaining}
             refreshTrigger={refreshTrigger}
           />
           <CustomSavingsGoals />

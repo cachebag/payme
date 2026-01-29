@@ -10,11 +10,10 @@ import { useCurrency } from "../context/CurrencyContext";
 
 interface SavingsCardProps {
   onSavingsChange?: (savings: number) => void;
-  remaining: number;
   refreshTrigger?: number;
 }
 
-export function SavingsCard({ onSavingsChange, remaining, refreshTrigger }: SavingsCardProps) {
+export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProps) {
   const [savings, setSavings] = useState<number>(0);
   const [savingsGoal, setSavingsGoal] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -70,7 +69,7 @@ export function SavingsCard({ onSavingsChange, remaining, refreshTrigger }: Savi
     setIsEditingGoal(false);
   };
 
-  const target = savingsGoal > 0 ? savingsGoal : savings + remaining;
+  const target = savingsGoal > 0 ? savingsGoal : 0;
   const percentage = target > 0 ? (savings / target) * 100 : 0;
   const difference = savings - target;
   const isAhead = difference >= 0;
@@ -180,7 +179,7 @@ export function SavingsCard({ onSavingsChange, remaining, refreshTrigger }: Savi
         </div>
         
         <p className="text-xs text-charcoal-400 dark:text-charcoal-500 italic">
-          {savingsGoal > 0 ? 'based on your goal' : 'based on remaining budget'}
+          {savingsGoal > 0 ? 'based on your goal' : 'no goal set'}
         </p>
       </div>
     </Card>
@@ -201,11 +200,11 @@ export function SavingsCard({ onSavingsChange, remaining, refreshTrigger }: Savi
             Savings Goal
           </h3>
           <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mb-2">
-            Set your own target amount. If no goal is set, it defaults to:
+            Set your own target amount. You can set any amount, including zero if you don't want to track a specific goal.
           </p>
-          <div className="bg-sand-100 dark:bg-charcoal-800 p-3 rounded text-xs font-mono">
-            Current Savings + Remaining Budget
-          </div>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            The progress bar will only show when you have a goal set (greater than 0).
+          </p>
         </div>
 
         <div>
