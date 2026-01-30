@@ -46,9 +46,27 @@ export function useMonth() {
     loadMonth(monthId);
   };
 
+  const createMonth = async (year: number, month: number) => {
+    setLoading(true);
+    try {
+      const data = await api.months.create(year, month);
+      await loadMonths();
+      setSummary(data);
+      setSelectedMonthId(data.month.id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const closeMonth = async () => {
     if (!selectedMonthId) return;
     await api.months.close(selectedMonthId);
+    await refresh();
+  };
+
+  const reopenMonth = async () => {
+    if (!selectedMonthId) return;
+    await api.months.reopen(selectedMonthId);
     await refresh();
   };
 
@@ -70,8 +88,10 @@ export function useMonth() {
     selectedMonthId,
     loading,
     selectMonth,
+    createMonth,
     refresh,
     closeMonth,
+    reopenMonth,
     downloadPdf,
     refreshTrigger,
   };

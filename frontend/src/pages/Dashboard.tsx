@@ -18,9 +18,10 @@ import { Loader2 } from "lucide-react";
 
 interface DashboardProps {
   onSettingsClick: () => void;
+  onSummaryClick: (monthId?: number) => void;
 }
 
-export function Dashboard({ onSettingsClick }: DashboardProps) {
+export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
   const [showVarianceModal, setShowVarianceModal] = useState(false);
   const { transfersEnabled } = useUIPreferences();
   const {
@@ -30,9 +31,10 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
     selectedMonthId,
     loading,
     selectMonth,
+    createMonth,
     refresh,
     closeMonth,
-    downloadPdf,
+    reopenMonth,
     refreshTrigger,
   } = useMonth();
 
@@ -65,8 +67,10 @@ export function Dashboard({ onSettingsClick }: DashboardProps) {
           months={months}
           selectedMonthId={selectedMonthId}
           onSelect={selectMonth}
+          onCreateMonth={createMonth}
           onClose={closeMonth}
-          onDownloadPdf={downloadPdf}
+          onReopen={reopenMonth}
+          onSummary={() => onSummaryClick(selectedMonthId ?? undefined)}
         />
         <div className="hidden lg:flex justify-end">
           <Stats />

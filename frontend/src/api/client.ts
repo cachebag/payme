@@ -59,7 +59,13 @@ export const api = {
     list: () => request<Month[]>("/months"),
     current: () => request<MonthSummary>("/months/current"),
     get: (id: number) => request<MonthSummary>(`/months/${id}`),
+    create: (year: number, month: number) =>
+      request<MonthSummary>("/months", {
+        method: "POST",
+        body: JSON.stringify({ year, month }),
+      }),
     close: (id: number) => request<Month>(`/months/${id}/close`, { method: "POST" }),
+    reopen: (id: number) => request<Month>(`/months/${id}/reopen`, { method: "POST" }),
     downloadPdf: async (id: number) => {
       const response = await fetch(`${BASE_URL}/months/${id}/pdf`, {
         credentials: "include",
