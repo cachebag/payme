@@ -4,12 +4,15 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { Settings } from "./pages/Settings";
+import { SummaryPage } from "./pages/Summary";
 import { Loader2 } from "lucide-react";
 
 export default function App() {
   const { user, loading } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryMonthId, setSummaryMonthId] = useState<number | null>(null);
 
   if (loading) {
     return (
@@ -31,6 +34,23 @@ export default function App() {
     return <Settings onBack={() => setShowSettings(false)} />;
   }
 
-  return <Dashboard onSettingsClick={() => setShowSettings(true)} />;
+  if (showSummary) {
+    return (
+      <SummaryPage
+        onBack={() => setShowSummary(false)}
+        initialMonthId={summaryMonthId}
+      />
+    );
+  }
+
+  return (
+    <Dashboard
+      onSettingsClick={() => setShowSettings(true)}
+      onSummaryClick={(monthId) => {
+        setSummaryMonthId(monthId ?? null);
+        setShowSummary(true);
+      }}
+    />
+  );
 }
 
