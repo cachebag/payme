@@ -10,25 +10,25 @@
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
   },
   "dependencies": {
+    "html2canvas": "^1.4.1",
     "lucide-react": "*",
     "react": "*",
     "react-dom": "*",
     "recharts": "*"
   },
   "devDependencies": {
+    "@eslint/js": "*",
     "@tailwindcss/vite": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
     "@vitejs/plugin-react": "*",
     "eslint": "*",
-    "@eslint/js": "*",
-    "typescript-eslint": "*",
     "eslint-plugin-react-hooks": "*",
     "eslint-plugin-react-refresh": "*",
     "globals": "*",
     "tailwindcss": "*",
     "typescript": "*",
+    "typescript-eslint": "*",
     "vite": "*"
   }
 }
-
