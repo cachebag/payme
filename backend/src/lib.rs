@@ -35,12 +35,14 @@ pub fn create_app(pool: SqlitePool) -> Router {
         .route("/api/auth/clear-data", delete(auth::clear_all_data))
         .route("/api/export", get(auth::export_db))
         .route("/api/months", get(months::list_months))
+        .route("/api/months", post(months::create_month))
         .route(
             "/api/months/current",
             get(months::get_or_create_current_month),
         )
         .route("/api/months/{id}", get(months::get_month))
         .route("/api/months/{id}/close", post(months::close_month))
+        .route("/api/months/{id}/reopen", post(months::reopen_month))
         .route("/api/months/{id}/pdf", get(months::get_month_pdf))
         .route(
             "/api/fixed-expenses",

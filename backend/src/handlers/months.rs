@@ -3,7 +3,9 @@ use axum::{
     Json,
 };
 use chrono::{Datelike, Utc};
+use serde::Deserialize;
 use sqlx::SqlitePool;
+use utoipa::ToSchema;
 
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
@@ -11,6 +13,12 @@ use crate::models::{
     FixedExpense, IncomeEntry, ItemWithCategory, Month, MonthSummary, MonthlyBudgetWithCategory,
 };
 use crate::pdf;
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateMonthRequest {
+    pub year: i32,
+    pub month: i32,
+}
 
 #[utoipa::path(
     get,
@@ -35,6 +43,90 @@ pub async fn list_months(
     .await?;
 
     Ok(Json(months))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/months",
+    request_body = CreateMonthRequest,
+    responses(
+        (status = 200, description = "Month created or returned if already exists", body = MonthSummary),
+        (status = 400, description = "Invalid month or year"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Create a month for any year/month",
+    description = "Creates a new month for the specified year and month. If the month already exists, returns the existing month. This allows navigating to and creating historical months."
+)]
+pub async fn create_month(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Json(payload): Json<CreateMonthRequest>,
+) -> Result<Json<MonthSummary>, PaymeError> {
+    if payload.month < 1 || payload.month > 12 {
+        return Err(PaymeError::BadRequest(
+            "Month must be between 1 and 12".to_string(),
+        ));
+    }
+
+    if payload.year < 2000 || payload.year > 2100 {
+        return Err(PaymeError::BadRequest(
+            "Year must be between 2000 and 2100".to_string(),
+        ));
+    }
+
+    let existing: Option<Month> = sqlx::query_as(
+        "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE user_id = ? AND year = ? AND month = ?",
+    )
+    .bind(claims.sub)
+    .bind(payload.year)
+    .bind(payload.month)
+    .fetch_optional(&pool)
+    .await?;
+
+    let month_record = match existing {
+        Some(m) => m,
+        None => {
+            let id: i64 = sqlx::query_scalar(
+                "INSERT INTO months (user_id, year, month) VALUES (?, ?, ?) RETURNING id",
+            )
+            .bind(claims.sub)
+            .bind(payload.year)
+            .bind(payload.month)
+            .fetch_one(&pool)
+            .await?;
+
+            let categories: Vec<(i64, f64)> = sqlx::query_as(
+                "SELECT id, default_amount FROM budget_categories WHERE user_id = ?",
+            )
+            .bind(claims.sub)
+            .fetch_all(&pool)
+            .await?;
+
+            for (cat_id, default_amount) in categories {
+                sqlx::query(
+                    "INSERT INTO monthly_budgets (month_id, category_id, allocated_amount) VALUES (?, ?, ?)",
+                )
+                .bind(id)
+                .bind(cat_id)
+                .bind(default_amount)
+                .execute(&pool)
+                .await
+                .ok();
+            }
+
+            Month {
+                id,
+                user_id: claims.sub,
+                year: payload.year,
+                month: payload.month,
+                is_closed: false,
+                closed_at: None,
+            }
+        }
+    };
+
+    get_month_summary(&pool, claims.sub, month_record.id).await
 }
 
 #[utoipa::path(
@@ -290,6 +382,60 @@ pub async fn close_month(
     let now = Utc::now();
     sqlx::query("UPDATE months SET is_closed = 1, closed_at = ? WHERE id = ?")
         .bind(now)
+        .bind(month_id)
+        .execute(&pool)
+        .await?;
+
+    let updated: Month = sqlx::query_as(
+        "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ?",
+    )
+    .bind(month_id)
+    .fetch_one(&pool)
+    .await?;
+
+    Ok(Json(updated))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/months/{id}/reopen",
+    params(
+        ("id" = i64, Path, description = "Month ID")
+    ),
+    responses(
+        (status = 200, description = "Month reopened", body = Month),
+        (status = 400, description = "Month is not closed"),
+        (status = 404, description = "Month not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Reopen a closed month",
+    description = "Reopens a previously closed month, allowing further edits."
+)]
+pub async fn reopen_month(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(month_id): Path<i64>,
+) -> Result<Json<Month>, PaymeError> {
+    let month: Month = sqlx::query_as(
+        "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE id = ? AND user_id = ?",
+    )
+    .bind(month_id)
+    .bind(claims.sub)
+    .fetch_optional(&pool)
+    .await?
+    .ok_or(PaymeError::NotFound)?;
+
+    if !month.is_closed {
+        return Err(PaymeError::BadRequest("Month is not closed".to_string()));
+    }
+
+    sqlx::query("UPDATE months SET is_closed = 0, closed_at = NULL WHERE id = ?")
+        .bind(month_id)
+        .execute(&pool)
+        .await?;
+
+    sqlx::query("DELETE FROM monthly_snapshots WHERE month_id = ?")
         .bind(month_id)
         .execute(&pool)
         .await?;
