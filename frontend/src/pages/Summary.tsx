@@ -46,8 +46,24 @@ export function SummaryPage({ onBack, initialMonthId }: SummaryPageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        const [monthsList, currentMonth] = await Promise.all([
+          api.months.list(),
+          api.months.current(),
+        ]);
+        setMonths(monthsList);
+        setMonthSummary(currentMonth);
+        if (!initialMonthId) {
+          setSelectedMonthId(currentMonth.month.id);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
     loadInitialData();
-  }, []);
+  }, [initialMonthId]);
 
   useEffect(() => {
     if (viewMode === "month" && selectedMonthId) {
@@ -56,23 +72,6 @@ export function SummaryPage({ onBack, initialMonthId }: SummaryPageProps) {
       loadYearData();
     }
   }, [viewMode, selectedMonthId]);
-
-  const loadInitialData = async () => {
-    setLoading(true);
-    try {
-      const [monthsList, currentMonth] = await Promise.all([
-        api.months.list(),
-        api.months.current(),
-      ]);
-      setMonths(monthsList);
-      setMonthSummary(currentMonth);
-      if (!selectedMonthId) {
-        setSelectedMonthId(currentMonth.month.id);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadMonthData = async (monthId: number) => {
     setLoading(true);
