@@ -12,9 +12,10 @@ import { ArrowLeft, Info, Eye, EyeOff } from "lucide-react";
 
 interface SettingsProps {
   onBack: () => void;
+  from?: "dashboard" | "summary";
 }
 
-export function Settings({ onBack }: SettingsProps) {
+export function Settings({ onBack, from = "dashboard" }: SettingsProps) {
   const { user, logout, updateUsername } = useAuth();
   const { currency, setCurrency, formatCurrency } = useCurrency();
   const { transfersEnabled, setTransfersEnabled } = useUIPreferences();
@@ -124,7 +125,7 @@ export function Settings({ onBack }: SettingsProps) {
           className="mb-4 sm:mb-6 flex items-center gap-2 text-sm text-charcoal-600 dark:text-charcoal-400 hover:text-charcoal-900 dark:hover:text-sand-100 transition-colors touch-manipulation"
         >
           <ArrowLeft size={16} />
-          Back to Dashboard
+          Back to {from === "summary" ? "Summary" : "Dashboard"}
         </button>
 
         <h1 className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8 text-charcoal-800 dark:text-sand-100">
