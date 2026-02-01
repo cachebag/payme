@@ -11,6 +11,23 @@ pub struct FixedExpense {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct MonthlyFixedExpense {
+    pub id: i64,
+    pub month_id: i64,
+    pub label: String,
+    pub amount: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct MonthlySavings {
+    pub id: i64,
+    pub month_id: i64,
+    pub savings: f64,
+    pub retirement_savings: f64,
+    pub savings_goal: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct BudgetCategory {
     pub id: i64,
     pub user_id: i64,
@@ -69,9 +86,10 @@ pub struct MonthlyBudgetWithCategory {
 pub struct MonthSummary {
     pub month: Month,
     pub income_entries: Vec<IncomeEntry>,
-    pub fixed_expenses: Vec<FixedExpense>,
+    pub fixed_expenses: Vec<MonthlyFixedExpense>,
     pub budgets: Vec<MonthlyBudgetWithCategory>,
     pub items: Vec<ItemWithCategory>,
+    pub savings: Option<MonthlySavings>,
     pub total_income: f64,
     pub total_fixed: f64,
     pub total_budgeted: f64,

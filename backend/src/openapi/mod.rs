@@ -10,11 +10,12 @@ use crate::handlers::{
     fixed_expenses::{CreateFixedExpense, UpdateFixedExpense},
     income::{CreateIncome, UpdateIncome},
     items::{CreateItem, UpdateItem},
+    monthly_data::{CreateMonthlyFixedExpense, UpdateMonthlyFixedExpense, UpdateMonthlySavings},
     savings::{RetirementSavingsResponse, SavingsResponse, UpdateRetirementSavings, UpdateSavings},
 };
 use crate::models::{
     BudgetCategory, CategoryStats, FixedExpense, IncomeEntry, Item, ItemWithCategory, Month,
-    MonthSummary, MonthlyBudget, MonthlyStats, StatsResponse,
+    MonthSummary, MonthlyBudget, MonthlyFixedExpense, MonthlySavings, MonthlyStats, StatsResponse,
 };
 
 #[derive(OpenApi)]
@@ -49,6 +50,10 @@ use crate::models::{
         crate::handlers::months::get_month,
         crate::handlers::months::close_month,
         crate::handlers::months::get_month_pdf,
+        crate::handlers::monthly_data::create_monthly_fixed_expense,
+        crate::handlers::monthly_data::update_monthly_fixed_expense,
+        crate::handlers::monthly_data::delete_monthly_fixed_expense,
+        crate::handlers::monthly_data::update_monthly_savings,
         crate::handlers::savings::get_savings,
         crate::handlers::savings::update_savings,
         crate::handlers::savings::get_retirement_savings,
@@ -70,6 +75,11 @@ use crate::models::{
         FixedExpense,
         CreateFixedExpense,
         UpdateFixedExpense,
+        MonthlyFixedExpense,
+        CreateMonthlyFixedExpense,
+        UpdateMonthlyFixedExpense,
+        MonthlySavings,
+        UpdateMonthlySavings,
         BudgetCategory,
         CreateCategory,
         UpdateCategory,

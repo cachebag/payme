@@ -114,7 +114,8 @@ pub fn generate_pdf(summary: &MonthSummary) -> Result<Vec<u8>, Box<dyn std::erro
 mod tests {
     use super::*;
     use crate::models::{
-        FixedExpense, IncomeEntry, ItemWithCategory, Month, MonthlyBudgetWithCategory,
+        IncomeEntry, ItemWithCategory, Month, MonthlyBudgetWithCategory, MonthlyFixedExpense,
+        MonthlySavings,
     };
     use chrono::NaiveDate;
 
@@ -134,9 +135,9 @@ mod tests {
                 label: "Salary".to_string(),
                 amount: 5000.0,
             }],
-            fixed_expenses: vec![FixedExpense {
+            fixed_expenses: vec![MonthlyFixedExpense {
                 id: 1,
-                user_id: 1,
+                month_id: 1,
                 label: "Rent".to_string(),
                 amount: 1500.0,
             }],
@@ -158,6 +159,13 @@ mod tests {
                 spent_on: NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
                 savings_destination: "none".to_string(),
             }],
+            savings: Some(MonthlySavings {
+                id: 1,
+                month_id: 1,
+                savings: 10000.0,
+                retirement_savings: 50000.0,
+                savings_goal: 20000.0,
+            }),
             total_income: 5000.0,
             total_fixed: 1500.0,
             total_budgeted: 500.0,
@@ -196,6 +204,7 @@ mod tests {
             fixed_expenses: vec![],
             budgets: vec![],
             items: vec![],
+            savings: None,
             total_income: 0.0,
             total_fixed: 0.0,
             total_budgeted: 0.0,

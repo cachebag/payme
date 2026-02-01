@@ -162,6 +162,37 @@ async fn run_migrations(pool: &SqlitePool) {
     .execute(pool)
     .await
     .expect("Failed to create monthly_snapshots table");
+
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS monthly_fixed_expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            month_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            amount REAL NOT NULL,
+            FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create monthly_fixed_expenses table");
+
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS monthly_savings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            month_id INTEGER NOT NULL UNIQUE,
+            savings REAL NOT NULL DEFAULT 0,
+            retirement_savings REAL NOT NULL DEFAULT 0,
+            savings_goal REAL NOT NULL DEFAULT 0,
+            FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create monthly_savings table");
 }
 
 /// Create a test user and return their ID

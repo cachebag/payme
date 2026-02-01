@@ -5,6 +5,7 @@ pub mod fixed_expenses;
 pub mod health;
 pub mod income;
 pub mod items;
+pub mod monthly_data;
 pub mod months;
 pub mod savings;
 pub mod stats;

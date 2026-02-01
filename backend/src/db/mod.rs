@@ -161,5 +161,87 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS monthly_fixed_expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            month_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            amount REAL NOT NULL,
+            FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS monthly_savings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            month_id INTEGER NOT NULL UNIQUE,
+            savings REAL NOT NULL DEFAULT 0,
+            retirement_savings REAL NOT NULL DEFAULT 0,
+            savings_goal REAL NOT NULL DEFAULT 0,
+            FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    // Migration: Backfill existing months with current fixed expenses and savings
+    // This ensures existing data is preserved when upgrading
+    let existing_months: Vec<(i64, i64)> = sqlx::query_as(
+        "SELECT id, user_id FROM months WHERE id NOT IN (SELECT DISTINCT month_id FROM monthly_fixed_expenses)",
+    )
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+
+    for (month_id, user_id) in existing_months {
+        // Copy current fixed expenses to this month
+        let fixed_expenses: Vec<(String, f64)> =
+            sqlx::query_as("SELECT label, amount FROM fixed_expenses WHERE user_id = ?")
+                .bind(user_id)
+                .fetch_all(pool)
+                .await
+                .unwrap_or_default();
+
+        for (label, amount) in fixed_expenses {
+            sqlx::query(
+                "INSERT INTO monthly_fixed_expenses (month_id, label, amount) VALUES (?, ?, ?)",
+            )
+            .bind(month_id)
+            .bind(&label)
+            .bind(amount)
+            .execute(pool)
+            .await
+            .ok();
+        }
+
+        // Copy current savings values to this month
+        let user_savings: Option<(f64, f64, f64)> = sqlx::query_as(
+            "SELECT savings, retirement_savings, savings_goal FROM users WHERE id = ?",
+        )
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .unwrap_or(None);
+
+        if let Some((savings, retirement_savings, savings_goal)) = user_savings {
+            sqlx::query(
+                "INSERT INTO monthly_savings (month_id, savings, retirement_savings, savings_goal) VALUES (?, ?, ?, ?)",
+            )
+            .bind(month_id)
+            .bind(savings)
+            .bind(retirement_savings)
+            .bind(savings_goal)
+            .execute(pool)
+            .await
+            .ok();
+        }
+    }
+
     Ok(())
 }

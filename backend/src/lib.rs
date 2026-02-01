@@ -16,7 +16,8 @@ use sqlx::SqlitePool;
 use tower_http::cors::{Any, CorsLayer};
 
 use handlers::{
-    auth, budget, export, fixed_expenses, health, income, items, months, savings, stats,
+    auth, budget, export, fixed_expenses, health, income, items, monthly_data, months, savings,
+    stats,
 };
 use middleware::auth::auth_middleware;
 
@@ -44,6 +45,22 @@ pub fn create_app(pool: SqlitePool) -> Router {
         .route("/api/months/{id}/close", post(months::close_month))
         .route("/api/months/{id}/reopen", post(months::reopen_month))
         .route("/api/months/{id}/pdf", get(months::get_month_pdf))
+        .route(
+            "/api/months/{month_id}/fixed-expenses",
+            post(monthly_data::create_monthly_fixed_expense),
+        )
+        .route(
+            "/api/months/{month_id}/fixed-expenses/{id}",
+            put(monthly_data::update_monthly_fixed_expense),
+        )
+        .route(
+            "/api/months/{month_id}/fixed-expenses/{id}",
+            delete(monthly_data::delete_monthly_fixed_expense),
+        )
+        .route(
+            "/api/months/{month_id}/savings",
+            put(monthly_data::update_monthly_savings),
+        )
         .route(
             "/api/fixed-expenses",
             get(fixed_expenses::list_fixed_expenses),

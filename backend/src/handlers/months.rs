@@ -10,7 +10,8 @@ use utoipa::ToSchema;
 use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{
-    FixedExpense, IncomeEntry, ItemWithCategory, Month, MonthSummary, MonthlyBudgetWithCategory,
+    IncomeEntry, ItemWithCategory, Month, MonthSummary, MonthlyBudgetWithCategory,
+    MonthlyFixedExpense, MonthlySavings,
 };
 use crate::pdf;
 
@@ -115,6 +116,40 @@ pub async fn create_month(
                 .ok();
             }
 
+            let fixed_expenses: Vec<(String, f64)> =
+                sqlx::query_as("SELECT label, amount FROM fixed_expenses WHERE user_id = ?")
+                    .bind(claims.sub)
+                    .fetch_all(&pool)
+                    .await?;
+
+            for (label, amount) in fixed_expenses {
+                sqlx::query(
+                    "INSERT INTO monthly_fixed_expenses (month_id, label, amount) VALUES (?, ?, ?)",
+                )
+                .bind(id)
+                .bind(label)
+                .bind(amount)
+                .execute(&pool)
+                .await?;
+            }
+
+            let (savings, retirement_savings, savings_goal): (f64, f64, f64) = sqlx::query_as(
+                "SELECT savings, retirement_savings, savings_goal FROM users WHERE id = ?",
+            )
+            .bind(claims.sub)
+            .fetch_one(&pool)
+            .await?;
+
+            sqlx::query(
+                "INSERT INTO monthly_savings (month_id, savings, retirement_savings, savings_goal) VALUES (?, ?, ?, ?)",
+            )
+            .bind(id)
+            .bind(savings)
+            .bind(retirement_savings)
+            .bind(savings_goal)
+            .execute(&pool)
+            .await?;
+
             Month {
                 id,
                 user_id: claims.sub,
@@ -188,6 +223,40 @@ pub async fn get_or_create_current_month(
                 .ok();
             }
 
+            let fixed_expenses: Vec<(String, f64)> =
+                sqlx::query_as("SELECT label, amount FROM fixed_expenses WHERE user_id = ?")
+                    .bind(claims.sub)
+                    .fetch_all(&pool)
+                    .await?;
+
+            for (label, amount) in fixed_expenses {
+                sqlx::query(
+                    "INSERT INTO monthly_fixed_expenses (month_id, label, amount) VALUES (?, ?, ?)",
+                )
+                .bind(id)
+                .bind(label)
+                .bind(amount)
+                .execute(&pool)
+                .await?;
+            }
+
+            let (savings, retirement_savings, savings_goal): (f64, f64, f64) = sqlx::query_as(
+                "SELECT savings, retirement_savings, savings_goal FROM users WHERE id = ?",
+            )
+            .bind(claims.sub)
+            .fetch_one(&pool)
+            .await?;
+
+            sqlx::query(
+                "INSERT INTO monthly_savings (month_id, savings, retirement_savings, savings_goal) VALUES (?, ?, ?, ?)",
+            )
+            .bind(id)
+            .bind(savings)
+            .bind(retirement_savings)
+            .bind(savings_goal)
+            .execute(&pool)
+            .await?;
+
             Month {
                 id,
                 user_id: claims.sub,
@@ -235,7 +304,7 @@ pub async fn get_month(
 
 async fn get_month_summary(
     pool: &SqlitePool,
-    user_id: i64,
+    _user_id: i64,
     month_id: i64,
 ) -> Result<Json<MonthSummary>, PaymeError> {
     let month: Month = sqlx::query_as(
@@ -251,10 +320,17 @@ async fn get_month_summary(
             .fetch_all(pool)
             .await?;
 
-    let fixed_expenses: Vec<FixedExpense> =
-        sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ?")
-            .bind(user_id)
-            .fetch_all(pool)
+    let fixed_expenses: Vec<MonthlyFixedExpense> = sqlx::query_as(
+        "SELECT id, month_id, label, amount FROM monthly_fixed_expenses WHERE month_id = ?",
+    )
+    .bind(month_id)
+    .fetch_all(pool)
+    .await?;
+
+    let savings: Option<MonthlySavings> =
+        sqlx::query_as("SELECT id, month_id, savings, retirement_savings, savings_goal FROM monthly_savings WHERE month_id = ?")
+            .bind(month_id)
+            .fetch_optional(pool)
             .await?;
 
     let budgets: Vec<MonthlyBudgetWithCategory> =
@@ -326,6 +402,7 @@ async fn get_month_summary(
         fixed_expenses,
         budgets,
         items,
+        savings,
         total_income,
         total_fixed,
         total_budgeted,
