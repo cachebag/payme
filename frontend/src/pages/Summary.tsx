@@ -22,6 +22,7 @@ import {
 
 interface SummaryPageProps {
   onBack: () => void;
+  onSettingsClick: () => void;
   initialMonthId?: number | null;
 }
 
@@ -35,7 +36,7 @@ const COLORS = [
   "#5a8e7d", "#8e6b5a", "#5a6b8e", "#8e8b5a", "#6b5a8e",
 ];
 
-export function SummaryPage({ onBack, initialMonthId }: SummaryPageProps) {
+export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: SummaryPageProps) {
   const { formatCurrency } = useCurrency();
   const [viewMode, setViewMode] = useState<"month" | "year">("month");
   const [loading, setLoading] = useState(true);
@@ -174,7 +175,7 @@ export function SummaryPage({ onBack, initialMonthId }: SummaryPageProps) {
     : 0;
 
   return (
-    <Layout>
+    <Layout onSettingsClick={onSettingsClick}>
       <div className="print:hidden mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <button

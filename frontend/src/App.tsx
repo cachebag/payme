@@ -13,6 +13,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryMonthId, setSummaryMonthId] = useState<number | null>(null);
+  const [settingsFrom, setSettingsFrom] = useState<"dashboard" | "summary">("dashboard");
 
   if (loading) {
     return (
@@ -31,13 +32,27 @@ export default function App() {
   }
 
   if (showSettings) {
-    return <Settings onBack={() => setShowSettings(false)} />;
+    return (
+      <Settings
+        from={settingsFrom}
+        onBack={() => {
+          setShowSettings(false);
+          if (settingsFrom === "summary") {
+            setShowSummary(true);
+          }
+        }}
+      />
+    );
   }
 
   if (showSummary) {
     return (
       <SummaryPage
         onBack={() => setShowSummary(false)}
+        onSettingsClick={() => {
+          setSettingsFrom("summary");
+          setShowSettings(true);
+        }}
         initialMonthId={summaryMonthId}
       />
     );
@@ -45,7 +60,10 @@ export default function App() {
 
   return (
     <Dashboard
-      onSettingsClick={() => setShowSettings(true)}
+      onSettingsClick={() => {
+        setSettingsFrom("dashboard");
+        setShowSettings(true);
+      }}
       onSummaryClick={(monthId) => {
         setSummaryMonthId(monthId ?? null);
         setShowSummary(true);
