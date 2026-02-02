@@ -177,6 +177,70 @@ pub struct UpdateMonthlySavings {
 }
 
 #[utoipa::path(
+    get,
+    path = "/api/months/{month_id}/savings",
+    params(("month_id" = i64, Path, description = "Month ID")),
+    responses(
+        (status = 200, body = MonthlySavings),
+        (status = 404, description = "Month not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Get monthly savings snapshot",
+    description = "Retrieves the savings values for a specific month."
+)]
+pub async fn get_monthly_savings(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(month_id): Path<i64>,
+) -> Result<Json<MonthlySavings>, PaymeError> {
+    let _: (i64,) = sqlx::query_as("SELECT id FROM months WHERE id = ? AND user_id = ?")
+        .bind(month_id)
+        .bind(claims.sub)
+        .fetch_optional(&pool)
+        .await?
+        .ok_or(PaymeError::NotFound)?;
+
+    let existing: Option<MonthlySavings> = sqlx::query_as(
+        "SELECT id, month_id, savings, retirement_savings, savings_goal FROM monthly_savings WHERE month_id = ?",
+    )
+    .bind(month_id)
+    .fetch_optional(&pool)
+    .await?;
+
+    match existing {
+        Some(savings) => Ok(Json(savings)),
+        None => {
+            // If no monthly savings exist yet, create one with defaults from user
+            let (savings, retirement_savings, savings_goal): (f64, f64, f64) = sqlx::query_as(
+                "SELECT savings, retirement_savings, savings_goal FROM users WHERE id = ?",
+            )
+            .bind(claims.sub)
+            .fetch_one(&pool)
+            .await?;
+
+            let id: i64 = sqlx::query_scalar(
+                "INSERT INTO monthly_savings (month_id, savings, retirement_savings, savings_goal) VALUES (?, ?, ?, ?) RETURNING id",
+            )
+            .bind(month_id)
+            .bind(savings)
+            .bind(retirement_savings)
+            .bind(savings_goal)
+            .fetch_one(&pool)
+            .await?;
+
+            Ok(Json(MonthlySavings {
+                id,
+                month_id,
+                savings,
+                retirement_savings,
+                savings_goal,
+            }))
+        }
+    }
+}
+
+#[utoipa::path(
     put,
     path = "/api/months/{month_id}/savings",
     params(("month_id" = i64, Path, description = "Month ID")),

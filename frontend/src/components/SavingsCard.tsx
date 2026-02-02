@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Vault, Pencil, Check, X, Info } from "lucide-react";
-import { api } from "../api/client";
+import { api, MonthlySavings } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { ProgressBar } from "./ui/ProgressBar";
@@ -9,13 +9,16 @@ import { Button } from "./ui/Button";
 import { useCurrency } from "../context/CurrencyContext";
 
 interface SavingsCardProps {
+  monthId: number;
+  initialSavings?: MonthlySavings | null;
+  isReadOnly?: boolean;
   onSavingsChange?: (savings: number) => void;
   refreshTrigger?: number;
 }
 
-export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProps) {
-  const [savings, setSavings] = useState<number>(0);
-  const [savingsGoal, setSavingsGoal] = useState<number>(0);
+export function SavingsCard({ monthId, initialSavings, isReadOnly, onSavingsChange, refreshTrigger }: SavingsCardProps) {
+  const [savings, setSavings] = useState<number>(initialSavings?.savings ?? 0);
+  const [savingsGoal, setSavingsGoal] = useState<number>(initialSavings?.savings_goal ?? 0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [editGoalValue, setEditGoalValue] = useState("");
@@ -25,14 +28,23 @@ export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProp
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
-    api.savings.get().then((res) => {
-      setSavings(res.savings);
-      setSavingsGoal(res.savings_goal);
-      onSavingsChange?.(res.savings);
-    });
-  }, [onSavingsChange, refreshTrigger]);
+    // If we have initial savings data from the month summary, use it
+    if (initialSavings) {
+      setSavings(initialSavings.savings);
+      setSavingsGoal(initialSavings.savings_goal);
+      onSavingsChange?.(initialSavings.savings);
+    } else {
+      // Otherwise fetch month-specific savings
+      api.monthlySavings.get(monthId).then((res) => {
+        setSavings(res.savings);
+        setSavingsGoal(res.savings_goal);
+        onSavingsChange?.(res.savings);
+      });
+    }
+  }, [monthId, initialSavings, onSavingsChange, refreshTrigger]);
 
   const startEdit = () => {
+    if (isReadOnly) return;
     setEditValue(savings.toString());
     setIsEditing(true);
   };
@@ -45,13 +57,14 @@ export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProp
   const saveEdit = async () => {
     const value = parseFloat(editValue);
     if (isNaN(value)) return;
-    await api.savings.update(value);
+    await api.monthlySavings.update(monthId, { savings: value });
     setSavings(value);
     onSavingsChange?.(value);
     setIsEditing(false);
   };
 
   const startEditGoal = () => {
+    if (isReadOnly) return;
     setEditGoalValue(savingsGoal.toString());
     setIsEditingGoal(true);
   };
@@ -64,7 +77,7 @@ export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProp
   const saveEditGoal = async () => {
     const value = parseFloat(editGoalValue);
     if (isNaN(value) || value < 0) return;
-    await api.savings.updateGoal(value);
+    await api.monthlySavings.update(monthId, { savings_goal: value });
     setSavingsGoal(value);
     setIsEditingGoal(false);
   };
@@ -188,10 +201,20 @@ export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProp
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200 mb-2">
+            Monthly Savings Snapshot
+          </h3>
+          <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            Each month tracks its own savings balance and goal. When you create a new month, it starts with your current savings values, 
+            but changes won't affect other months.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200 mb-2">
             Current Savings
           </h3>
           <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
-            Your actual savings balance. Update this anytime as you add or withdraw money.
+            Your savings balance for this specific month. Update it to track your progress over time.
           </p>
         </div>
 
@@ -200,7 +223,7 @@ export function SavingsCard({ onSavingsChange, refreshTrigger }: SavingsCardProp
             Savings Goal
           </h3>
           <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mb-2">
-            Set your own target amount. You can set any amount, including zero if you don't want to track a specific goal.
+            Set a target amount for this month. You can adjust goals month-by-month as your targets change.
           </p>
           <p className="text-sm text-charcoal-600 dark:text-charcoal-300">
             The progress bar will only show when you have a goal set (greater than 0).

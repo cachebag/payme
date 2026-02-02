@@ -59,6 +59,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
         )
         .route(
             "/api/months/{month_id}/savings",
+            get(monthly_data::get_monthly_savings),
+        )
+        .route(
+            "/api/months/{month_id}/savings",
             put(monthly_data::update_monthly_savings),
         )
         .route(

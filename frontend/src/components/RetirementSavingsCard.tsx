@@ -1,22 +1,34 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, Pencil, Check, X } from "lucide-react";
-import { api } from "../api/client";
+import { api, MonthlySavings } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { useCurrency } from "../context/CurrencyContext";
 
-export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: number }) {
-  const [amount, setAmount] = useState<number>(0);
+interface RetirementSavingsCardProps {
+  monthId: number;
+  initialSavings?: MonthlySavings | null;
+  isReadOnly?: boolean;
+  refreshTrigger?: number;
+}
+
+export function RetirementSavingsCard({ monthId, initialSavings, isReadOnly, refreshTrigger }: RetirementSavingsCardProps) {
+  const [amount, setAmount] = useState<number>(initialSavings?.retirement_savings ?? 0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
 
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
-    api.retirementSavings.get().then((res) => setAmount(res.retirement_savings));
-  }, [refreshTrigger]);
+    if (initialSavings) {
+      setAmount(initialSavings.retirement_savings);
+    } else {
+      api.monthlySavings.get(monthId).then((res) => setAmount(res.retirement_savings));
+    }
+  }, [monthId, initialSavings, refreshTrigger]);
 
   const startEdit = () => {
+    if (isReadOnly) return;
     setEditValue(amount.toString());
     setIsEditing(true);
   };
@@ -29,7 +41,7 @@ export function RetirementSavingsCard({ refreshTrigger }: { refreshTrigger?: num
   const saveEdit = async () => {
     const value = parseFloat(editValue);
     if (isNaN(value)) return;
-    await api.retirementSavings.update(value);
+    await api.monthlySavings.update(monthId, { retirement_savings: value });
     setAmount(value);
     setIsEditing(false);
   };

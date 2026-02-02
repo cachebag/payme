@@ -200,6 +200,19 @@ export const api = {
       }),
   },
 
+  monthlySavings: {
+    get: (monthId: number) =>
+      request<MonthlySavings>(`/months/${monthId}/savings`),
+    update: (
+      monthId: number,
+      data: { savings?: number; retirement_savings?: number; savings_goal?: number }
+    ) =>
+      request<MonthlySavings>(`/months/${monthId}/savings`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+  },
+
   retirementSavings: {
     get: () => request<{ retirement_savings: number }>("/retirement-savings"),
     update: (retirement_savings: number) =>
@@ -286,12 +299,21 @@ export interface ItemWithCategory extends Item {
   category_label: string;
 }
 
+export interface MonthlySavings {
+  id: number;
+  month_id: number;
+  savings: number;
+  retirement_savings: number;
+  savings_goal: number;
+}
+
 export interface MonthSummary {
   month: Month;
   income_entries: IncomeEntry[];
   fixed_expenses: FixedExpense[];
   budgets: MonthlyBudgetWithCategory[];
   items: ItemWithCategory[];
+  savings: MonthlySavings | null;
   total_income: number;
   total_fixed: number;
   total_budgeted: number;

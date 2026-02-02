@@ -83,11 +83,21 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
           totalFixed={summary.total_fixed}
           totalSpent={summary.total_spent}
           remaining={summary.remaining}
-          extraCard={<RetirementSavingsCard refreshTrigger={refreshTrigger} />}
+          extraCard={
+            <RetirementSavingsCard 
+              monthId={summary.month.id}
+              initialSavings={summary.savings}
+              isReadOnly={isReadOnly}
+              refreshTrigger={refreshTrigger} 
+            />
+          }
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <SavingsCard 
+            monthId={summary.month.id}
+            initialSavings={summary.savings}
+            isReadOnly={isReadOnly}
             refreshTrigger={refreshTrigger}
           />
           <CustomSavingsGoals />
