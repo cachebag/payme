@@ -28,19 +28,14 @@ export function SavingsCard({ monthId, initialSavings, isReadOnly, onSavingsChan
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
-    // If we have initial savings data from the month summary, use it
     if (initialSavings) {
-      setSavings(initialSavings.savings);
-      setSavingsGoal(initialSavings.savings_goal);
-      onSavingsChange?.(initialSavings.savings);
-    } else {
-      // Otherwise fetch month-specific savings
-      api.monthlySavings.get(monthId).then((res) => {
-        setSavings(res.savings);
-        setSavingsGoal(res.savings_goal);
-        onSavingsChange?.(res.savings);
-      });
+      return;
     }
+    api.monthlySavings.get(monthId).then((res) => {
+      setSavings(res.savings);
+      setSavingsGoal(res.savings_goal);
+      onSavingsChange?.(res.savings);
+    });
   }, [monthId, initialSavings, onSavingsChange, refreshTrigger]);
 
   const startEdit = () => {

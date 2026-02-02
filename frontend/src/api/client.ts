@@ -213,6 +213,21 @@ export const api = {
       }),
   },
 
+  monthlyFixedExpenses: {
+    create: (monthId: number, data: { label: string; amount: number }) =>
+      request<MonthlyFixedExpense>(`/months/${monthId}/fixed-expenses`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (monthId: number, id: number, data: { label?: string; amount?: number }) =>
+      request<MonthlyFixedExpense>(`/months/${monthId}/fixed-expenses/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (monthId: number, id: number) =>
+      request<void>(`/months/${monthId}/fixed-expenses/${id}`, { method: "DELETE" }),
+  },
+
   retirementSavings: {
     get: () => request<{ retirement_savings: number }>("/retirement-savings"),
     update: (retirement_savings: number) =>
@@ -251,6 +266,13 @@ export interface Month {
 export interface FixedExpense {
   id: number;
   user_id: number;
+  label: string;
+  amount: number;
+}
+
+export interface MonthlyFixedExpense {
+  id: number;
+  month_id: number;
   label: string;
   amount: number;
 }
@@ -310,7 +332,7 @@ export interface MonthlySavings {
 export interface MonthSummary {
   month: Month;
   income_entries: IncomeEntry[];
-  fixed_expenses: FixedExpense[];
+  fixed_expenses: MonthlyFixedExpense[];
   budgets: MonthlyBudgetWithCategory[];
   items: ItemWithCategory[];
   savings: MonthlySavings | null;

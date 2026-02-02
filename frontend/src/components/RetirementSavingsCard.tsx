@@ -21,10 +21,9 @@ export function RetirementSavingsCard({ monthId, initialSavings, isReadOnly, ref
 
   useEffect(() => {
     if (initialSavings) {
-      setAmount(initialSavings.retirement_savings);
-    } else {
-      api.monthlySavings.get(monthId).then((res) => setAmount(res.retirement_savings));
+      return;
     }
+    api.monthlySavings.get(monthId).then((res) => setAmount(res.retirement_savings));
   }, [monthId, initialSavings, refreshTrigger]);
 
   const startEdit = () => {

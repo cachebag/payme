@@ -84,7 +84,8 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
           totalSpent={summary.total_spent}
           remaining={summary.remaining}
           extraCard={
-            <RetirementSavingsCard 
+            <RetirementSavingsCard
+              key={summary.month.id}
               monthId={summary.month.id}
               initialSavings={summary.savings}
               isReadOnly={isReadOnly}
@@ -94,7 +95,8 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SavingsCard 
+          <SavingsCard
+            key={summary.month.id}
             monthId={summary.month.id}
             initialSavings={summary.savings}
             isReadOnly={isReadOnly}
@@ -111,7 +113,9 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
             onUpdate={refresh}
           />
           <FixedExpenses
+            monthId={summary.month.id}
             expenses={summary.fixed_expenses}
+            isReadOnly={isReadOnly}
             onUpdate={refresh}
           />
           <BudgetSection

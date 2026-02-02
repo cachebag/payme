@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Plus, Trash2, Edit2, Check, X, Settings } from "lucide-react";
-import { FixedExpense, api } from "../api/client";
+import { MonthlyFixedExpense, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
@@ -8,11 +8,13 @@ import { Modal } from "./ui/Modal";
 import { useCurrency } from "../context/CurrencyContext";
 
 interface FixedExpensesProps {
-  expenses: FixedExpense[];
+  monthId: number;
+  expenses: MonthlyFixedExpense[];
+  isReadOnly?: boolean;
   onUpdate: () => void;
 }
 
-export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
+export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: FixedExpensesProps) {
   const { formatCurrency } = useCurrency();
   const [isManaging, setIsManaging] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -22,7 +24,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
 
   const handleAdd = async () => {
     if (!label || !amount) return;
-    await api.fixedExpenses.create({ label, amount: parseFloat(amount) });
+    await api.monthlyFixedExpenses.create(monthId, { label, amount: parseFloat(amount) });
     setLabel("");
     setAmount("");
     setIsAdding(false);
@@ -31,7 +33,7 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
 
   const handleUpdate = async (id: number) => {
     if (!label || !amount) return;
-    await api.fixedExpenses.update(id, { label, amount: parseFloat(amount) });
+    await api.monthlyFixedExpenses.update(monthId, id, { label, amount: parseFloat(amount) });
     setEditingId(null);
     setLabel("");
     setAmount("");
@@ -39,11 +41,12 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
   };
 
   const handleDelete = async (id: number) => {
-    await api.fixedExpenses.delete(id);
+    await api.monthlyFixedExpenses.delete(monthId, id);
     await onUpdate();
   };
 
-  const startEdit = (expense: FixedExpense) => {
+  const startEdit = (expense: MonthlyFixedExpense) => {
+    if (isReadOnly) return;
     setEditingId(expense.id);
     setLabel(expense.label);
     setAmount(expense.amount.toString());
@@ -65,12 +68,14 @@ export function FixedExpenses({ expenses, onUpdate }: FixedExpensesProps) {
           <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
             Fixed Expenses
           </h3>
-          <button
-            onClick={() => setIsManaging(true)}
-            className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
-          >
-            <Settings size={16} />
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setIsManaging(true)}
+              className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
+            >
+              <Settings size={16} />
+            </button>
+          )}
         </div>
 
         <div className="space-y-2">
