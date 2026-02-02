@@ -18,7 +18,7 @@ interface SettingsProps {
 export function Settings({ onBack, from = "dashboard" }: SettingsProps) {
   const { user, logout, updateUsername } = useAuth();
   const { currency, setCurrency, formatCurrency } = useCurrency();
-  const { transfersEnabled, setTransfersEnabled } = useUIPreferences();
+  const { transfersEnabled, setTransfersEnabled, retirementBreakdownEnabled, setRetirementBreakdownEnabled } = useUIPreferences();
   const [newUsername, setNewUsername] = useState(user?.username || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -39,6 +39,7 @@ export function Settings({ onBack, from = "dashboard" }: SettingsProps) {
   const [currencySuccess, setCurrencySuccess] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(currency.code);
   const [showTransfersModal, setShowTransfersModal] = useState(false);
+  const [showRetirementBreakdownModal, setShowRetirementBreakdownModal] = useState(false);
 
 
   const handleChangeUsername = async (e: React.FormEvent) => {
@@ -195,6 +196,47 @@ export function Settings({ onBack, from = "dashboard" }: SettingsProps) {
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                       transfersEnabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-sand-100 dark:bg-charcoal-900 p-4 sm:p-6 border border-sand-200 dark:border-charcoal-800">
+            <h2 className="text-base sm:text-lg font-medium mb-4 text-charcoal-800 dark:text-sand-100">
+              Retirement Savings Breakdown
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-sm font-medium text-charcoal-700 dark:text-sand-300">
+                      Enable Retirement Breakdown
+                    </label>
+                    <button
+                      onClick={() => setShowRetirementBreakdownModal(true)}
+                      className="p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors touch-manipulation"
+                      title="How to use retirement breakdown"
+                    >
+                      <Info size={14} className="text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
+                    Track and view breakdown of retirement savings
+                  </p>
+                </div>
+                <button
+                  onClick={() => setRetirementBreakdownEnabled(!retirementBreakdownEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    retirementBreakdownEnabled
+                      ? "bg-sage-600 dark:bg-sage-500"
+                      : "bg-charcoal-300 dark:bg-charcoal-600"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      retirementBreakdownEnabled ? "translate-x-6" : "translate-x-1"
                     }`}
                   />
                 </button>
@@ -422,6 +464,58 @@ export function Settings({ onBack, from = "dashboard" }: SettingsProps) {
           <div className="flex gap-2 pt-4">
             <Button
               onClick={() => setShowTransfersModal(false)}
+              className="w-full"
+            >
+              Got it
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showRetirementBreakdownModal} onClose={() => setShowRetirementBreakdownModal(false)}>
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-charcoal-800 dark:text-sand-100">
+            How to Use Retirement Savings Breakdown
+          </h2>
+          
+          <div className="space-y-3 text-sm text-charcoal-600 dark:text-charcoal-300">
+            <div>
+              <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">What is the retirement breakdown?</p>
+              <p>A detailed breakdown of what makes up your total retirement savings amount. Track different accounts or sources (pension plans, investment accounts, savings accounts, etc.) and see exactly how your retirement funds are composed.</p>
+            </div>
+            
+            <div>
+              <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">Enable/Disable behavior:</p>
+              <ul className="space-y-1">
+                <li><span className="font-medium">When enabled:</span> You can add, edit, and delete breakdown items. The card is always visible.</li>
+                <li><span className="font-medium">When disabled:</span> View only. Card hides once all entries are deleted.</li>
+              </ul>
+            </div>
+            
+            <div>
+              <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">When to use:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Track your pension plans, retirement accounts, and investment portfolios</li>
+                <li>Monitor the composition of your total retirement savings</li>
+                <li>Keep a detailed record of where your retirement funds are allocated</li>
+              </ul>
+            </div>
+            
+            <div>
+              <p className="font-medium text-charcoal-700 dark:text-sand-300 mb-1">How to add a breakdown item:</p>
+              <ol className="list-decimal list-inside space-y-1 text-xs">
+                <li>Open the "Retirement Savings Breakdown" card on the dashboard</li>
+                <li>Click the <span className="inline-block">+</span> button to create an entry</li>
+                <li>Enter the account/source label (e.g., "Pension", "Investment Account", "Savings")</li>
+                <li>Enter the amount in that account</li>
+                <li>Click confirm</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              onClick={() => setShowRetirementBreakdownModal(false)}
               className="w-full"
             >
               Got it

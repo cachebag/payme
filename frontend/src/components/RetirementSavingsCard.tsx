@@ -1,33 +1,56 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, Pencil, Check, X } from "lucide-react";
-import { api, MonthlySavings } from "../api/client";
+import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { useCurrency } from "../context/CurrencyContext";
 
+interface BreakdownItem {
+  id: string;
+  label: string;
+  amount: number;
+}
+
+const STORAGE_KEY = "retirementBreakdown";
+
 interface RetirementSavingsCardProps {
-  monthId: number;
-  initialSavings?: MonthlySavings | null;
-  isReadOnly?: boolean;
+  monthId?: number;
   refreshTrigger?: number;
 }
 
-export function RetirementSavingsCard({ monthId, initialSavings, isReadOnly, refreshTrigger }: RetirementSavingsCardProps) {
-  const [amount, setAmount] = useState<number>(initialSavings?.retirement_savings ?? 0);
+export function RetirementSavingsCard({ refreshTrigger }: RetirementSavingsCardProps) {
+  const [amount, setAmount] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+  const [breakdownItems, setBreakdownItems] = useState<BreakdownItem[]>([]);
 
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
-    if (initialSavings) {
-      return;
+    api.retirementSavings.get().then((res) => setAmount(res.retirement_savings));
+  }, [refreshTrigger]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setBreakdownItems(JSON.parse(stored));
+      } catch {
+        setBreakdownItems([]);
+      }
     }
-    api.monthlySavings.get(monthId).then((res) => setAmount(res.retirement_savings));
-  }, [monthId, initialSavings, refreshTrigger]);
+  }, []);
+
+  useEffect(() => {
+    const handleBreakdownUpdate = (event: CustomEvent) => {
+      setBreakdownItems(event.detail);
+    };
+
+    window.addEventListener("retirementBreakdownUpdated" as any, handleBreakdownUpdate);
+    return () => window.removeEventListener("retirementBreakdownUpdated" as any, handleBreakdownUpdate);
+  }, []);
 
   const startEdit = () => {
-    if (isReadOnly) return;
     setEditValue(amount.toString());
     setIsEditing(true);
   };
@@ -40,10 +63,13 @@ export function RetirementSavingsCard({ monthId, initialSavings, isReadOnly, ref
   const saveEdit = async () => {
     const value = parseFloat(editValue);
     if (isNaN(value)) return;
-    await api.monthlySavings.update(monthId, { retirement_savings: value });
+    await api.retirementSavings.update(value);
     setAmount(value);
     setIsEditing(false);
   };
+
+  const breakdownTotal = breakdownItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalAmount = amount + breakdownTotal;
 
   return (
     <Card>
@@ -77,7 +103,7 @@ export function RetirementSavingsCard({ monthId, initialSavings, isReadOnly, ref
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-xl font-semibold text-sage-600 dark:text-sage-400">
-                {formatCurrency(amount)}
+                {formatCurrency(totalAmount)}
               </span>
               <button
                 onClick={startEdit}
