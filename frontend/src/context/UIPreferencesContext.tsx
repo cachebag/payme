@@ -3,6 +3,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 interface UIPreferencesContextType {
   transfersEnabled: boolean;
   setTransfersEnabled: (enabled: boolean) => void;
+  retirementBreakdownEnabled: boolean;
+  setRetirementBreakdownEnabled: (enabled: boolean) => void;
 }
 
 const UIPreferencesContext = createContext<UIPreferencesContextType | undefined>(undefined);
@@ -20,7 +22,20 @@ export function UIPreferencesProvider({ children }: { children: ReactNode }) {
         return true;
       }
     }
-    return true; // Default: transfers enabled
+    return true;
+  });
+
+  const [retirementBreakdownEnabled, setRetirementBreakdownEnabledState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const prefs = JSON.parse(stored);
+        return prefs.retirementBreakdownEnabled ?? false;
+      } catch {
+        return false;
+      }
+    }
+    return false;
   });
 
   const setTransfersEnabled = (enabled: boolean) => {
@@ -30,8 +45,15 @@ export function UIPreferencesProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...prefs, transfersEnabled: enabled }));
   };
 
+  const setRetirementBreakdownEnabled = (enabled: boolean) => {
+    setRetirementBreakdownEnabledState(enabled);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const prefs = stored ? JSON.parse(stored) : {};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...prefs, retirementBreakdownEnabled: enabled }));
+  };
+
   return (
-    <UIPreferencesContext.Provider value={{ transfersEnabled, setTransfersEnabled }}>
+    <UIPreferencesContext.Provider value={{ transfersEnabled, setTransfersEnabled, retirementBreakdownEnabled, setRetirementBreakdownEnabled }}>
       {children}
     </UIPreferencesContext.Provider>
   );

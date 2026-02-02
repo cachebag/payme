@@ -4,6 +4,7 @@ import { MonthNav } from "../components/MonthNav";
 import { Summary } from "../components/Summary";
 import { SavingsCard } from "../components/SavingsCard";
 import { RetirementSavingsCard } from "../components/RetirementSavingsCard";
+import { RetirementBreakdownCard } from "../components/RetirementBreakdownCard";
 import { CustomSavingsGoals } from "../components/CustomSavingsGoals";
 import { TransfersCard } from "../components/TransfersCard";
 import { VarianceModal } from "../components/VarianceModal";
@@ -85,10 +86,6 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
           remaining={summary.remaining}
           extraCard={
             <RetirementSavingsCard
-              key={summary.month.id}
-              monthId={summary.month.id}
-              initialSavings={summary.savings}
-              isReadOnly={isReadOnly}
               refreshTrigger={refreshTrigger} 
             />
           }
@@ -144,6 +141,10 @@ export function Dashboard({ onSettingsClick, onSummaryClick }: DashboardProps) {
             onUpdate={refresh}
           />
         )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RetirementBreakdownCard />
+        </div>
       </div>
 
       <footer className="mt-12 py-4 text-center text-xs text-charcoal-400 dark:text-charcoal-600">
