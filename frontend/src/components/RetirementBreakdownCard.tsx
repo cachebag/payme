@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
@@ -40,10 +40,13 @@ export function RetirementBreakdownCard() {
     window.dispatchEvent(new CustomEvent('retirementBreakdownUpdated', { detail: items }));
   };
 
+  const idPrefix = useId();
+  let idCounter = 0;
+
   const handleAdd = () => {
     if (!label || !amount) return;
     const newItem: BreakdownItem = {
-      id: Date.now().toString(),
+      id: `${idPrefix}-${++idCounter}`,
       label,
       amount: parseFloat(amount),
     };
