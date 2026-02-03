@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from "react";
+import { useState } from "react";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
@@ -17,22 +17,21 @@ const STORAGE_KEY = "retirementBreakdown";
 export function RetirementBreakdownCard() {
   const { formatCurrency } = useCurrency();
   const { retirementBreakdownEnabled } = useUIPreferences();
-  const [breakdownItems, setBreakdownItems] = useState<BreakdownItem[]>([]);
+  const [breakdownItems, setBreakdownItems] = useState<BreakdownItem[]>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setBreakdownItems(JSON.parse(stored));
-      } catch {
-        setBreakdownItems([]);
-      }
-    }
-  }, []);
 
   const saveItems = (items: BreakdownItem[]) => {
     setBreakdownItems(items);
@@ -40,13 +39,11 @@ export function RetirementBreakdownCard() {
     window.dispatchEvent(new CustomEvent('retirementBreakdownUpdated', { detail: items }));
   };
 
-  const idPrefix = useId();
-  let idCounter = 0;
-
   const handleAdd = () => {
     if (!label || !amount) return;
+    const generateId = () => Date.now().toString();
     const newItem: BreakdownItem = {
-      id: `${idPrefix}-${++idCounter}`,
+      id: generateId(),
       label,
       amount: parseFloat(amount),
     };
