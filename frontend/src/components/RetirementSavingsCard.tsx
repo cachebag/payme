@@ -22,7 +22,17 @@ export function RetirementSavingsCard({ refreshTrigger }: RetirementSavingsCardP
   const [amount, setAmount] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
-  const [breakdownItems, setBreakdownItems] = useState<BreakdownItem[]>([]);
+  const [breakdownItems, setBreakdownItems] = useState<BreakdownItem[]>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
 
   const { formatCurrency } = useCurrency();
 
@@ -31,23 +41,14 @@ export function RetirementSavingsCard({ refreshTrigger }: RetirementSavingsCardP
   }, [refreshTrigger]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setBreakdownItems(JSON.parse(stored));
-      } catch {
-        setBreakdownItems([]);
+    const handleBreakdownUpdate = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        setBreakdownItems(event.detail);
       }
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleBreakdownUpdate = (event: CustomEvent) => {
-      setBreakdownItems(event.detail);
     };
 
-    window.addEventListener("retirementBreakdownUpdated" as any, handleBreakdownUpdate);
-    return () => window.removeEventListener("retirementBreakdownUpdated" as any, handleBreakdownUpdate);
+    window.addEventListener("retirementBreakdownUpdated", handleBreakdownUpdate);
+    return () => window.removeEventListener("retirementBreakdownUpdated", handleBreakdownUpdate);
   }, []);
 
   const startEdit = () => {
