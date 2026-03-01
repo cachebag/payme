@@ -17,6 +17,23 @@ interface ItemsSectionProps {
 
 type SortField = "spent_on" | "description" | "category_label" | "amount";
 
+const SortIcon = ({
+  field,
+  sortField,
+  sortDirection,
+}: {
+  field: SortField;
+  sortField: SortField;
+  sortDirection: "asc" | "desc";
+}) => {
+  if (sortField !== field) return <ArrowUpDown size={14} className="ml-1 opacity-20" />;
+  return sortDirection === "asc" ? (
+    <ArrowUp size={14} className="ml-1 text-sage-600" />
+  ) : (
+    <ArrowDown size={14} className="ml-1 text-sage-600" />
+  );
+};
+
 export function ItemsSection({
   monthId,
   items,
@@ -113,28 +130,14 @@ export function ItemsSection({
         return matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
-        let aValue: any = a[sortField];
-        let bValue: any = b[sortField];
-
-        if (sortField === "amount") {
-          aValue = Number(aValue);
-          bValue = Number(bValue);
-        }
+        const aValue = a[sortField];
+        const bValue = b[sortField];
 
         if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
         if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
         return 0;
       });
   }, [items, sortField, sortDirection, filterCategory, searchQuery]);
-
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown size={14} className="ml-1 opacity-20" />;
-    return sortDirection === "asc" ? (
-      <ArrowUp size={14} className="ml-1 text-sage-600" />
-    ) : (
-      <ArrowDown size={14} className="ml-1 text-sage-600" />
-    );
-  };
 
   return (
     <Card className="col-span-full">
@@ -258,7 +261,7 @@ export function ItemsSection({
                 onClick={() => handleSort("spent_on")}
               >
                 <div className="flex items-center">
-                  Date <SortIcon field="spent_on" />
+                  Date <SortIcon field="spent_on" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -266,7 +269,7 @@ export function ItemsSection({
                 onClick={() => handleSort("description")}
               >
                 <div className="flex items-center">
-                  Description <SortIcon field="description" />
+                  Description <SortIcon field="description" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -274,7 +277,7 @@ export function ItemsSection({
                 onClick={() => handleSort("category_label")}
               >
                 <div className="flex items-center">
-                  Category <SortIcon field="category_label" />
+                  Category <SortIcon field="category_label" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -282,7 +285,7 @@ export function ItemsSection({
                 onClick={() => handleSort("amount")}
               >
                 <div className="flex items-center justify-end">
-                  Amount <SortIcon field="amount" />
+                  Amount <SortIcon field="amount" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               {!isReadOnly && <th className="w-16 md:w-20"></th>}
