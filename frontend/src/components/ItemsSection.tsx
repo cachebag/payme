@@ -361,7 +361,14 @@ export function ItemsSection({
                       </div>
                     </td>
                     <td className="py-2 px-1">
-                      <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 bg-sand-200 dark:bg-charcoal-800 text-charcoal-600 dark:text-sand-400 whitespace-nowrap">
+                      <span
+                        className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full border whitespace-nowrap"
+                        style={{
+                          backgroundColor: `${item.category_color}20`,
+                          color: item.category_color,
+                          borderColor: `${item.category_color}40`,
+                        }}
+                      >
                         {item.category_label}
                       </span>
                     </td>

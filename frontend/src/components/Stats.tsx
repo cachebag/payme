@@ -140,9 +140,15 @@ export function Stats() {
                       key={cat.category_id}
                       className="flex items-center justify-between py-2 border-b border-sand-200 dark:border-charcoal-700"
                     >
-                      <span className="text-sm text-charcoal-700 dark:text-sand-300">
-                        {cat.category_label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: cat.category_color }}
+                        />
+                        <span className="text-sm text-charcoal-700 dark:text-sand-300">
+                          {cat.category_label}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-charcoal-600 dark:text-charcoal-400">
                           {formatCurrency(cat.current_month_spent)}

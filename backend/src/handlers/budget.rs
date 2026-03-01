@@ -18,6 +18,7 @@ pub struct CreateCategory {
     pub label: String,
     #[validate(range(min = 0.0))]
     pub default_amount: f64,
+    pub color: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
@@ -26,6 +27,7 @@ pub struct UpdateCategory {
     pub label: Option<String>,
     #[validate(range(min = 0.0))]
     pub default_amount: Option<f64>,
+    pub color: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
@@ -50,7 +52,7 @@ pub async fn list_categories(
     axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<BudgetCategory>>, PaymeError> {
     let categories: Vec<BudgetCategory> = sqlx::query_as(
-        "SELECT id, user_id, label, default_amount FROM budget_categories WHERE user_id = ?",
+        "SELECT id, user_id, label, default_amount, color FROM budget_categories WHERE user_id = ?",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
@@ -77,12 +79,14 @@ pub async fn create_category(
     Json(payload): Json<CreateCategory>,
 ) -> Result<Json<BudgetCategory>, PaymeError> {
     payload.validate()?;
+    let color = payload.color.unwrap_or_else(|| "#71717a".to_string());
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO budget_categories (user_id, label, default_amount) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO budget_categories (user_id, label, default_amount, color) VALUES (?, ?, ?, ?) RETURNING id",
     )
     .bind(claims.sub)
     .bind(&payload.label)
     .bind(payload.default_amount)
+    .bind(&color)
     .fetch_one(&pool)
     .await?;
 
@@ -109,6 +113,7 @@ pub async fn create_category(
         user_id: claims.sub,
         label: payload.label,
         default_amount: payload.default_amount,
+        color,
     }))
 }
 
@@ -133,7 +138,7 @@ pub async fn update_category(
 ) -> Result<Json<BudgetCategory>, PaymeError> {
     payload.validate()?;
     let existing: BudgetCategory = sqlx::query_as(
-        "SELECT id, user_id, label, default_amount FROM budget_categories WHERE id = ? AND user_id = ?",
+        "SELECT id, user_id, label, default_amount, color FROM budget_categories WHERE id = ? AND user_id = ?",
     )
     .bind(category_id)
     .bind(claims.sub)
@@ -143,10 +148,12 @@ pub async fn update_category(
 
     let label = payload.label.unwrap_or(existing.label);
     let default_amount = payload.default_amount.unwrap_or(existing.default_amount);
+    let color = payload.color.unwrap_or(existing.color);
 
-    sqlx::query("UPDATE budget_categories SET label = ?, default_amount = ? WHERE id = ?")
+    sqlx::query("UPDATE budget_categories SET label = ?, default_amount = ?, color = ? WHERE id = ?")
         .bind(&label)
         .bind(default_amount)
+        .bind(&color)
         .bind(category_id)
         .execute(&pool)
         .await?;
@@ -156,6 +163,7 @@ pub async fn update_category(
         user_id: claims.sub,
         label,
         default_amount,
+        color,
     }))
 }
 

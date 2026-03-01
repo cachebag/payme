@@ -33,6 +33,7 @@ pub struct BudgetCategory {
     pub user_id: i64,
     pub label: String,
     pub default_amount: f64,
+    pub color: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
@@ -78,6 +79,7 @@ pub struct MonthlyBudgetWithCategory {
     pub month_id: i64,
     pub category_id: i64,
     pub category_label: String,
+    pub category_color: String,
     pub allocated_amount: f64,
     pub spent_amount: f64,
 }
@@ -103,6 +105,7 @@ pub struct ItemWithCategory {
     pub month_id: i64,
     pub category_id: i64,
     pub category_label: String,
+    pub category_color: String,
     pub description: String,
     pub amount: f64,
     pub spent_on: NaiveDate,
@@ -113,6 +116,7 @@ pub struct ItemWithCategory {
 pub struct CategoryStats {
     pub category_id: i64,
     pub category_label: String,
+    pub category_color: String,
     pub current_month_spent: f64,
     pub previous_month_spent: f64,
     pub change_amount: f64,

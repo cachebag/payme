@@ -65,12 +65,17 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
             user_id INTEGER NOT NULL,
             label TEXT NOT NULL,
             default_amount REAL NOT NULL,
+            color TEXT NOT NULL DEFAULT '#71717a',
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         "#,
     )
     .execute(pool)
     .await?;
+
+    let _ = sqlx::query("ALTER TABLE budget_categories ADD COLUMN color TEXT NOT NULL DEFAULT '#71717a'")
+        .execute(pool)
+        .await;
 
     sqlx::query(
         r#"
