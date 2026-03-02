@@ -73,9 +73,11 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
-    let _ = sqlx::query("ALTER TABLE budget_categories ADD COLUMN color TEXT NOT NULL DEFAULT '#71717a'")
-        .execute(pool)
-        .await;
+    let _ = sqlx::query(
+        "ALTER TABLE budget_categories ADD COLUMN color TEXT NOT NULL DEFAULT '#71717a'",
+    )
+    .execute(pool)
+    .await;
 
     sqlx::query(
         r#"
