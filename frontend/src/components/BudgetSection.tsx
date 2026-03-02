@@ -148,7 +148,7 @@ export function BudgetSection({
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-2 h-2 rounded-full"
+                        className="w-2 h-2 rounded-sm"
                         style={{ backgroundColor: budget.category_color }}
                       />
                       <span className="text-sm text-charcoal-700 dark:text-sand-300">
@@ -213,7 +213,7 @@ export function BudgetSection({
                       <button
                         key={c}
                         onClick={() => setColor(c)}
-                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                        className={`w-6 h-6 rounded-sm border-2 transition-all ${
                           color === c ? "border-charcoal-800 dark:border-sand-200 scale-110" : "border-transparent hover:scale-105"
                         }`}
                         style={{ backgroundColor: c }}
@@ -239,7 +239,7 @@ export function BudgetSection({
                 <div className="flex items-center justify-between py-2 border-b border-sand-200 dark:border-charcoal-800">
                   <div className="flex items-center gap-2">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 rounded-sm"
                       style={{ backgroundColor: cat.color }}
                     />
                     <span className="text-sm">{cat.label}</span>
@@ -290,7 +290,7 @@ export function BudgetSection({
                   <button
                     key={c}
                     onClick={() => setColor(c)}
-                    className={`w-6 h-6 rounded-full border-2 transition-all ${
+                    className={`w-6 h-6 rounded-sm border-2 transition-all ${
                       color === c ? "border-charcoal-800 dark:border-sand-200 scale-110" : "border-transparent hover:scale-105"
                     }`}
                     style={{ backgroundColor: c }}

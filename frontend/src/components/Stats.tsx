@@ -142,7 +142,7 @@ export function Stats() {
                     >
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-2.5 h-2.5 rounded-full"
+                          className="w-2.5 h-2.5 rounded-sm"
                           style={{ backgroundColor: cat.category_color }}
                         />
                         <span className="text-sm text-charcoal-700 dark:text-sand-300">
