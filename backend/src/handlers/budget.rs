@@ -150,13 +150,15 @@ pub async fn update_category(
     let default_amount = payload.default_amount.unwrap_or(existing.default_amount);
     let color = payload.color.unwrap_or(existing.color);
 
-    sqlx::query("UPDATE budget_categories SET label = ?, default_amount = ?, color = ? WHERE id = ?")
-        .bind(&label)
-        .bind(default_amount)
-        .bind(&color)
-        .bind(category_id)
-        .execute(&pool)
-        .await?;
+    sqlx::query(
+        "UPDATE budget_categories SET label = ?, default_amount = ?, color = ? WHERE id = ?",
+    )
+    .bind(&label)
+    .bind(default_amount)
+    .bind(&color)
+    .bind(category_id)
+    .execute(&pool)
+    .await?;
 
     Ok(Json(BudgetCategory {
         id: category_id,
