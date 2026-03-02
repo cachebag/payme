@@ -71,6 +71,7 @@ async fn run_migrations(pool: &SqlitePool) {
             user_id INTEGER NOT NULL,
             label TEXT NOT NULL,
             default_amount REAL NOT NULL,
+            color TEXT NOT NULL DEFAULT '#71717a',
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         "#,
@@ -260,11 +261,12 @@ pub async fn create_test_category(
     default_amount: f64,
 ) -> i64 {
     sqlx::query_scalar::<_, i64>(
-        "INSERT INTO budget_categories (user_id, label, default_amount) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO budget_categories (user_id, label, default_amount, color) VALUES (?, ?, ?, ?) RETURNING id",
     )
     .bind(user_id)
     .bind(label)
     .bind(default_amount)
+    .bind("#71717a")
     .fetch_one(pool)
     .await
     .expect("Failed to create test category")
