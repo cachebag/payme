@@ -334,9 +334,9 @@ async fn get_month_summary(
             .await?;
 
     let budgets: Vec<MonthlyBudgetWithCategory> =
-        sqlx::query_as::<_, (i64, i64, i64, String, f64)>(
+        sqlx::query_as::<_, (i64, i64, i64, String, String, f64)>(
             r#"
-        SELECT mb.id, mb.month_id, mb.category_id, bc.label, mb.allocated_amount
+        SELECT mb.id, mb.month_id, mb.category_id, bc.label, bc.color, mb.allocated_amount
         FROM monthly_budgets mb
         JOIN budget_categories bc ON mb.category_id = bc.id
         WHERE mb.month_id = ?
@@ -347,12 +347,13 @@ async fn get_month_summary(
         .await?
         .into_iter()
         .map(
-            |(id, month_id, category_id, category_label, allocated_amount)| {
+            |(id, month_id, category_id, category_label, category_color, allocated_amount)| {
                 MonthlyBudgetWithCategory {
                     id,
                     month_id,
                     category_id,
                     category_label,
+                    category_color,
                     allocated_amount,
                     spent_amount: 0.0,
                 }
@@ -362,7 +363,7 @@ async fn get_month_summary(
 
     let items: Vec<ItemWithCategory> = sqlx::query_as(
         r#"
-        SELECT i.id, i.month_id, i.category_id, bc.label as category_label, i.description, i.amount, i.spent_on, i.savings_destination
+        SELECT i.id, i.month_id, i.category_id, bc.label as category_label, bc.color as category_color, i.description, i.amount, i.spent_on, i.savings_destination
         FROM items i
         JOIN budget_categories bc ON i.category_id = bc.id
         WHERE i.month_id = ?

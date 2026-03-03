@@ -27,6 +27,7 @@ pub struct FixedExpenseExport {
 pub struct CategoryExport {
     pub label: String,
     pub default_amount: f64,
+    pub color: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -95,7 +96,7 @@ pub async fn export_json(
             .await?;
 
     let categories: Vec<BudgetCategory> = sqlx::query_as(
-        "SELECT id, user_id, label, default_amount FROM budget_categories WHERE user_id = ?",
+        "SELECT id, user_id, label, default_amount, color FROM budget_categories WHERE user_id = ?",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
@@ -188,6 +189,7 @@ pub async fn export_json(
             .map(|c| CategoryExport {
                 label: c.label,
                 default_amount: c.default_amount,
+                color: c.color,
             })
             .collect(),
         months: month_exports,
@@ -278,11 +280,12 @@ pub async fn import_json(
     let mut category_map: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
     for cat in &data.categories {
         let id: i64 = sqlx::query_scalar(
-            "INSERT INTO budget_categories (user_id, label, default_amount) VALUES (?, ?, ?) RETURNING id",
+            "INSERT INTO budget_categories (user_id, label, default_amount, color) VALUES (?, ?, ?, ?) RETURNING id",
         )
         .bind(claims.sub)
         .bind(&cat.label)
         .bind(cat.default_amount)
+        .bind(&cat.color)
         .fetch_one(&mut *tx)
         .await?;
         category_map.insert(cat.label.clone(), id);

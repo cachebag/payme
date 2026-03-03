@@ -60,8 +60,8 @@ async fn test_import_json() {
             {"label": "Internet", "amount": 80.0}
         ],
         "categories": [
-            {"label": "Food", "default_amount": 500.0},
-            {"label": "Transport", "default_amount": 200.0}
+            {"label": "Food", "default_amount": 500.0, "color": "#ef4444"},
+            {"label": "Transport", "default_amount": 200.0, "color": "#3b82f6"}
         ],
         "months": [
             {
@@ -162,7 +162,7 @@ async fn test_import_json_replaces_existing() {
             {"label": "New Expense", "amount": 200.0}
         ],
         "categories": [
-            {"label": "New Category", "default_amount": 300.0}
+            {"label": "New Category", "default_amount": 300.0, "color": "#71717a"}
         ],
         "months": []
     });
