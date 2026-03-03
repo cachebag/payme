@@ -92,12 +92,12 @@ export const api = {
 
   categories: {
     list: () => request<BudgetCategory[]>("/categories"),
-    create: (data: { label: string; default_amount: number }) =>
+    create: (data: { label: string; default_amount: number; color?: string }) =>
       request<BudgetCategory>("/categories", {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    update: (id: number, data: { label?: string; default_amount?: number }) =>
+    update: (id: number, data: { label?: string; default_amount?: number; color?: string }) =>
       request<BudgetCategory>(`/categories/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
@@ -282,6 +282,7 @@ export interface BudgetCategory {
   user_id: number;
   label: string;
   default_amount: number;
+  color: string;
 }
 
 export interface MonthlyBudget {
@@ -296,6 +297,7 @@ export interface MonthlyBudgetWithCategory {
   month_id: number;
   category_id: number;
   category_label: string;
+  category_color: string;
   allocated_amount: number;
   spent_amount: number;
 }
@@ -319,6 +321,7 @@ export interface Item {
 
 export interface ItemWithCategory extends Item {
   category_label: string;
+  category_color: string;
 }
 
 export interface MonthlySavings {
@@ -346,6 +349,7 @@ export interface MonthSummary {
 export interface CategoryStats {
   category_id: number;
   category_label: string;
+  category_color: string;
   current_month_spent: number;
   previous_month_spent: number;
   change_amount: number;

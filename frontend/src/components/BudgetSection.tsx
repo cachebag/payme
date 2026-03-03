@@ -30,22 +30,38 @@ export function BudgetSection({
   const [editingBudgetId, setEditingBudgetId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+  const [color, setColor] = useState("#71717a");
+
+  const PRESET_COLORS = [
+    "#71717a", // Zinc
+    "#ef4444", // Red
+    "#f97316", // Orange
+    "#f59e0b", // Amber
+    "#10b981", // Emerald
+    "#06b6d4", // Cyan
+    "#3b82f6", // Blue
+    "#6366f1", // Indigo
+    "#8b5cf6", // Violet
+    "#d946ef", // Fuchsia
+  ];
 
   const handleAddCategory = async () => {
     if (!label || !amount) return;
-    await api.categories.create({ label, default_amount: parseFloat(amount) });
+    await api.categories.create({ label, default_amount: parseFloat(amount), color });
     setLabel("");
     setAmount("");
+    setColor("#71717a");
     setIsAddingCategory(false);
     await onUpdate();
   };
 
   const handleUpdateCategory = async (id: number) => {
     if (!label || !amount) return;
-    await api.categories.update(id, { label, default_amount: parseFloat(amount) });
+    await api.categories.update(id, { label, default_amount: parseFloat(amount), color });
     setEditingCategoryId(null);
     setLabel("");
     setAmount("");
+    setColor("#71717a");
     await onUpdate();
   };
 
@@ -66,6 +82,7 @@ export function BudgetSection({
     setEditingCategoryId(cat.id);
     setLabel(cat.label);
     setAmount(cat.default_amount.toString());
+    setColor(cat.color);
   };
 
   const startEditBudget = (budget: MonthlyBudgetWithCategory) => {
@@ -78,6 +95,7 @@ export function BudgetSection({
     setEditingBudgetId(null);
     setLabel("");
     setAmount("");
+    setColor("#71717a");
     setIsAddingCategory(false);
   };
 
@@ -128,9 +146,15 @@ export function BudgetSection({
               ) : (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-charcoal-700 dark:text-sand-300">
-                      {budget.category_label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2 h-2 rounded-sm"
+                        style={{ backgroundColor: budget.category_color }}
+                      />
+                      <span className="text-sm text-charcoal-700 dark:text-sand-300">
+                        {budget.category_label}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
                         {formatCurrency(budget.spent_amount)} / {formatCurrency(budget.allocated_amount)}
@@ -166,38 +190,60 @@ export function BudgetSection({
           {categories.map((cat) => (
             <div key={cat.id}>
               {editingCategoryId === cat.id ? (
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Label"
-                      value={label}
-                      onChange={(e) => setLabel(e.target.value)}
-                    />
+                <div className="space-y-3 p-3 bg-sand-100 dark:bg-charcoal-900/50 rounded-lg">
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Label"
+                        value={label}
+                        onChange={(e) => setLabel(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        placeholder="Default"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="w-24">
-                    <Input
-                      type="number"
-                      placeholder="Default"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                    />
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setColor(c)}
+                        className={`w-6 h-6 rounded-sm border-2 transition-all ${
+                          color === c ? "border-charcoal-800 dark:border-sand-200 scale-110" : "border-transparent hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
                   </div>
-                  <button
-                    onClick={() => handleUpdateCategory(cat.id)}
-                    className="p-2 text-sage-600 hover:bg-sage-100 dark:hover:bg-charcoal-800"
-                  >
-                    <Check size={16} />
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="p-2 text-charcoal-500 hover:bg-sand-200 dark:hover:bg-charcoal-800"
-                  >
-                    <X size={16} />
-                  </button>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => handleUpdateCategory(cat.id)}
+                      className="p-2 text-sage-600 hover:bg-sage-100 dark:hover:bg-charcoal-800"
+                    >
+                      <Check size={16} />
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="p-2 text-charcoal-500 hover:bg-sand-200 dark:hover:bg-charcoal-800"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between py-2 border-b border-sand-200 dark:border-charcoal-800">
-                  <span className="text-sm">{cat.label}</span>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm"
+                      style={{ backgroundColor: cat.color }}
+                    />
+                    <span className="text-sm">{cat.label}</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-charcoal-500">
                       {formatCurrency(cat.default_amount)}
@@ -221,28 +267,44 @@ export function BudgetSection({
           ))}
 
           {isAddingCategory ? (
-            <div className="flex items-end gap-2 pt-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="Category name"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                />
+            <div className="space-y-3 p-3 bg-sand-100 dark:bg-charcoal-900/50 rounded-lg pt-2">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Category name"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                  />
+                </div>
+                <div className="w-24">
+                  <Input
+                    type="number"
+                    placeholder="Default"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="w-24">
-                <Input
-                  type="number"
-                  placeholder="Default"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className={`w-6 h-6 rounded-sm border-2 transition-all ${
+                      color === c ? "border-charcoal-800 dark:border-sand-200 scale-110" : "border-transparent hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
               </div>
-              <Button size="sm" onClick={handleAddCategory}>
-                <Check size={16} />
-              </Button>
-              <Button size="sm" variant="ghost" onClick={cancelEdit}>
-                <X size={16} />
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" onClick={handleAddCategory}>
+                  <Check size={16} className="mr-1" /> Add
+                </Button>
+                <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                  <X size={16} className="mr-1" /> Cancel
+                </Button>
+              </div>
             </div>
           ) : (
             <Button

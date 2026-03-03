@@ -92,13 +92,13 @@ pub async fn get_stats(
         let current_month_id = months[0].0;
         let previous_month_id = months.get(1).map(|m| m.0);
 
-        let categories: Vec<(i64, String)> =
-            sqlx::query_as("SELECT id, label FROM budget_categories WHERE user_id = ?")
+        let categories: Vec<(i64, String, String)> =
+            sqlx::query_as("SELECT id, label, color FROM budget_categories WHERE user_id = ?")
                 .bind(claims.sub)
                 .fetch_all(&pool)
                 .await?;
 
-        for (cat_id, cat_label) in categories {
+        for (cat_id, cat_label, cat_color) in categories {
             let current_spent: (f64,) = sqlx::query_as(
                 "SELECT COALESCE(SUM(amount), 0.0) FROM items WHERE month_id = ? AND category_id = ? AND savings_destination = 'none'",
             )
@@ -130,6 +130,7 @@ pub async fn get_stats(
             category_comparisons.push(CategoryStats {
                 category_id: cat_id,
                 category_label: cat_label,
+                category_color: cat_color,
                 current_month_spent: current_spent.0,
                 previous_month_spent: previous_spent,
                 change_amount,
