@@ -133,6 +133,23 @@ pub struct MonthlyStats {
     pub net: f64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct CustomSavingsGoal {
+    pub id: i64,
+    pub user_id: i64,
+    pub name: String,
+    pub current_amount: f64,
+    pub target_amount: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct RetirementBreakdownItem {
+    pub id: i64,
+    pub user_id: i64,
+    pub label: String,
+    pub amount: f64,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct StatsResponse {
     pub category_comparisons: Vec<CategoryStats>,
