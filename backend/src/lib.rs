@@ -16,8 +16,8 @@ use sqlx::SqlitePool;
 use tower_http::cors::{Any, CorsLayer};
 
 use handlers::{
-    auth, budget, export, fixed_expenses, health, income, items, monthly_data, months, savings,
-    stats,
+    auth, budget, export, fixed_expenses, health, income, items, monthly_data, months,
+    retirement_breakdown, savings, savings_goals, stats,
 };
 use middleware::auth::auth_middleware;
 
@@ -124,6 +124,38 @@ pub fn create_app(pool: SqlitePool) -> Router {
         )
         .route("/api/export/json", get(export::export_json))
         .route("/api/import/json", post(export::import_json))
+        .route(
+            "/api/savings-goals",
+            get(savings_goals::list_savings_goals),
+        )
+        .route(
+            "/api/savings-goals",
+            post(savings_goals::create_savings_goal),
+        )
+        .route(
+            "/api/savings-goals/{id}",
+            put(savings_goals::update_savings_goal),
+        )
+        .route(
+            "/api/savings-goals/{id}",
+            delete(savings_goals::delete_savings_goal),
+        )
+        .route(
+            "/api/retirement-breakdown",
+            get(retirement_breakdown::list_retirement_breakdown),
+        )
+        .route(
+            "/api/retirement-breakdown",
+            post(retirement_breakdown::create_retirement_breakdown_item),
+        )
+        .route(
+            "/api/retirement-breakdown/{id}",
+            put(retirement_breakdown::update_retirement_breakdown_item),
+        )
+        .route(
+            "/api/retirement-breakdown/{id}",
+            delete(retirement_breakdown::delete_retirement_breakdown_item),
+        )
         .layer(from_fn(auth_middleware));
 
     let cors = CorsLayer::new()
