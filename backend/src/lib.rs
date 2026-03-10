@@ -124,10 +124,7 @@ pub fn create_app(pool: SqlitePool) -> Router {
         )
         .route("/api/export/json", get(export::export_json))
         .route("/api/import/json", post(export::import_json))
-        .route(
-            "/api/savings-goals",
-            get(savings_goals::list_savings_goals),
-        )
+        .route("/api/savings-goals", get(savings_goals::list_savings_goals))
         .route(
             "/api/savings-goals",
             post(savings_goals::create_savings_goal),
