@@ -236,6 +236,38 @@ export const api = {
         body: JSON.stringify({ retirement_savings }),
       }),
   },
+
+  savingsGoals: {
+    list: () => request<CustomSavingsGoal[]>("/savings-goals"),
+    create: (data: { name: string; current_amount?: number; target_amount: number }) =>
+      request<CustomSavingsGoal>("/savings-goals", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: { name?: string; current_amount?: number; target_amount?: number }) =>
+      request<CustomSavingsGoal>(`/savings-goals/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: number) =>
+      request<void>(`/savings-goals/${id}`, { method: "DELETE" }),
+  },
+
+  retirementBreakdown: {
+    list: () => request<RetirementBreakdownItem[]>("/retirement-breakdown"),
+    create: (data: { label: string; amount: number }) =>
+      request<RetirementBreakdownItem>("/retirement-breakdown", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: { label?: string; amount?: number }) =>
+      request<RetirementBreakdownItem>(`/retirement-breakdown/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: number) =>
+      request<void>(`/retirement-breakdown/${id}`, { method: "DELETE" }),
+  },
 };
 
 export interface UserExport {
@@ -370,5 +402,20 @@ export interface StatsResponse {
   monthly_trends: MonthlyStats[];
   average_monthly_spending: number;
   average_monthly_income: number;
+}
+
+export interface CustomSavingsGoal {
+  id: number;
+  user_id: number;
+  name: string;
+  current_amount: number;
+  target_amount: number;
+}
+
+export interface RetirementBreakdownItem {
+  id: number;
+  user_id: number;
+  label: string;
+  amount: number;
 }
 

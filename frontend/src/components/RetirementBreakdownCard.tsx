@@ -1,70 +1,83 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { useCurrency } from "../context/CurrencyContext";
 import { useUIPreferences } from "../context/UIPreferencesContext";
-
-interface BreakdownItem {
-  id: string;
-  label: string;
-  amount: number;
-}
-
-const STORAGE_KEY = "retirementBreakdown";
+import { api, RetirementBreakdownItem } from "../api/client";
 
 export function RetirementBreakdownCard() {
   const { formatCurrency } = useCurrency();
   const { retirementBreakdownEnabled } = useUIPreferences();
-  const [breakdownItems, setBreakdownItems] = useState<BreakdownItem[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+
+  const [breakdownItems, setBreakdownItems] = useState<RetirementBreakdownItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
 
-  const saveItems = (items: BreakdownItem[]) => {
-    setBreakdownItems(items);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent('retirementBreakdownUpdated', { detail: items }));
-  };
+  const loadItems = useCallback(async () => {
+    try {
+      const data = await api.retirementBreakdown.list();
+      setBreakdownItems(data);
+      window.dispatchEvent(new CustomEvent("retirementBreakdownUpdated", { detail: data }));
+    } catch (e) {
+      console.error("Failed to load retirement breakdown:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const handleAdd = () => {
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  const handleAdd = async () => {
     if (!label || !amount) return;
-    const generateId = () => Date.now().toString();
-    const newItem: BreakdownItem = {
-      id: generateId(),
-      label,
-      amount: parseFloat(amount),
-    };
-    saveItems([...breakdownItems, newItem]);
-    resetForm();
+    try {
+      const created = await api.retirementBreakdown.create({
+        label,
+        amount: parseFloat(amount),
+      });
+      const updated = [...breakdownItems, created];
+      setBreakdownItems(updated);
+      window.dispatchEvent(new CustomEvent("retirementBreakdownUpdated", { detail: updated }));
+      resetForm();
+    } catch (e) {
+      console.error("Failed to add retirement breakdown item:", e);
+    }
   };
 
-  const handleUpdate = (id: string) => {
+  const handleUpdate = async (id: number) => {
     if (!label || !amount) return;
-    const updated = breakdownItems.map((item) =>
-      item.id === id ? { ...item, label, amount: parseFloat(amount) } : item
-    );
-    saveItems(updated);
-    resetForm();
+    try {
+      const updatedItem = await api.retirementBreakdown.update(id, {
+        label,
+        amount: parseFloat(amount),
+      });
+      const updated = breakdownItems.map((item) => (item.id === id ? updatedItem : item));
+      setBreakdownItems(updated);
+      window.dispatchEvent(new CustomEvent("retirementBreakdownUpdated", { detail: updated }));
+      resetForm();
+    } catch (e) {
+      console.error("Failed to update retirement breakdown item:", e);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    saveItems(breakdownItems.filter((item) => item.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      await api.retirementBreakdown.delete(id);
+      const updated = breakdownItems.filter((item) => item.id !== id);
+      setBreakdownItems(updated);
+      window.dispatchEvent(new CustomEvent("retirementBreakdownUpdated", { detail: updated }));
+    } catch (e) {
+      console.error("Failed to delete retirement breakdown item:", e);
+    }
   };
 
-  const startEdit = (item: BreakdownItem) => {
+  const startEdit = (item: RetirementBreakdownItem) => {
     setEditingId(item.id);
     setLabel(item.label);
     setAmount(item.amount.toString());
@@ -77,7 +90,7 @@ export function RetirementBreakdownCard() {
     setIsAdding(false);
   };
 
-  if (!retirementBreakdownEnabled && breakdownItems.length === 0) {
+  if (!isLoading && !retirementBreakdownEnabled && breakdownItems.length === 0) {
     return null;
   }
 
@@ -219,7 +232,7 @@ export function RetirementBreakdownCard() {
           </tbody>
         </table>
 
-        {breakdownItems.length === 0 && (
+        {!isLoading && breakdownItems.length === 0 && (
           <div className="text-sm text-charcoal-400 dark:text-charcoal-600 py-8 text-center">
             No breakdown items. Add items to track what makes up your retirement savings.
           </div>
