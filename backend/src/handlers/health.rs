@@ -2,9 +2,12 @@ use axum::{extract::State, http::StatusCode, Json};
 use serde::Serialize;
 use sqlx::SqlitePool;
 
+/// Represents the response for the health check endpoint.
 #[derive(Serialize)]
 pub struct HealthResponse {
+    /// The overall health status of the service, typically "healthy" when operational.
     pub status: &'static str,
+    /// The status of the database connection, either "connected" or "disconnected".
     pub database: &'static str,
 }
 
