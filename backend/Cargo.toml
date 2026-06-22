@@ -12,7 +12,7 @@ axum = { version = "0.8.8", features = ["macros"] }
 axum-extra = { version = "0.12.5", features = ["cookie"] }
 tokio = { version = "1.49.0", features = ["full"] }
 tower = "0.5.2"
-tower-http = { version = "0.6.8", features = ["cors", "fs"] }
+tower-http = { version = "0.7.0", features = ["cors", "fs"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "chrono"] }
