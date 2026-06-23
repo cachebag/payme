@@ -32,6 +32,6 @@ validator = { version = "0.20.0", features = ["derive"] }
 url = "2.5.7"
 
 [dev-dependencies]
-axum-test = "18"
+axum-test = "20"
 tower = { version = "0.5", features = ["util"] }
 tempfile = "3"
