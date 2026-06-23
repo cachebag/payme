@@ -4,7 +4,7 @@ COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/src ./src
 RUN cargo build --release
 
-FROM node:22-bookworm AS frontend-builder
+FROM node:26-bookworm AS frontend-builder
 WORKDIR /build
 COPY frontend/package*.json ./
 RUN npm ci
