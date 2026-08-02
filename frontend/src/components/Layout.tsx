@@ -71,13 +71,13 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 bg-sand-50/80 dark:bg-charcoal-950/80 backdrop-blur-md border-b border-sand-200 dark:border-charcoal-800">
-        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-          <span className="text-lg sm:text-xl font-semibold tracking-tight text-charcoal-800 dark:text-sand-100">
+      <header className="sticky top-0 z-40 border-b border-sand-300 bg-sand-50/90 backdrop-blur-md dark:border-charcoal-700 dark:bg-charcoal-950/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-3 py-3 sm:px-5">
+          <span className="text-base font-semibold tracking-tight text-charcoal-900 dark:text-sand-100">
             payme
           </span>
           {user && (
-            <span className="hidden sm:inline text-sm text-charcoal-600 dark:text-charcoal-300">
+            <span className="hidden truncate text-sm text-charcoal-500 dark:text-charcoal-400 sm:inline">
               Welcome, {user.username}
             </span>
           )}
@@ -93,7 +93,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
                 />
                 <button
                   onClick={handleImportClick}
-                  className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+                  className="rounded-md p-2 text-charcoal-500 hover:bg-sand-200 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 transition-colors touch-manipulation"
                   title="Import data"
                   aria-label="Import data"
                 >
@@ -101,7 +101,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
                 </button>
                 <button
                   onClick={handleExport}
-                  className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+                  className="rounded-md p-2 text-charcoal-500 hover:bg-sand-200 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 transition-colors touch-manipulation"
                   title="Export data"
                   aria-label="Export data"
                 >
@@ -111,7 +111,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
             )}
             <button
               onClick={toggle}
-              className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+              className="rounded-md p-2 text-charcoal-500 hover:bg-sand-200 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 transition-colors touch-manipulation"
               aria-label="Toggle theme"
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
@@ -119,7 +119,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
             {user && onSettingsClick && (
               <button
                 onClick={onSettingsClick}
-                className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+                className="rounded-md p-2 text-charcoal-500 hover:bg-sand-200 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 transition-colors touch-manipulation"
                 title="Settings"
                 aria-label="Settings"
               >
@@ -129,7 +129,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
             {user && (
               <button
                 onClick={logout}
-                className="p-2 sm:p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors cursor-pointer touch-manipulation"
+                className="rounded-md p-2 text-charcoal-500 hover:bg-sand-200 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 transition-colors touch-manipulation"
                 aria-label="Logout"
               >
                 <LogOut size={18} />
@@ -138,7 +138,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
           </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-5 sm:py-7">{children}</main>
 
       <Modal isOpen={showImportConfirm} onClose={() => setShowImportConfirm(false)} title="Import Data">
         <div className="space-y-4">

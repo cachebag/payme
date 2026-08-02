@@ -86,13 +86,24 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+    reorder: (ids: number[]) =>
+      request<void>("/fixed-expenses/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
+      }),
     delete: (id: number) =>
       request<void>(`/fixed-expenses/${id}`, { method: "DELETE" }),
   },
 
   categories: {
     list: () => request<BudgetCategory[]>("/categories"),
-    create: (data: { label: string; default_amount: number; color?: string }) =>
+    // month_id scopes the new category to that month onward; earlier months keep their shape.
+    create: (data: {
+      label: string;
+      default_amount: number;
+      color?: string;
+      month_id?: number;
+    }) =>
       request<BudgetCategory>("/categories", {
         method: "POST",
         body: JSON.stringify(data),
@@ -102,8 +113,15 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
-    delete: (id: number) =>
-      request<void>(`/categories/${id}`, { method: "DELETE" }),
+    reorder: (ids: number[]) =>
+      request<void>("/categories/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
+      }),
+    // Scoped to a month: removes the category from that month onward and leaves
+    // earlier months, closed months, and recorded transactions alone.
+    delete: (monthId: number, id: number) =>
+      request<void>(`/months/${monthId}/categories/${id}`, { method: "DELETE" }),
   },
 
   budgets: {
@@ -117,7 +135,7 @@ export const api = {
 
   income: {
     list: (monthId: number) => request<IncomeEntry[]>(`/months/${monthId}/income`),
-    create: (monthId: number, data: { label: string; amount: number }) =>
+    create: (monthId: number, data: { label: string; amount: number; paid_on?: string | null }) =>
       request<IncomeEntry>(`/months/${monthId}/income`, {
         method: "POST",
         body: JSON.stringify(data),
@@ -125,11 +143,16 @@ export const api = {
     update: (
       monthId: number,
       incomeId: number,
-      data: { label?: string; amount?: number }
+      data: { label?: string; amount?: number; paid_on?: string | null }
     ) =>
       request<IncomeEntry>(`/months/${monthId}/income/${incomeId}`, {
         method: "PUT",
         body: JSON.stringify(data),
+      }),
+    reorder: (monthId: number, ids: number[]) =>
+      request<void>(`/months/${monthId}/income/reorder`, {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
       }),
     delete: (monthId: number, incomeId: number) =>
       request<void>(`/months/${monthId}/income/${incomeId}`, { method: "DELETE" }),
@@ -139,7 +162,7 @@ export const api = {
     list: (monthId: number) => request<ItemWithCategory[]>(`/months/${monthId}/items`),
     create: (
       monthId: number,
-      data: { category_id: number; description: string; amount: number; spent_on: string; savings_destination?: string }
+      data: { category_id?: number; description: string; amount: number; spent_on: string; savings_destination?: string }
     ) =>
       request<Item>(`/months/${monthId}/items`, {
         method: "POST",
@@ -159,6 +182,11 @@ export const api = {
       request<Item>(`/months/${monthId}/items/${itemId}`, {
         method: "PUT",
         body: JSON.stringify(data),
+      }),
+    reorder: (monthId: number, ids: number[]) =>
+      request<void>(`/months/${monthId}/items/reorder`, {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
       }),
     delete: (monthId: number, itemId: number) =>
       request<void>(`/months/${monthId}/items/${itemId}`, { method: "DELETE" }),
@@ -224,6 +252,11 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+    reorder: (monthId: number, ids: number[]) =>
+      request<void>(`/months/${monthId}/fixed-expenses/reorder`, {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
+      }),
     delete: (monthId: number, id: number) =>
       request<void>(`/months/${monthId}/fixed-expenses/${id}`, { method: "DELETE" }),
   },
@@ -249,6 +282,11 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+    reorder: (ids: number[]) =>
+      request<void>("/savings-goals/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
+      }),
     delete: (id: number) =>
       request<void>(`/savings-goals/${id}`, { method: "DELETE" }),
   },
@@ -265,6 +303,11 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+    reorder: (ids: number[]) =>
+      request<void>("/retirement-breakdown/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ ids }),
+      }),
     delete: (id: number) =>
       request<void>(`/retirement-breakdown/${id}`, { method: "DELETE" }),
   },
@@ -275,14 +318,14 @@ export interface UserExport {
   savings?: number;
   retirement_savings?: number;
   fixed_expenses: { label: string; amount: number }[];
-  categories: { label: string; default_amount: number }[];
+  categories: { label: string; default_amount: number; archived?: boolean }[];
   months: {
     year: number;
     month: number;
     is_closed: boolean;
-    income_entries: { label: string; amount: number }[];
+    income_entries: { label: string; amount: number; paid_on?: string | null }[];
     budgets: { category_label: string; allocated_amount: number }[];
-    items: { category_label: string; description: string; amount: number; spent_on: string }[];
+    items: { category_label: string | null; description: string; amount: number; spent_on: string }[];
   }[];
 }
 
@@ -339,12 +382,13 @@ export interface IncomeEntry {
   month_id: number;
   label: string;
   amount: number;
+  paid_on: string | null;
 }
 
 export interface Item {
   id: number;
   month_id: number;
-  category_id: number;
+  category_id: number | null;
   description: string;
   amount: number;
   spent_on: string;
@@ -352,8 +396,8 @@ export interface Item {
 }
 
 export interface ItemWithCategory extends Item {
-  category_label: string;
-  category_color: string;
+  category_label: string | null;
+  category_color: string | null;
 }
 
 export interface MonthlySavings {
@@ -418,4 +462,3 @@ export interface RetirementBreakdownItem {
   label: string;
   amount: number;
 }
-

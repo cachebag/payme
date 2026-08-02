@@ -19,7 +19,7 @@ fn default_savings_destination() -> String {
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateItem {
-    pub category_id: i64,
+    pub category_id: Option<i64>,
     #[validate(length(min = 1, max = 200))]
     pub description: String,
     #[validate(range(min = 0.0))]
@@ -38,6 +38,11 @@ pub struct UpdateItem {
     pub amount: Option<f64>,
     pub spent_on: Option<NaiveDate>,
     pub savings_destination: Option<String>,
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct ReorderItems {
+    pub ids: Vec<i64>,
 }
 
 #[utoipa::path(
@@ -62,9 +67,9 @@ pub async fn list_items(
         r#"
         SELECT i.id, i.month_id, i.category_id, bc.label as category_label, bc.color as category_color, i.description, i.amount, i.spent_on, i.savings_destination
         FROM items i
-        JOIN budget_categories bc ON i.category_id = bc.id
+        LEFT JOIN budget_categories bc ON i.category_id = bc.id
         WHERE i.month_id = ?
-        ORDER BY i.spent_on DESC
+        ORDER BY i.sort_order, i.id
         "#,
     )
     .bind(month_id)
@@ -95,16 +100,27 @@ pub async fn create_item(
     payload.validate()?;
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
-    let _category: (i64,) =
-        sqlx::query_as("SELECT id FROM budget_categories WHERE id = ? AND user_id = ?")
-            .bind(payload.category_id)
-            .bind(claims.sub)
-            .fetch_optional(&pool)
-            .await?
-            .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
+    // Uncategorized items are allowed; a concrete category must be live and owned.
+    if let Some(category_id) = payload.category_id {
+        let _category: (i64,) = sqlx::query_as(
+            "SELECT id FROM budget_categories WHERE id = ? AND user_id = ? AND archived_at IS NULL",
+        )
+        .bind(category_id)
+        .bind(claims.sub)
+        .fetch_optional(&pool)
+        .await?
+        .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
+    }
+
+    let sort_order: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM items WHERE month_id = ?",
+    )
+    .bind(month_id)
+    .fetch_one(&pool)
+    .await?;
 
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO items (month_id, category_id, description, amount, spent_on, savings_destination) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+        "INSERT INTO items (month_id, category_id, description, amount, spent_on, savings_destination, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
     )
     .bind(month_id)
     .bind(payload.category_id)
@@ -112,6 +128,7 @@ pub async fn create_item(
     .bind(payload.amount)
     .bind(payload.spent_on)
     .bind(&payload.savings_destination)
+    .bind(sort_order)
     .fetch_one(&pool)
     .await?;
 
@@ -181,7 +198,8 @@ pub async fn update_item(
     .await?
     .ok_or(PaymeError::NotFound)?;
 
-    let category_id = payload.category_id.unwrap_or(existing.category_id);
+    // `Some` re-categorizes; `None` keeps whatever the item had (possibly uncategorized).
+    let category_id = payload.category_id.or(existing.category_id);
     let description = payload.description.unwrap_or(existing.description);
     let amount = payload.amount.unwrap_or(existing.amount);
     let spent_on = payload.spent_on.unwrap_or(existing.spent_on);
@@ -190,16 +208,16 @@ pub async fn update_item(
         .unwrap_or(existing.savings_destination.clone());
 
     if payload.category_id.is_some() {
-        let _category: (i64,) =
-            sqlx::query_as("SELECT id FROM budget_categories WHERE id = ? AND user_id = ?")
-                .bind(category_id)
-                .bind(claims.sub)
-                .fetch_optional(&pool)
-                .await?
-                .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
+        let _category: (i64,) = sqlx::query_as(
+            "SELECT id FROM budget_categories WHERE id = ? AND user_id = ? AND archived_at IS NULL",
+        )
+        .bind(category_id)
+        .bind(claims.sub)
+        .fetch_optional(&pool)
+        .await?
+        .ok_or(PaymeError::BadRequest("Invalid category".to_string()))?;
     }
 
-    // Update the item first to ensure data consistency
     sqlx::query(
         "UPDATE items SET category_id = ?, description = ?, amount = ?, spent_on = ?, savings_destination = ? WHERE id = ?",
     )
@@ -215,7 +233,6 @@ pub async fn update_item(
     let old_dest = existing.savings_destination.as_str();
     let new_dest = savings_destination.as_str();
 
-    // Adjust balances only after successful item update
     if old_dest != new_dest || (old_dest != "none" && existing.amount != amount) {
         match old_dest {
             "savings" => {
@@ -267,6 +284,26 @@ pub async fn update_item(
         spent_on,
         savings_destination,
     }))
+}
+
+pub async fn reorder_items(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(month_id): Path<i64>,
+    Json(payload): Json<ReorderItems>,
+) -> Result<StatusCode, PaymeError> {
+    verify_month_not_closed(&pool, claims.sub, month_id).await?;
+
+    for (index, id) in payload.ids.iter().enumerate() {
+        sqlx::query("UPDATE items SET sort_order = ? WHERE id = ? AND month_id = ?")
+            .bind(index as i64)
+            .bind(id)
+            .bind(month_id)
+            .execute(&pool)
+            .await?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[utoipa::path(

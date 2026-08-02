@@ -1,10 +1,12 @@
 mod common;
 
 use common::{
-    auth_name, auth_value, close_test_month, create_test_category, create_test_month,
-    create_test_pool, create_test_server, create_test_user, generate_token,
+    auth_name, auth_value, close_test_month, create_test_category, create_test_fixed_expense,
+    create_test_month, create_test_monthly_fixed_expense, create_test_pool, create_test_server,
+    create_test_user, generate_token,
 };
 use payme::create_app;
+use serde_json::json;
 
 async fn setup_with_user() -> (axum_test::TestServer, sqlx::SqlitePool, i64, String) {
     let pool = create_test_pool().await;
@@ -95,6 +97,92 @@ async fn test_get_or_create_current_month_returns_existing() {
     let month_id2 = body2["month"]["id"].as_i64().unwrap();
 
     assert_eq!(month_id1, month_id2);
+}
+
+#[tokio::test]
+async fn test_new_month_carries_forward_previous_months_fixed_expenses() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+
+    let january_id = create_test_month(&pool, user_id, 2024, 1).await;
+    create_test_monthly_fixed_expense(&pool, january_id, "Rent", 1500.0).await;
+    create_test_monthly_fixed_expense(&pool, january_id, "Internet", 80.0).await;
+
+    let response = server
+        .post("/api/months")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&json!({ "year": 2024, "month": 2 }))
+        .await;
+
+    response.assert_status_ok();
+    let body: serde_json::Value = response.json();
+    let fixed_expenses = body["fixed_expenses"].as_array().unwrap();
+
+    assert_eq!(fixed_expenses.len(), 2);
+    let labels: Vec<&str> = fixed_expenses
+        .iter()
+        .map(|e| e["label"].as_str().unwrap())
+        .collect();
+    assert!(labels.contains(&"Rent"));
+    assert!(labels.contains(&"Internet"));
+}
+
+#[tokio::test]
+async fn test_new_month_fixed_expenses_are_independent_of_previous_month() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+
+    let january_id = create_test_month(&pool, user_id, 2024, 1).await;
+    let jan_expense_id = create_test_monthly_fixed_expense(&pool, january_id, "Rent", 1500.0).await;
+
+    let response = server
+        .post("/api/months")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&json!({ "year": 2024, "month": 2 }))
+        .await;
+
+    response.assert_status_ok();
+    let body: serde_json::Value = response.json();
+    let feb_expense = &body["fixed_expenses"][0];
+    let feb_expense_id = feb_expense["id"].as_i64().unwrap();
+
+    assert_ne!(feb_expense_id, jan_expense_id);
+
+    server
+        .put(&format!(
+            "/api/months/{}/fixed-expenses/{}",
+            body["month"]["id"], feb_expense_id
+        ))
+        .add_header(auth_name(), auth_value(&token))
+        .json(&json!({ "amount": 1600.0 }))
+        .await
+        .assert_status_ok();
+
+    let jan_response = server
+        .get(&format!("/api/months/{}", january_id))
+        .add_header(auth_name(), auth_value(&token))
+        .await;
+    let jan_body: serde_json::Value = jan_response.json();
+
+    assert_eq!(jan_body["fixed_expenses"][0]["amount"], 1500.0);
+}
+
+#[tokio::test]
+async fn test_new_month_falls_back_to_global_fixed_expenses_when_no_previous_month() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+
+    create_test_fixed_expense(&pool, user_id, "Rent", 1500.0).await;
+
+    let response = server
+        .post("/api/months")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&json!({ "year": 2024, "month": 1 }))
+        .await;
+
+    response.assert_status_ok();
+    let body: serde_json::Value = response.json();
+    let fixed_expenses = body["fixed_expenses"].as_array().unwrap();
+
+    assert_eq!(fixed_expenses.len(), 1);
+    assert_eq!(fixed_expenses[0]["label"], "Rent");
 }
 
 #[tokio::test]

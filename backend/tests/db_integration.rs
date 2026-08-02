@@ -4,8 +4,8 @@ use axum::extract::{Path, State};
 use axum::Json;
 use payme::db::run_migrations;
 use payme::handlers::budget::{
-    create_category, delete_category, list_categories, update_category, update_monthly_budget,
-    CreateCategory, UpdateCategory, UpdateMonthlyBudget,
+    create_category, delete_month_category, list_categories, update_category,
+    update_monthly_budget, CreateCategory, UpdateCategory, UpdateMonthlyBudget,
 };
 use payme::handlers::income::{create_income, list_income, CreateIncome};
 use payme::handlers::months::{create_month, list_months, reopen_month};
@@ -102,6 +102,7 @@ async fn category_create_and_list() {
             label: "Groceries".to_string(),
             default_amount: 400.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -127,6 +128,7 @@ async fn category_update() {
             label: "Old".to_string(),
             default_amount: 100.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -161,37 +163,13 @@ async fn category_delete_removes_it_from_list() {
             label: "Dining".to_string(),
             default_amount: 200.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
     .unwrap();
 
-    delete_category(st(pool.clone()), ext(claims.clone()), Path(cat.id))
-        .await
-        .unwrap();
-
-    let Json(list) = list_categories(st(pool), ext(claims)).await.unwrap();
-    assert!(list.is_empty());
-}
-
-#[tokio::test]
-async fn category_delete_cascades_to_monthly_budgets() {
-    let (pool, claims) = setup().await;
-
-    // Create a category then a month (which seeds monthly_budgets).
-    let Json(cat) = create_category(
-        st(pool.clone()),
-        ext(claims.clone()),
-        Json(CreateCategory {
-            label: "Transport".to_string(),
-            default_amount: 150.0,
-            color: None,
-        }),
-    )
-    .await
-    .unwrap();
-
-    create_month(
+    let Json(summary) = create_month(
         st(pool.clone()),
         ext(claims.clone()),
         Json(payme::handlers::months::CreateMonthRequest {
@@ -202,31 +180,146 @@ async fn category_delete_cascades_to_monthly_budgets() {
     .await
     .unwrap();
 
-    let budget_count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM monthly_budgets WHERE category_id = ?")
-            .bind(cat.id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    assert_eq!(
-        budget_count, 1,
-        "monthly_budget row should exist before delete"
-    );
+    delete_month_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Path((summary.month.id, cat.id)),
+    )
+    .await
+    .unwrap();
 
-    // Deleting the category must cascade.
-    delete_category(st(pool.clone()), ext(claims.clone()), Path(cat.id))
+    let Json(list) = list_categories(st(pool), ext(claims)).await.unwrap();
+    assert!(list.is_empty());
+}
+
+#[tokio::test]
+async fn category_delete_clears_the_month_but_not_its_history() {
+    let (pool, claims) = setup().await;
+
+    let Json(cat) = create_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(CreateCategory {
+            label: "Transport".to_string(),
+            default_amount: 150.0,
+            color: None,
+            month_id: None,
+        }),
+    )
+    .await
+    .unwrap();
+
+    // Two months, each seeded with the category.
+    let Json(august) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2025,
+            month: 8,
+        }),
+    )
+    .await
+    .unwrap();
+    let Json(september) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2025,
+            month: 9,
+        }),
+    )
+    .await
+    .unwrap();
+
+    sqlx::query("INSERT INTO items (month_id, category_id, description, amount, spent_on, savings_destination) VALUES (?, ?, 'Bus pass', 40.0, '2025-08-03', 'none')")
+        .bind(august.month.id)
+        .bind(cat.id)
+        .execute(&pool)
         .await
         .unwrap();
 
-    let budget_count_after: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM monthly_budgets WHERE category_id = ?")
-            .bind(cat.id)
+    delete_month_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Path((september.month.id, cat.id)),
+    )
+    .await
+    .unwrap();
+
+    let august_budgets: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM monthly_budgets WHERE month_id = ?")
+            .bind(august.month.id)
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(
-        budget_count_after, 0,
-        "monthly_budget rows should be deleted by cascade"
+    assert_eq!(august_budgets, 1, "August keeps its allocation");
+
+    let august_items: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM items WHERE month_id = ?")
+        .bind(august.month.id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(august_items, 1, "August keeps its transactions");
+
+    let september_budgets: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM monthly_budgets WHERE month_id = ?")
+            .bind(september.month.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(september_budgets, 0, "September drops the allocation");
+}
+
+#[tokio::test]
+async fn deleted_category_does_not_come_back_in_new_months() {
+    let (pool, claims) = setup().await;
+
+    let Json(cat) = create_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(CreateCategory {
+            label: "Hobbies".to_string(),
+            default_amount: 75.0,
+            color: None,
+            month_id: None,
+        }),
+    )
+    .await
+    .unwrap();
+
+    let Json(september) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2025,
+            month: 9,
+        }),
+    )
+    .await
+    .unwrap();
+
+    delete_month_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Path((september.month.id, cat.id)),
+    )
+    .await
+    .unwrap();
+
+    let Json(october) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2025,
+            month: 10,
+        }),
+    )
+    .await
+    .unwrap();
+
+    assert!(
+        october.budgets.is_empty(),
+        "a retired category should not seed later months"
     );
 }
 
@@ -241,6 +334,7 @@ async fn month_creation_seeds_existing_categories() {
             label: "Rent".to_string(),
             default_amount: 1500.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -253,6 +347,7 @@ async fn month_creation_seeds_existing_categories() {
             label: "Food".to_string(),
             default_amount: 300.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -331,10 +426,21 @@ async fn month_creation_rejects_invalid_month_number() {
 }
 
 #[tokio::test]
-async fn category_created_mid_month_seeds_open_months() {
-    // The key invariant: if you add a new category while a month is already
-    // open, that month should immediately get a monthly_budget row for it.
+async fn category_created_mid_month_seeds_that_month_not_earlier_ones() {
+    // The key invariant: adding a category while a month is open gives that month a
+    // monthly_budget row for it, while months before it keep the shape they had.
     let (pool, claims) = setup().await;
+
+    let Json(earlier) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2025,
+            month: 3,
+        }),
+    )
+    .await
+    .unwrap();
 
     let Json(summary) = create_month(
         st(pool.clone()),
@@ -358,7 +464,7 @@ async fn category_created_mid_month_seeds_open_months() {
             .unwrap();
     assert_eq!(count_before, 0);
 
-    // Now create a category — it should be retroactively seeded into the open month.
+    // Now create a category from that month — it lands there, but not in March.
     create_category(
         st(pool.clone()),
         ext(claims.clone()),
@@ -366,6 +472,7 @@ async fn category_created_mid_month_seeds_open_months() {
             label: "Entertainment".to_string(),
             default_amount: 100.0,
             color: None,
+            month_id: Some(month_id),
         }),
     )
     .await
@@ -379,7 +486,18 @@ async fn category_created_mid_month_seeds_open_months() {
             .unwrap();
     assert_eq!(
         count_after, 1,
-        "new category should be seeded into the existing open month"
+        "new category should be seeded into the month it was added from"
+    );
+
+    let earlier_count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM monthly_budgets WHERE month_id = ?")
+            .bind(earlier.month.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        earlier_count, 0,
+        "an earlier month should not gain a category added later"
     );
 }
 
@@ -394,6 +512,7 @@ async fn monthly_budget_allocation_can_be_updated() {
             label: "Misc".to_string(),
             default_amount: 50.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -439,6 +558,7 @@ async fn closed_month_rejects_budget_update() {
             label: "Bills".to_string(),
             default_amount: 300.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -530,6 +650,7 @@ async fn income_create_and_list() {
         Json(CreateIncome {
             label: "Salary".to_string(),
             amount: 5000.0,
+            paid_on: None,
         }),
     )
     .await
@@ -542,6 +663,7 @@ async fn income_create_and_list() {
         Json(CreateIncome {
             label: "Freelance".to_string(),
             amount: 800.0,
+            paid_on: None,
         }),
     )
     .await
@@ -702,6 +824,7 @@ async fn categories_are_scoped_to_user() {
             label: "Alice's Category".to_string(),
             default_amount: 100.0,
             color: None,
+            month_id: None,
         }),
     )
     .await
@@ -811,5 +934,222 @@ async fn cannot_update_another_users_savings_goal() {
     assert!(
         result.is_err(),
         "bob should not be able to update alice's goal"
+    );
+}
+
+#[tokio::test]
+async fn migrations_rebuild_legacy_not_null_items_table() {
+    // Simulate a database from before items.category_id became nullable.
+    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+    for sql in [
+        "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, savings REAL NOT NULL DEFAULT 0, savings_goal REAL NOT NULL DEFAULT 0, retirement_savings REAL NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))",
+        "CREATE TABLE budget_categories (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, label TEXT NOT NULL, default_amount REAL NOT NULL, color TEXT NOT NULL DEFAULT '#71717a', sort_order INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE months (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, year INTEGER NOT NULL, month INTEGER NOT NULL, is_closed INTEGER NOT NULL DEFAULT 0, closed_at TEXT, UNIQUE(user_id, year, month))",
+        "CREATE TABLE items (id INTEGER PRIMARY KEY AUTOINCREMENT, month_id INTEGER NOT NULL, category_id INTEGER NOT NULL, description TEXT NOT NULL, amount REAL NOT NULL, spent_on TEXT NOT NULL, savings_destination TEXT NOT NULL DEFAULT 'none', sort_order INTEGER NOT NULL DEFAULT 0, FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE, FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE CASCADE)",
+        "INSERT INTO users (id, username, password_hash) VALUES (1, 'alice', 'x')",
+        "INSERT INTO budget_categories (id, user_id, label, default_amount) VALUES (7, 1, 'Food', 100.0)",
+        "INSERT INTO months (id, user_id, year, month) VALUES (1, 1, 2026, 7)",
+        "INSERT INTO items (id, month_id, category_id, description, amount, spent_on) VALUES (42, 1, 7, 'Lunch', 12.5, '2026-07-01')",
+    ] {
+        sqlx::query(sql).execute(&pool).await.unwrap();
+    }
+
+    run_migrations(&pool).await.unwrap();
+
+    let items_sql: String =
+        sqlx::query_scalar("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'items'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert!(
+        !items_sql.contains("category_id INTEGER NOT NULL"),
+        "rebuild must drop the NOT NULL constraint"
+    );
+
+    let (id, category_id, description, amount): (i64, Option<i64>, String, f64) =
+        sqlx::query_as("SELECT id, category_id, description, amount FROM items WHERE id = 42")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        (id, category_id, description.as_str(), amount),
+        (42, Some(7), "Lunch", 12.5)
+    );
+
+    // Idempotent: a second run must not attempt another rebuild.
+    run_migrations(&pool).await.unwrap();
+}
+
+#[tokio::test]
+async fn migrations_null_out_items_orphaned_by_old_hard_deletes() {
+    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+    run_migrations(&pool).await.unwrap();
+
+    // The pragma is per-connection, so pin one connection for the orphan insert.
+    let mut conn = pool.acquire().await.unwrap();
+    sqlx::query("PRAGMA foreign_keys = OFF")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO users (id, username, password_hash) VALUES (1, 'alice', 'x')")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO months (id, user_id, year, month) VALUES (1, 1, 2026, 7)")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO items (id, month_id, category_id, description, amount, spent_on) VALUES (1, 1, 999, 'Ghost', 5.0, '2026-07-01')",
+    )
+    .execute(&mut *conn)
+    .await
+    .unwrap();
+    sqlx::query("PRAGMA foreign_keys = ON")
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+    drop(conn);
+
+    run_migrations(&pool).await.unwrap();
+
+    let category_id: Option<i64> = sqlx::query_scalar("SELECT category_id FROM items WHERE id = 1")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(category_id, None, "orphaned reference is cleared");
+}
+
+#[tokio::test]
+async fn migrations_give_open_months_a_line_for_every_live_category() {
+    let (pool, claims) = setup().await;
+
+    // A month created before the category existed, plus a closed one.
+    let Json(open) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2026,
+            month: 8,
+        }),
+    )
+    .await
+    .unwrap();
+    let Json(closed) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2026,
+            month: 9,
+        }),
+    )
+    .await
+    .unwrap();
+    sqlx::query("UPDATE months SET is_closed = 1 WHERE id = ?")
+        .bind(closed.month.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    // Created without naming a month, so it seeds nothing on its own.
+    let Json(cat) = create_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(CreateCategory {
+            label: "Travel".to_string(),
+            default_amount: 250.0,
+            color: None,
+            month_id: None,
+        }),
+    )
+    .await
+    .unwrap();
+
+    let before: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM monthly_budgets WHERE month_id = ? AND category_id = ?",
+    )
+    .bind(open.month.id)
+    .bind(cat.id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(before, 0, "the open month starts out missing the category");
+
+    run_migrations(&pool).await.unwrap();
+
+    let allocated: Option<f64> = sqlx::query_scalar(
+        "SELECT allocated_amount FROM monthly_budgets WHERE month_id = ? AND category_id = ?",
+    )
+    .bind(open.month.id)
+    .bind(cat.id)
+    .fetch_optional(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        allocated,
+        Some(250.0),
+        "the open month gains a line at the category's default"
+    );
+
+    let closed_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM monthly_budgets WHERE month_id = ? AND category_id = ?",
+    )
+    .bind(closed.month.id)
+    .bind(cat.id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(closed_count, 0, "closed months stay as they were closed");
+}
+
+#[tokio::test]
+async fn migrations_do_not_resurrect_a_category_removed_from_a_month() {
+    let (pool, claims) = setup().await;
+
+    let Json(cat) = create_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(CreateCategory {
+            label: "Dining".to_string(),
+            default_amount: 100.0,
+            color: None,
+            month_id: None,
+        }),
+    )
+    .await
+    .unwrap();
+
+    let Json(month) = create_month(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Json(payme::handlers::months::CreateMonthRequest {
+            year: 2026,
+            month: 8,
+        }),
+    )
+    .await
+    .unwrap();
+
+    delete_month_category(
+        st(pool.clone()),
+        ext(claims.clone()),
+        Path((month.month.id, cat.id)),
+    )
+    .await
+    .unwrap();
+
+    run_migrations(&pool).await.unwrap();
+
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM monthly_budgets WHERE month_id = ? AND category_id = ?",
+    )
+    .bind(month.month.id)
+    .bind(cat.id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        count, 0,
+        "an archived category must not come back on restart"
     );
 }

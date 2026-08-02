@@ -21,12 +21,11 @@ async fn main() {
 
     let app = create_app(pool)
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .fallback_service(ServeDir::new("/app/static"));
+        .fallback_service(ServeDir::new(config.static_dir.clone()));
 
-    let addr = format!("0.0.0.0:{}", config.port);
-    tracing::info!("Server running on {}", addr);
+    tracing::info!("Server running on {}", config.bind);
 
-    let listener = tokio::net::TcpListener::bind(&addr)
+    let listener = tokio::net::TcpListener::bind(&config.bind)
         .await
         .expect("Failed to bind to address");
 

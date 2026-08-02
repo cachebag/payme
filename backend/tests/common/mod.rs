@@ -20,7 +20,6 @@ pub struct Claims {
     pub exp: usize,
 }
 
-/// Create an in-memory SQLite pool and run migrations
 pub async fn create_test_pool() -> SqlitePool {
     let pool = SqlitePool::connect(":memory:")
         .await
@@ -30,7 +29,6 @@ pub async fn create_test_pool() -> SqlitePool {
     pool
 }
 
-/// Run database migrations (copied from db/mod.rs to avoid circular deps)
 async fn run_migrations(pool: &SqlitePool) {
     sqlx::query(
         r#"
@@ -56,6 +54,7 @@ async fn run_migrations(pool: &SqlitePool) {
             user_id INTEGER NOT NULL,
             label TEXT NOT NULL,
             amount REAL NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         "#,
@@ -72,6 +71,8 @@ async fn run_migrations(pool: &SqlitePool) {
             label TEXT NOT NULL,
             default_amount REAL NOT NULL,
             color TEXT NOT NULL DEFAULT '#71717a',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            archived_at TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         "#,
@@ -105,6 +106,8 @@ async fn run_migrations(pool: &SqlitePool) {
             month_id INTEGER NOT NULL,
             label TEXT NOT NULL,
             amount REAL NOT NULL,
+            paid_on TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE
         )
         "#,
@@ -135,13 +138,14 @@ async fn run_migrations(pool: &SqlitePool) {
         CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             month_id INTEGER NOT NULL,
-            category_id INTEGER NOT NULL,
+            category_id INTEGER,
             description TEXT NOT NULL,
             amount REAL NOT NULL,
             spent_on TEXT NOT NULL,
             savings_destination TEXT NOT NULL DEFAULT 'none',
+            sort_order INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE,
-            FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE CASCADE
+            FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE SET NULL
         )
         "#,
     )
@@ -171,6 +175,8 @@ async fn run_migrations(pool: &SqlitePool) {
             month_id INTEGER NOT NULL,
             label TEXT NOT NULL,
             amount REAL NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            group_id INTEGER,
             FOREIGN KEY (month_id) REFERENCES months(id) ON DELETE CASCADE
         )
         "#,
@@ -196,7 +202,6 @@ async fn run_migrations(pool: &SqlitePool) {
     .expect("Failed to create monthly_savings table");
 }
 
-/// Create a test user and return their ID
 pub async fn create_test_user(pool: &SqlitePool, username: &str, password: &str) -> i64 {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
@@ -215,7 +220,6 @@ pub async fn create_test_user(pool: &SqlitePool, username: &str, password: &str)
     .expect("Failed to create test user")
 }
 
-/// Generate a JWT token for a user
 pub fn generate_token(user_id: i64, username: &str) -> String {
     let secret = std::env::var("JWT_SECRET")
         .unwrap_or_else(|_| "payme-secret-key-change-in-production".to_string());
@@ -234,7 +238,6 @@ pub fn generate_token(user_id: i64, username: &str) -> String {
     .expect("Failed to generate token")
 }
 
-/// Generate an expired JWT token for testing
 pub fn generate_expired_token(user_id: i64, username: &str) -> String {
     let secret = std::env::var("JWT_SECRET")
         .unwrap_or_else(|_| "payme-secret-key-change-in-production".to_string());
@@ -253,7 +256,6 @@ pub fn generate_expired_token(user_id: i64, username: &str) -> String {
     .expect("Failed to generate token")
 }
 
-/// Create a test category and return its ID
 pub async fn create_test_category(
     pool: &SqlitePool,
     user_id: i64,
@@ -272,7 +274,6 @@ pub async fn create_test_category(
     .expect("Failed to create test category")
 }
 
-/// Create a test month and return its ID
 pub async fn create_test_month(pool: &SqlitePool, user_id: i64, year: i32, month: i32) -> i64 {
     sqlx::query_scalar::<_, i64>(
         "INSERT INTO months (user_id, year, month) VALUES (?, ?, ?) RETURNING id",
@@ -285,7 +286,6 @@ pub async fn create_test_month(pool: &SqlitePool, user_id: i64, year: i32, month
     .expect("Failed to create test month")
 }
 
-/// Create a test fixed expense and return its ID
 pub async fn create_test_fixed_expense(
     pool: &SqlitePool,
     user_id: i64,
@@ -303,7 +303,32 @@ pub async fn create_test_fixed_expense(
     .expect("Failed to create test fixed expense")
 }
 
-/// Create a test income entry and return its ID
+pub async fn create_test_monthly_fixed_expense(
+    pool: &SqlitePool,
+    month_id: i64,
+    label: &str,
+    amount: f64,
+) -> i64 {
+    let id = sqlx::query_scalar::<_, i64>(
+        "INSERT INTO monthly_fixed_expenses (month_id, label, amount) VALUES (?, ?, ?) RETURNING id",
+    )
+    .bind(month_id)
+    .bind(label)
+    .bind(amount)
+    .fetch_one(pool)
+    .await
+    .expect("Failed to create test monthly fixed expense");
+
+    // Mirror the production handlers: each expense starts its own propagation group.
+    sqlx::query("UPDATE monthly_fixed_expenses SET group_id = id WHERE id = ?")
+        .bind(id)
+        .execute(pool)
+        .await
+        .expect("Failed to set group_id on test monthly fixed expense");
+
+    id
+}
+
 pub async fn create_test_income(pool: &SqlitePool, month_id: i64, label: &str, amount: f64) -> i64 {
     sqlx::query_scalar::<_, i64>(
         "INSERT INTO income_entries (month_id, label, amount) VALUES (?, ?, ?) RETURNING id",
@@ -316,7 +341,6 @@ pub async fn create_test_income(pool: &SqlitePool, month_id: i64, label: &str, a
     .expect("Failed to create test income")
 }
 
-/// Create a test item and return its ID
 pub async fn create_test_item(
     pool: &SqlitePool,
     month_id: i64,
@@ -339,7 +363,6 @@ pub async fn create_test_item(
     .expect("Failed to create test item")
 }
 
-/// Create a test monthly budget and return its ID
 pub async fn create_test_budget(
     pool: &SqlitePool,
     month_id: i64,
@@ -357,7 +380,6 @@ pub async fn create_test_budget(
     .expect("Failed to create test budget")
 }
 
-/// Close a month
 pub async fn close_test_month(pool: &SqlitePool, month_id: i64) {
     sqlx::query("UPDATE months SET is_closed = 1, closed_at = datetime('now') WHERE id = ?")
         .bind(month_id)
@@ -366,17 +388,14 @@ pub async fn close_test_month(pool: &SqlitePool, month_id: i64) {
         .expect("Failed to close test month");
 }
 
-/// Authorization header name
 pub fn auth_name() -> HeaderName {
     HeaderName::from_static("authorization")
 }
 
-/// Authorization header value
 pub fn auth_value(token: &str) -> HeaderValue {
     HeaderValue::from_str(&format!("Bearer {}", token)).unwrap()
 }
 
-/// Create a test server from a router
 pub fn create_test_server(app: Router) -> TestServer {
-    TestServer::new(app).unwrap()
+    TestServer::new(app)
 }
