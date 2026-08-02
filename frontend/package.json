@@ -2,6 +2,7 @@
   "name": "payme-frontend",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "bun@1.3.14",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,25 +11,28 @@
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "html2canvas": "^1.4.1",
-    "lucide-react": "*",
-    "react": "*",
-    "react-dom": "*",
-    "recharts": "*"
+    "lucide-react": "^1.28.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@eslint/js": "*",
-    "@tailwindcss/vite": "*",
-    "@types/react": "*",
-    "@types/react-dom": "*",
-    "@vitejs/plugin-react": "*",
-    "eslint": "*",
-    "eslint-plugin-react-hooks": "*",
-    "eslint-plugin-react-refresh": "*",
-    "globals": "*",
-    "tailwindcss": "*",
-    "typescript": "*",
-    "typescript-eslint": "*",
-    "vite": "*"
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.9.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.2.0"
   }
 }

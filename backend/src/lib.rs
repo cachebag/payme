@@ -21,7 +21,6 @@ use handlers::{
 };
 use middleware::auth::auth_middleware;
 
-/// Create the application router with all routes
 pub fn create_app(pool: SqlitePool) -> Router {
     let public_routes = Router::new()
         .route("/health", get(health::health_check))
@@ -50,6 +49,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
             post(monthly_data::create_monthly_fixed_expense),
         )
         .route(
+            "/api/months/{month_id}/fixed-expenses/reorder",
+            put(monthly_data::reorder_monthly_fixed_expenses),
+        )
+        .route(
             "/api/months/{month_id}/fixed-expenses/{id}",
             put(monthly_data::update_monthly_fixed_expense),
         )
@@ -74,6 +77,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
             post(fixed_expenses::create_fixed_expense),
         )
         .route(
+            "/api/fixed-expenses/reorder",
+            put(fixed_expenses::reorder_fixed_expenses),
+        )
+        .route(
             "/api/fixed-expenses/{id}",
             put(fixed_expenses::update_fixed_expense),
         )
@@ -83,8 +90,12 @@ pub fn create_app(pool: SqlitePool) -> Router {
         )
         .route("/api/categories", get(budget::list_categories))
         .route("/api/categories", post(budget::create_category))
+        .route("/api/categories/reorder", put(budget::reorder_categories))
         .route("/api/categories/{id}", put(budget::update_category))
-        .route("/api/categories/{id}", delete(budget::delete_category))
+        .route(
+            "/api/months/{month_id}/categories/{id}",
+            delete(budget::delete_month_category),
+        )
         .route(
             "/api/months/{id}/budgets",
             get(budget::list_monthly_budgets),
@@ -96,6 +107,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
         .route("/api/months/{id}/income", get(income::list_income))
         .route("/api/months/{id}/income", post(income::create_income))
         .route(
+            "/api/months/{id}/income/reorder",
+            put(income::reorder_income),
+        )
+        .route(
             "/api/months/{month_id}/income/{id}",
             put(income::update_income),
         )
@@ -105,6 +120,7 @@ pub fn create_app(pool: SqlitePool) -> Router {
         )
         .route("/api/months/{id}/items", get(items::list_items))
         .route("/api/months/{id}/items", post(items::create_item))
+        .route("/api/months/{id}/items/reorder", put(items::reorder_items))
         .route("/api/months/{month_id}/items/{id}", put(items::update_item))
         .route(
             "/api/months/{month_id}/items/{id}",
@@ -130,6 +146,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
             post(savings_goals::create_savings_goal),
         )
         .route(
+            "/api/savings-goals/reorder",
+            put(savings_goals::reorder_savings_goals),
+        )
+        .route(
             "/api/savings-goals/{id}",
             put(savings_goals::update_savings_goal),
         )
@@ -144,6 +164,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
         .route(
             "/api/retirement-breakdown",
             post(retirement_breakdown::create_retirement_breakdown_item),
+        )
+        .route(
+            "/api/retirement-breakdown/reorder",
+            put(retirement_breakdown::reorder_retirement_breakdown),
         )
         .route(
             "/api/retirement-breakdown/{id}",

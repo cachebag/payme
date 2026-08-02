@@ -25,7 +25,7 @@ Generally, if you don't like it, fork it and make it your own or consider contri
 ## Requirements
 
 - Rust 1.75+
-- Node.js 20+
+- Bun 1.3+
 - SQLite3
 
 ## Setup
@@ -43,7 +43,8 @@ See `.env.example` for all available variables.
 ```bash 
 DATABASE_URL=sqlite:payme.db?mode=rwc
 JWT_SECRET=some-random-string
-PORT=3001
+PAYME_BIND=127.0.0.1:3001
+PAYME_STATIC_DIR=frontend/dist
 ``` 
 
 
@@ -74,55 +75,34 @@ Export/import database via the UI download button or `/api/export` endpoint.
 
 To view all the api endpoints and schemas, go to: http://your-ip/swagger-ui
 
-## Docker
+## Rafael deployment
 
-Docker is the recommended way to deploy payme in a homelab. The multi-stage build creates a minimal image with just the compiled binary and static frontend assets.
-
-### Using Docker Compose (Recommended)
+In the Rafael monorepo, payme runs as a user-level systemd service:
 
 ```bash
-# Set a secure JWT secret
-echo "JWT_SECRET=$(openssl rand -base64 32)" > .env
+mkdir -p ~/rafael/data/payme
+printf 'JWT_SECRET=%s\n' "$(openssl rand -base64 32)" > ~/rafael/data/payme/payme.env
+chmod 600 ~/rafael/data/payme/payme.env
 
-# Build and start
-docker compose up -d
+cd ~/rafael/services/payme/frontend
+bun install --frozen-lockfile
+bun run build
+
+cd ~/rafael
+cargo build --release -p payme
+
+mkdir -p ~/.config/systemd/user
+ln -sf ~/rafael/infra/systemd/rafael-payme.service ~/.config/systemd/user/rafael-payme.service
+systemctl --user daemon-reload
+systemctl --user enable --now rafael-payme.service
 ```
 
-Access payme at http://your-ip:3001
+The service binds to `127.0.0.1:3032` by default. Rafael exposes it publicly
+through Tailscale Funnel on:
 
-### Manual Docker Build
-
-```bash
-docker build -t payme .
-docker run -d \
-  --name payme \
-  -p 3001:3001 \
-  -v payme_data:/data \
-  -e JWT_SECRET=your-secret-key \
-  payme
+```txt
+https://rafael.taild0efc0.ts.net:8443/
 ```
 
-### Data Persistence
-
-The SQLite database is stored in a Docker volume at `/data`. To backup:
-
-```bash
-docker cp payme:/data/payme.db ./backup.db
-```
-
-### Reverse Proxy
-
-For production, place payme behind a reverse proxy (nginx, Caddy, Traefik) with HTTPS. Example nginx config:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name finance.yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:3001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
+The backend auth cookie is named `payme_token` so it does not collide with
+other apps on the same Tailscale hostname.

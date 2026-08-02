@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { ItemWithCategory, BudgetCategory, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
 import { Button } from "./ui/Button";
+import { ReorderControls } from "./ui/ReorderControls";
+import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
 import { useCurrency } from "../context/CurrencyContext";
 import { useUIPreferences } from "../context/UIPreferencesContext";
+import { useSortableReorder } from "../hooks/useSortableReorder";
 
 interface TransfersCardProps {
   monthId: number;
@@ -32,11 +35,22 @@ export function TransfersCard({
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
   const [savingsDestination, setSavingsDestination] = useState("savings");
 
-  const transferItems = items.filter(
-    (item) =>
-      item.savings_destination === "savings" ||
-      item.savings_destination === "retirement_savings"
+  const transferItems = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.savings_destination === "savings" ||
+          item.savings_destination === "retirement_savings"
+      ),
+    [items]
   );
+  const {
+    orderedItems: orderedTransferItems,
+    handleDragEnd: handleTransferDragEnd,
+  } = useSortableReorder(transferItems, async (nextItems) => {
+    await api.items.reorder(monthId, nextItems.map((item) => item.id));
+    await onUpdate();
+  });
 
   const handleAdd = async () => {
     if (!description || !amount) return;
@@ -68,6 +82,15 @@ export function TransfersCard({
 
   const handleDelete = async (id: number) => {
     await api.items.delete(monthId, id);
+    await onUpdate();
+  };
+
+  const handleMove = async (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= orderedTransferItems.length) return;
+    const next = [...orderedTransferItems];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    await api.items.reorder(monthId, next.map((item) => item.id));
     await onUpdate();
   };
 
@@ -170,122 +193,142 @@ export function TransfersCard({
               <th className="text-right py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
                 Amount
               </th>
-              {!isReadOnly && <th className="w-16 md:w-20"></th>}
+              {!isReadOnly && transfersEnabled && <th className="w-28 md:w-32"></th>}
             </tr>
           </thead>
           <tbody>
-            {transferItems.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b border-sand-200 dark:border-charcoal-800 hover:bg-sand-100 dark:hover:bg-charcoal-900/50 active:bg-sand-200 dark:active:bg-charcoal-900 transition-colors"
-              >
-                {editingId === item.id ? (
-                  <>
-                    <td className="py-2">
-                      <Input
-                        type="date"
-                        value={spentOn}
-                        onChange={(e) => setSpentOn(e.target.value)}
-                        className="text-xs"
-                      />
-                    </td>
-                    <td className="py-2">
-                      <Input
-                        placeholder="Description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="text-xs"
-                      />
-                    </td>
-                    <td className="py-2">
-                      <Select
-                        options={[
-                          { value: "savings", label: "Savings" },
-                          { value: "retirement_savings", label: "Retirement" },
-                        ]}
-                        value={savingsDestination}
-                        onChange={(e) => setSavingsDestination(e.target.value)}
-                        className="text-xs"
-                      />
-                    </td>
-                    <td className="py-2">
-                      <Input
-                        type="number"
-                        placeholder="Amount"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="text-xs text-right"
-                      />
-                    </td>
-                    <td className="py-2">
-                      <div className="flex gap-0.5 md:gap-1 justify-end">
-                        <button
-                          onClick={() => handleUpdate(item.id)}
-                          className="p-2 md:p-1 text-sage-600 hover:bg-sage-100 dark:hover:bg-charcoal-800 active:bg-sage-200 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          onClick={resetForm}
-                          className="p-2 md:p-1 text-charcoal-500 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="py-2 px-1 text-charcoal-600 dark:text-charcoal-400 text-xs md:text-sm whitespace-nowrap">
-                      <span className="hidden md:inline">{item.spent_on}</span>
-                      <span className="md:hidden">{item.spent_on.slice(5)}</span>
-                    </td>
-                    <td className="py-2 px-1 text-charcoal-800 dark:text-sand-200 text-xs md:text-sm">
-                      <div className="max-w-[120px] md:max-w-none truncate">
-                        {item.description}
-                      </div>
-                    </td>
-                    <td className="py-2 px-1 text-center">
-                      {item.savings_destination === "savings" && (
-                        <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200 whitespace-nowrap">
-                          Savings
-                        </span>
-                      )}
-                      {item.savings_destination === "retirement_savings" && (
-                        <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 whitespace-nowrap">
-                          Retirement
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 px-1 text-right font-medium text-xs md:text-sm whitespace-nowrap text-sage-600 dark:text-sage-400">
-                      → {formatCurrency(item.amount)}
-                    </td>
-                    {!isReadOnly && transfersEnabled && (
-                      <td className="py-2 px-1">
-                        <div className="flex gap-0.5 md:gap-1 justify-end">
-                          <button
-                            onClick={() => startEdit(item)}
-                            className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="p-2 md:p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800 active:bg-terracotta-200 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </>
-                )}
-              </tr>
-            ))}
+            <SortableList
+              ids={orderedTransferItems.map((item) => item.id)}
+              onDragEnd={handleTransferDragEnd}
+            >
+              {orderedTransferItems.map((item, index) => (
+                <SortableItem
+                  key={item.id}
+                  id={item.id}
+                  as="tr"
+                  className="border-b border-sand-200 dark:border-charcoal-800 hover:bg-sand-100 dark:hover:bg-charcoal-900/50 active:bg-sand-200 dark:active:bg-charcoal-900 transition-colors"
+                >
+                  {({ attributes, listeners }) =>
+                    editingId === item.id ? (
+                      <>
+                        <td className="py-2">
+                          <Input
+                            type="date"
+                            value={spentOn}
+                            onChange={(e) => setSpentOn(e.target.value)}
+                            className="text-xs"
+                          />
+                        </td>
+                        <td className="py-2">
+                          <Input
+                            placeholder="Description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="text-xs"
+                          />
+                        </td>
+                        <td className="py-2">
+                          <Select
+                            options={[
+                              { value: "savings", label: "Savings" },
+                              { value: "retirement_savings", label: "Retirement" },
+                            ]}
+                            value={savingsDestination}
+                            onChange={(e) => setSavingsDestination(e.target.value)}
+                            className="text-xs"
+                          />
+                        </td>
+                        <td className="py-2">
+                          <Input
+                            type="number"
+                            placeholder="Amount"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="text-xs text-right"
+                          />
+                        </td>
+                        <td className="py-2">
+                          <div className="flex gap-0.5 md:gap-1 justify-end">
+                            <button
+                              onClick={() => handleUpdate(item.id)}
+                              className="p-2 md:p-1 text-sage-600 hover:bg-sage-100 dark:hover:bg-charcoal-800 active:bg-sage-200 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={resetForm}
+                              className="p-2 md:p-1 text-charcoal-500 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-1 text-charcoal-600 dark:text-charcoal-400 text-xs md:text-sm whitespace-nowrap">
+                          <span className="hidden md:inline">{item.spent_on}</span>
+                          <span className="md:hidden">{item.spent_on.slice(5)}</span>
+                        </td>
+                        <td className="py-2 px-1 text-charcoal-800 dark:text-sand-200 text-xs md:text-sm">
+                          <div className="max-w-[120px] md:max-w-none truncate">
+                            {item.description}
+                          </div>
+                        </td>
+                        <td className="py-2 px-1 text-center">
+                          {item.savings_destination === "savings" && (
+                            <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-sage-100 dark:bg-sage-900 text-sage-700 dark:text-sage-200 whitespace-nowrap">
+                              Savings
+                            </span>
+                          )}
+                          {item.savings_destination === "retirement_savings" && (
+                            <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 whitespace-nowrap">
+                              Retirement
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-1 text-right font-medium text-xs md:text-sm whitespace-nowrap text-sage-600 dark:text-sage-400">
+                          → {formatCurrency(item.amount)}
+                        </td>
+                        {!isReadOnly && transfersEnabled && (
+                          <td className="py-2 px-1">
+                            <div className="flex gap-0.5 md:gap-1 justify-end">
+                              {orderedTransferItems.length > 1 && (
+                                <>
+                                  <SortableHandle attributes={attributes} listeners={listeners} />
+                                  <ReorderControls
+                                    index={index}
+                                    total={orderedTransferItems.length}
+                                    onMove={handleMove}
+                                    className="mr-1"
+                                  />
+                                </>
+                              )}
+                              <button
+                                onClick={() => startEdit(item)}
+                                className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="p-2 md:p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800 active:bg-terracotta-200 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </>
+                    )
+                  }
+                </SortableItem>
+              ))}
+            </SortableList>
           </tbody>
         </table>
 
-        {transferItems.length === 0 && (
+        {orderedTransferItems.length === 0 && (
           <div className="text-sm text-charcoal-400 dark:text-charcoal-600 py-8 text-center">
             No transfers
           </div>

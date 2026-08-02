@@ -38,8 +38,17 @@ export function useMonth() {
   }, [loadMonths, loadMonth, selectedMonthId]);
 
   useEffect(() => {
-    loadMonths().then(() => loadMonth(null));
-  }, [loadMonths, loadMonth]);
+    Promise.all([api.months.list(), api.categories.list(), api.months.current()])
+      .then(([monthsList, cats, currentMonth]) => {
+        setMonths(monthsList);
+        setCategories(cats);
+        setSummary(currentMonth);
+        setSelectedMonthId(currentMonth.month.id);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   const selectMonth = (monthId: number) => {
     setSelectedMonthId(monthId);

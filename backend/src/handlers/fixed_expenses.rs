@@ -28,6 +28,11 @@ pub struct UpdateFixedExpense {
     pub amount: Option<f64>,
 }
 
+#[derive(Deserialize, ToSchema)]
+pub struct ReorderFixedExpenses {
+    pub ids: Vec<i64>,
+}
+
 #[utoipa::path(
     get,
     path = "/api/fixed-expenses",
@@ -44,7 +49,7 @@ pub async fn list_fixed_expenses(
     axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<FixedExpense>>, PaymeError> {
     let expenses: Vec<FixedExpense> =
-        sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ?")
+        sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ? ORDER BY sort_order, id")
             .bind(claims.sub)
             .fetch_all(&pool)
             .await?;
@@ -70,12 +75,20 @@ pub async fn create_fixed_expense(
     Json(payload): Json<CreateFixedExpense>,
 ) -> Result<Json<FixedExpense>, PaymeError> {
     payload.validate()?;
+    let sort_order: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM fixed_expenses WHERE user_id = ?",
+    )
+    .bind(claims.sub)
+    .fetch_one(&pool)
+    .await?;
+
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO fixed_expenses (user_id, label, amount) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO fixed_expenses (user_id, label, amount, sort_order) VALUES (?, ?, ?, ?) RETURNING id",
     )
     .bind(claims.sub)
     .bind(&payload.label)
     .bind(payload.amount)
+    .bind(sort_order)
     .fetch_one(&pool)
     .await?;
 
@@ -133,6 +146,23 @@ pub async fn update_fixed_expense(
         label,
         amount,
     }))
+}
+
+pub async fn reorder_fixed_expenses(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Json(payload): Json<ReorderFixedExpenses>,
+) -> Result<StatusCode, PaymeError> {
+    for (index, id) in payload.ids.iter().enumerate() {
+        sqlx::query("UPDATE fixed_expenses SET sort_order = ? WHERE id = ? AND user_id = ?")
+            .bind(index as i64)
+            .bind(id)
+            .bind(claims.sub)
+            .execute(&pool)
+            .await?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[utoipa::path(

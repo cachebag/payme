@@ -47,32 +47,17 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        const [monthsList, currentMonth] = await Promise.all([
-          api.months.list(),
-          api.months.current(),
-        ]);
+    Promise.all([api.months.list(), api.months.current()])
+      .then(async ([monthsList, currentMonth]) => {
+        const summary = initialMonthId ? await api.months.get(initialMonthId) : currentMonth;
         setMonths(monthsList);
-        setMonthSummary(currentMonth);
-        if (!initialMonthId) {
-          setSelectedMonthId(currentMonth.month.id);
-        }
-      } finally {
+        setMonthSummary(summary);
+        setSelectedMonthId(summary.month.id);
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    };
-    loadInitialData();
+      });
   }, [initialMonthId]);
-
-  useEffect(() => {
-    if (viewMode === "month" && selectedMonthId) {
-      loadMonthData(selectedMonthId);
-    } else if (viewMode === "year") {
-      loadYearData();
-    }
-  }, [viewMode, selectedMonthId]);
 
   const loadMonthData = async (monthId: number) => {
     setLoading(true);
@@ -92,6 +77,25 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
     } finally {
       setLoading(false);
     }
+  };
+
+  const showMonthView = () => {
+    setViewMode("month");
+    if (selectedMonthId) {
+      void loadMonthData(selectedMonthId);
+    }
+  };
+
+  const showYearView = () => {
+    setViewMode("year");
+    if (!yearStats) {
+      void loadYearData();
+    }
+  };
+
+  const selectMonth = (monthId: number) => {
+    setSelectedMonthId(monthId);
+    void loadMonthData(monthId);
   };
 
   const handlePrint = () => {
@@ -122,11 +126,12 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
   const spendingByCategory = monthSummary?.items
     .filter(i => i.savings_destination === "none")
     .reduce((acc, item) => {
-      const existing = acc.find(c => c.category === item.category_label);
+      const label = item.category_label ?? "Uncategorized";
+      const existing = acc.find(c => c.category === label);
       if (existing) {
         existing.amount += item.amount;
       } else {
-        acc.push({ category: item.category_label, amount: item.amount });
+        acc.push({ category: label, amount: item.amount });
       }
       return acc;
     }, [] as { category: string; amount: number }[])
@@ -201,7 +206,7 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
       <div className="print:hidden mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex rounded-lg overflow-hidden border border-sand-300 dark:border-charcoal-700">
           <button
-            onClick={() => setViewMode("month")}
+            onClick={showMonthView}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               viewMode === "month"
                 ? "bg-sage-600 text-white"
@@ -211,7 +216,7 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
             Single Month
           </button>
           <button
-            onClick={() => setViewMode("year")}
+            onClick={showYearView}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               viewMode === "year"
                 ? "bg-sage-600 text-white"
@@ -227,7 +232,7 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
             <Calendar size={16} className="text-charcoal-500" />
             <select
               value={selectedMonthId ?? ""}
-              onChange={(e) => setSelectedMonthId(Number(e.target.value))}
+              onChange={(e) => selectMonth(Number(e.target.value))}
               className="px-3 py-2 rounded-lg border border-sand-300 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 text-charcoal-900 dark:text-sand-100 text-sm"
             >
               {months.map(m => (
@@ -384,7 +389,7 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={topSpending.map(i => ({ name: i.description.slice(0, 20), amount: i.amount, category: i.category_label }))}
+                      data={topSpending.map(i => ({ name: i.description.slice(0, 20), amount: i.amount, category: i.category_label ?? "Uncategorized" }))}
                       layout="vertical"
                       margin={{ left: 100 }}
                     >
@@ -394,7 +399,7 @@ export function SummaryPage({ onBack, onSettingsClick, initialMonthId }: Summary
                         formatter={(value) => formatCurrency(Number(value))}
                         labelFormatter={(label) => {
                           const item = topSpending.find(i => i.description.slice(0, 20) === label);
-                          return item ? `${item.description} (${item.category_label})` : String(label);
+                          return item ? `${item.description} (${item.category_label ?? "Uncategorized"})` : String(label);
                         }}
                         contentStyle={{ backgroundColor: "#faf8f5", border: "none", fontSize: 12, color: "#1a1a1a" }}
                       />

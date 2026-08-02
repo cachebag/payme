@@ -3,56 +3,56 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  --color-sand-50: #faf8f5;
-  --color-sand-100: #f5f0e8;
-  --color-sand-200: #e8dfd2;
-  --color-sand-300: #d4c4ad;
-  --color-sand-400: #bfa585;
-  --color-sand-500: #a68a5b;
-  --color-sand-600: #8b7049;
-  --color-sand-700: #6f5a3b;
-  --color-sand-800: #5a4a33;
-  --color-sand-900: #4a3e2c;
+  --color-sand-50: #f1f1ef;
+  --color-sand-100: #ededeb;
+  --color-sand-200: #dededa;
+  --color-sand-300: #c9c7c0;
+  --color-sand-400: #9c968d;
+  --color-sand-500: #89724d;
+  --color-sand-600: #6f5c3f;
+  --color-sand-700: #574832;
+  --color-sand-800: #3f3425;
+  --color-sand-900: #282117;
 
-  --color-sage-50: #f4f7f4;
-  --color-sage-100: #e4ebe4;
-  --color-sage-200: #c9d6c9;
-  --color-sage-300: #a3b8a3;
-  --color-sage-400: #7a9a7a;
-  --color-sage-500: #5a7d5a;
-  --color-sage-600: #466446;
-  --color-sage-700: #3a5139;
-  --color-sage-800: #31422f;
-  --color-sage-900: #293628;
+  --color-sage-50: #f4f0e8;
+  --color-sage-100: #ede4d7;
+  --color-sage-200: #ddcdb4;
+  --color-sage-300: #ccb187;
+  --color-sage-400: #c8aa78;
+  --color-sage-500: #b89b6b;
+  --color-sage-600: #89724d;
+  --color-sage-700: #6f5c3f;
+  --color-sage-800: #3f3425;
+  --color-sage-900: #282117;
 
-  --color-terracotta-50: #fdf6f4;
-  --color-terracotta-100: #faeae5;
-  --color-terracotta-200: #f5d4cb;
-  --color-terracotta-300: #edb3a2;
-  --color-terracotta-400: #e28b70;
-  --color-terracotta-500: #d4694a;
-  --color-terracotta-600: #b5503a;
-  --color-terracotta-700: #954030;
-  --color-terracotta-800: #7a372a;
-  --color-terracotta-900: #663027;
+  --color-terracotta-50: #f2dfdc;
+  --color-terracotta-100: #ead0cc;
+  --color-terracotta-200: #dcb4ae;
+  --color-terracotta-300: #cf958d;
+  --color-terracotta-400: #d78779;
+  --color-terracotta-500: #bd6e65;
+  --color-terracotta-600: #a9605a;
+  --color-terracotta-700: #7c312c;
+  --color-terracotta-800: #3a211f;
+  --color-terracotta-900: #251918;
 
-  --color-charcoal-50: #f6f6f6;
-  --color-charcoal-100: #e7e7e7;
-  --color-charcoal-200: #d1d1d1;
-  --color-charcoal-300: #b0b0b0;
-  --color-charcoal-400: #888888;
-  --color-charcoal-500: #6d6d6d;
-  --color-charcoal-600: #5d5d5d;
-  --color-charcoal-700: #4f4f4f;
-  --color-charcoal-800: #454545;
-  --color-charcoal-900: #1a1a1a;
-  --color-charcoal-950: #0d0d0d;
+  --color-charcoal-50: #f7f7f5;
+  --color-charcoal-100: #e8e3da;
+  --color-charcoal-200: #d2cdc5;
+  --color-charcoal-300: #b8b2aa;
+  --color-charcoal-400: #9c968d;
+  --color-charcoal-500: #6d6860;
+  --color-charcoal-600: #55524e;
+  --color-charcoal-700: #343434;
+  --color-charcoal-800: #202020;
+  --color-charcoal-900: #181818;
+  --color-charcoal-950: #101010;
 }
 
 * {
-  font-family: var(--font-mono);
+  box-sizing: border-box;
 }
 
 button {
@@ -60,17 +60,32 @@ button {
 }
 
 body {
-  @apply bg-sand-50 text-charcoal-900 transition-colors duration-300;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  color: #202020;
+  background:
+    linear-gradient(180deg, #e8e8e5 0%, #f1f1ef 38rem),
+    #f1f1ef;
+  font-family: var(--font-sans);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 body.dark {
-  @apply bg-charcoal-950 text-sand-100;
+  color: #e8e3da;
+  color-scheme: dark;
+  background:
+    linear-gradient(180deg, #161616 0%, #101010 38rem),
+    #101010;
 }
 
+button,
 input,
 select,
 textarea {
-  @apply bg-transparent text-charcoal-900;
+  font: inherit;
 }
 
 input::placeholder,
@@ -80,12 +95,6 @@ textarea::placeholder {
 
 select option {
   @apply bg-sand-50 text-charcoal-900;
-}
-
-.dark input,
-.dark select,
-.dark textarea {
-  @apply bg-charcoal-900 border-charcoal-700 text-sand-100;
 }
 
 .dark input::placeholder,
@@ -136,4 +145,3 @@ select option {
     size: A4;
   }
 }
-

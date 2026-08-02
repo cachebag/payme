@@ -13,7 +13,9 @@ use utoipa::ToSchema;
 use validator::Validate;
 
 use crate::error::PaymeError;
-use crate::middleware::auth::Claims;
+use crate::middleware::auth::{Claims, AUTH_COOKIE_NAME};
+
+const LEGACY_AUTH_COOKIE_NAME: &str = "token";
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct AuthRequest {
@@ -116,15 +118,16 @@ pub async fn login(
     )
     .map_err(|e| PaymeError::Internal(e.to_string()))?;
 
-    let cookie = Cookie::build(("token", token))
+    let cookie = Cookie::build((AUTH_COOKIE_NAME, token))
         .path("/")
         .http_only(true)
         .same_site(SameSite::Lax)
         .max_age(time::Duration::days(30))
         .build();
+    let legacy_cookie = expired_auth_cookie(LEGACY_AUTH_COOKIE_NAME);
 
     Ok((
-        jar.add(cookie),
+        jar.add(cookie).add(legacy_cookie),
         Json(AuthResponse {
             id: user.0,
             username: user.1,
@@ -144,13 +147,8 @@ pub async fn login(
     description = "Clears the authentication token by setting the session cookie to expire immediately."
 )]
 pub async fn logout(jar: CookieJar) -> impl IntoResponse {
-    let cookie = Cookie::build(("token", ""))
-        .path("/")
-        .http_only(true)
-        .max_age(time::Duration::seconds(0))
-        .build();
-
-    jar.add(cookie)
+    jar.add(expired_auth_cookie(AUTH_COOKIE_NAME))
+        .add(expired_auth_cookie(LEGACY_AUTH_COOKIE_NAME))
 }
 
 #[utoipa::path(
@@ -348,14 +346,23 @@ pub async fn clear_all_data(
         .execute(&pool)
         .await?;
 
-    let cookie = Cookie::build(("token", ""))
+    let cookie = Cookie::build((AUTH_COOKIE_NAME, ""))
         .path("/")
         .http_only(true)
         .max_age(time::Duration::seconds(0))
         .build();
+    let legacy_cookie = expired_auth_cookie(LEGACY_AUTH_COOKIE_NAME);
 
     Ok((
-        jar.add(cookie),
+        jar.add(cookie).add(legacy_cookie),
         Json(serde_json::json!({"message": "All data cleared"})),
     ))
+}
+
+fn expired_auth_cookie(name: &'static str) -> Cookie<'static> {
+    Cookie::build((name, ""))
+        .path("/")
+        .http_only(true)
+        .max_age(time::Duration::seconds(0))
+        .build()
 }

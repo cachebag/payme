@@ -28,12 +28,17 @@ pub struct UpdateRetirementBreakdownItem {
     pub amount: Option<f64>,
 }
 
+#[derive(Deserialize, ToSchema)]
+pub struct ReorderRetirementBreakdown {
+    pub ids: Vec<i64>,
+}
+
 pub async fn list_retirement_breakdown(
     State(pool): State<SqlitePool>,
     axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<RetirementBreakdownItem>>, PaymeError> {
     let items: Vec<RetirementBreakdownItem> = sqlx::query_as(
-        "SELECT id, user_id, label, amount FROM retirement_breakdown_items WHERE user_id = ? ORDER BY id ASC",
+        "SELECT id, user_id, label, amount FROM retirement_breakdown_items WHERE user_id = ? ORDER BY sort_order, id",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
@@ -48,12 +53,20 @@ pub async fn create_retirement_breakdown_item(
     Json(payload): Json<CreateRetirementBreakdownItem>,
 ) -> Result<(StatusCode, Json<RetirementBreakdownItem>), PaymeError> {
     payload.validate()?;
+    let sort_order: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM retirement_breakdown_items WHERE user_id = ?",
+    )
+    .bind(claims.sub)
+    .fetch_one(&pool)
+    .await?;
+
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO retirement_breakdown_items (user_id, label, amount) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO retirement_breakdown_items (user_id, label, amount, sort_order) VALUES (?, ?, ?, ?) RETURNING id",
     )
     .bind(claims.sub)
     .bind(&payload.label)
     .bind(payload.amount)
+    .bind(sort_order)
     .fetch_one(&pool)
     .await?;
 
@@ -100,6 +113,25 @@ pub async fn update_retirement_breakdown_item(
         label,
         amount,
     }))
+}
+
+pub async fn reorder_retirement_breakdown(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Json(payload): Json<ReorderRetirementBreakdown>,
+) -> Result<StatusCode, PaymeError> {
+    for (index, id) in payload.ids.iter().enumerate() {
+        sqlx::query(
+            "UPDATE retirement_breakdown_items SET sort_order = ? WHERE id = ? AND user_id = ?",
+        )
+        .bind(index as i64)
+        .bind(id)
+        .bind(claims.sub)
+        .execute(&pool)
+        .await?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn delete_retirement_breakdown_item(

@@ -98,7 +98,7 @@ pub async fn create_month(
             .await?;
 
             let categories: Vec<(i64, f64)> = sqlx::query_as(
-                "SELECT id, default_amount FROM budget_categories WHERE user_id = ?",
+                "SELECT id, default_amount FROM budget_categories WHERE user_id = ? AND archived_at IS NULL ORDER BY sort_order, id",
             )
             .bind(claims.sub)
             .fetch_all(&pool)
@@ -116,22 +116,8 @@ pub async fn create_month(
                 .ok();
             }
 
-            let fixed_expenses: Vec<(String, f64)> =
-                sqlx::query_as("SELECT label, amount FROM fixed_expenses WHERE user_id = ?")
-                    .bind(claims.sub)
-                    .fetch_all(&pool)
-                    .await?;
-
-            for (label, amount) in fixed_expenses {
-                sqlx::query(
-                    "INSERT INTO monthly_fixed_expenses (month_id, label, amount) VALUES (?, ?, ?)",
-                )
-                .bind(id)
-                .bind(label)
-                .bind(amount)
-                .execute(&pool)
+            seed_fixed_expenses_for_month(&pool, claims.sub, id, payload.year, payload.month)
                 .await?;
-            }
 
             let (savings, retirement_savings, savings_goal): (f64, f64, f64) = sqlx::query_as(
                 "SELECT savings, retirement_savings, savings_goal FROM users WHERE id = ?",
@@ -162,6 +148,71 @@ pub async fn create_month(
     };
 
     get_month_summary(&pool, claims.sub, month_record.id).await
+}
+
+/// Seeds a newly created month's fixed expenses. Fixed expenses are stored per-month
+/// (`monthly_fixed_expenses`) so they can be edited independently for each month, but a new
+/// month should still start from whatever was set up in the most recent prior month. Only
+/// falls back to the user's global `fixed_expenses` templates when there is no earlier month
+/// to carry forward from (e.g. the very first month for a user).
+async fn seed_fixed_expenses_for_month(
+    pool: &SqlitePool,
+    user_id: i64,
+    new_month_id: i64,
+    year: i32,
+    month: i32,
+) -> Result<(), PaymeError> {
+    let previous_month_id: Option<i64> = sqlx::query_scalar(
+        "SELECT id FROM months WHERE user_id = ? AND (year < ? OR (year = ? AND month < ?)) ORDER BY year DESC, month DESC LIMIT 1",
+    )
+    .bind(user_id)
+    .bind(year)
+    .bind(year)
+    .bind(month)
+    .fetch_optional(pool)
+    .await?;
+
+    let fixed_expenses: Vec<(String, f64, i64, Option<i64>)> = match previous_month_id {
+        Some(prev_month_id) => {
+            sqlx::query_as(
+                "SELECT label, amount, sort_order, group_id FROM monthly_fixed_expenses WHERE month_id = ? ORDER BY sort_order, id",
+            )
+            .bind(prev_month_id)
+            .fetch_all(pool)
+            .await?
+        }
+        None => {
+            sqlx::query_as(
+                "SELECT label, amount, sort_order, NULL FROM fixed_expenses WHERE user_id = ? ORDER BY sort_order, id",
+            )
+            .bind(user_id)
+            .fetch_all(pool)
+            .await?
+        }
+    };
+
+    for (label, amount, sort_order, group_id) in fixed_expenses {
+        let id: i64 = sqlx::query_scalar(
+            "INSERT INTO monthly_fixed_expenses (month_id, label, amount, sort_order, group_id) VALUES (?, ?, ?, ?, ?) RETURNING id",
+        )
+        .bind(new_month_id)
+        .bind(label)
+        .bind(amount)
+        .bind(sort_order)
+        .bind(group_id)
+        .fetch_one(pool)
+        .await?;
+
+        // Rows without a group (e.g. seeded from the global template) start their own.
+        if group_id.is_none() {
+            sqlx::query("UPDATE monthly_fixed_expenses SET group_id = id WHERE id = ?")
+                .bind(id)
+                .execute(pool)
+                .await?;
+        }
+    }
+
+    Ok(())
 }
 
 #[utoipa::path(
@@ -205,7 +256,7 @@ pub async fn get_or_create_current_month(
             .await?;
 
             let categories: Vec<(i64, f64)> = sqlx::query_as(
-                "SELECT id, default_amount FROM budget_categories WHERE user_id = ?",
+                "SELECT id, default_amount FROM budget_categories WHERE user_id = ? AND archived_at IS NULL ORDER BY sort_order, id",
             )
             .bind(claims.sub)
             .fetch_all(&pool)
@@ -223,22 +274,7 @@ pub async fn get_or_create_current_month(
                 .ok();
             }
 
-            let fixed_expenses: Vec<(String, f64)> =
-                sqlx::query_as("SELECT label, amount FROM fixed_expenses WHERE user_id = ?")
-                    .bind(claims.sub)
-                    .fetch_all(&pool)
-                    .await?;
-
-            for (label, amount) in fixed_expenses {
-                sqlx::query(
-                    "INSERT INTO monthly_fixed_expenses (month_id, label, amount) VALUES (?, ?, ?)",
-                )
-                .bind(id)
-                .bind(label)
-                .bind(amount)
-                .execute(&pool)
-                .await?;
-            }
+            seed_fixed_expenses_for_month(&pool, claims.sub, id, year, month).await?;
 
             let (savings, retirement_savings, savings_goal): (f64, f64, f64) = sqlx::query_as(
                 "SELECT savings, retirement_savings, savings_goal FROM users WHERE id = ?",
@@ -314,14 +350,15 @@ async fn get_month_summary(
     .fetch_one(pool)
     .await?;
 
-    let income_entries: Vec<IncomeEntry> =
-        sqlx::query_as("SELECT id, month_id, label, amount FROM income_entries WHERE month_id = ?")
-            .bind(month_id)
-            .fetch_all(pool)
-            .await?;
+    let income_entries: Vec<IncomeEntry> = sqlx::query_as(
+        "SELECT id, month_id, label, amount, paid_on FROM income_entries WHERE month_id = ? ORDER BY sort_order, id",
+    )
+    .bind(month_id)
+    .fetch_all(pool)
+    .await?;
 
     let fixed_expenses: Vec<MonthlyFixedExpense> = sqlx::query_as(
-        "SELECT id, month_id, label, amount FROM monthly_fixed_expenses WHERE month_id = ?",
+        "SELECT id, month_id, label, amount FROM monthly_fixed_expenses WHERE month_id = ? ORDER BY sort_order, id",
     )
     .bind(month_id)
     .fetch_all(pool)
@@ -340,6 +377,7 @@ async fn get_month_summary(
         FROM monthly_budgets mb
         JOIN budget_categories bc ON mb.category_id = bc.id
         WHERE mb.month_id = ?
+        ORDER BY bc.sort_order, bc.id
         "#,
         )
         .bind(month_id)
@@ -365,9 +403,9 @@ async fn get_month_summary(
         r#"
         SELECT i.id, i.month_id, i.category_id, bc.label as category_label, bc.color as category_color, i.description, i.amount, i.spent_on, i.savings_destination
         FROM items i
-        JOIN budget_categories bc ON i.category_id = bc.id
+        LEFT JOIN budget_categories bc ON i.category_id = bc.id
         WHERE i.month_id = ?
-        ORDER BY i.spent_on DESC
+        ORDER BY i.sort_order, i.id
         "#,
     )
     .bind(month_id)
@@ -379,7 +417,7 @@ async fn get_month_summary(
         .map(|mut b| {
             b.spent_amount = items
                 .iter()
-                .filter(|i| i.category_id == b.category_id && i.savings_destination == "none")
+                .filter(|i| i.category_id == Some(b.category_id) && i.savings_destination == "none")
                 .map(|i| i.amount)
                 .sum();
             b
@@ -389,7 +427,6 @@ async fn get_month_summary(
     let total_income: f64 = income_entries.iter().map(|i| i.amount).sum();
     let total_fixed: f64 = fixed_expenses.iter().map(|e| e.amount).sum();
     let total_budgeted: f64 = budgets.iter().map(|b| b.allocated_amount).sum();
-    // Only count items as "spent" if they're not being transferred to savings
     let total_spent: f64 = items
         .iter()
         .filter(|i| i.savings_destination == "none")

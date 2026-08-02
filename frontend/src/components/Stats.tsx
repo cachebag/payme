@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { BarChart3, TrendingUp, TrendingDown } from "lucide-react";
 import {
   LineChart,
@@ -34,11 +34,13 @@ export function Stats() {
     }
   };
 
-  useEffect(() => {
-    if (isOpen && !stats) {
-      loadStats();
+  const openStats = () => {
+    setIsOpen(true);
+    if (!stats) {
+      void loadStats();
     }
-  }, [isOpen, stats]);
+  };
+
 
   const trendData = stats?.monthly_trends
     .slice()
@@ -52,7 +54,7 @@ export function Stats() {
 
   return (
     <>
-      <Button variant="ghost" size="sm" onClick={() => setIsOpen(true)}>
+      <Button variant="ghost" size="sm" onClick={openStats}>
         <BarChart3 size={16} className="mr-2" />
         Stats
       </Button>
@@ -110,18 +112,18 @@ export function Stats() {
                         }}
                       />
                       <Line
-                        type="monotone"
+                        type="linear"
                         dataKey="income"
                         stroke="#5a7d5a"
                         strokeWidth={2}
-                        dot={false}
+                        dot={{ r: 3 }}
                       />
                       <Line
-                        type="monotone"
+                        type="linear"
                         dataKey="spent"
                         stroke="#d4694a"
                         strokeWidth={2}
-                        dot={false}
+                        dot={{ r: 3 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

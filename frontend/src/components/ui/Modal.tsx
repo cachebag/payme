@@ -24,11 +24,8 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-charcoal-900/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative bg-sand-50 dark:bg-charcoal-900 p-6 shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-md border border-sand-300 bg-charcoal-50 p-5 shadow-[0_18px_60px_rgb(0_0_0_/_0.18)] mx-4 dark:border-charcoal-700 dark:bg-charcoal-900">
         <div className="flex items-center justify-between mb-4">
           {title && (
             <h2 className="text-lg font-semibold text-charcoal-800 dark:text-sand-100">
@@ -37,7 +34,7 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
           )}
           <button
             onClick={onClose}
-            className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors ml-auto"
+            className="ml-auto rounded-md p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
           >
             <X size={20} />
           </button>
@@ -47,4 +44,3 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
     </div>
   );
 }
-

@@ -109,14 +109,14 @@ export function MonthNav({
       <div className="flex items-center gap-2 sm:gap-4">
         <button
           onClick={goPrev}
-          className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors touch-manipulation"
+          className="rounded-md p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors touch-manipulation"
           aria-label="Previous month"
         >
           <ChevronLeft size={20} />
         </button>
         <button
           onClick={openPicker}
-          className="text-center hover:bg-sand-200 dark:hover:bg-charcoal-800 px-3 py-1 rounded-lg transition-colors"
+          className="rounded-md px-3 py-1 text-center hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
         >
           <div className="text-xl sm:text-2xl font-semibold text-charcoal-900 dark:text-sand-50 flex items-center gap-2 justify-center">
             {MONTH_NAMES[selectedMonth.month - 1]} {selectedMonth.year}
@@ -135,7 +135,7 @@ export function MonthNav({
         </button>
         <button
           onClick={goNext}
-          className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors touch-manipulation"
+          className="rounded-md p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors touch-manipulation"
           aria-label="Next month"
         >
           <ChevronRight size={20} />
@@ -161,13 +161,13 @@ export function MonthNav({
       {showPicker && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPicker(false)}>
           <div 
-            className="bg-white dark:bg-charcoal-900 rounded-xl p-4 shadow-xl max-w-sm w-full mx-4"
+            className="mx-4 w-full max-w-sm rounded-md border border-sand-300 bg-charcoal-50 p-4 shadow-[0_18px_60px_rgb(0_0_0_/_0.18)] dark:border-charcoal-700 dark:bg-charcoal-900"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setPickerYear(y => y - 1)}
-                className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 rounded-lg transition-colors"
+                className="rounded-md p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
               >
                 <ChevronLeft size={20} />
               </button>
@@ -176,7 +176,7 @@ export function MonthNav({
               </span>
               <button
                 onClick={() => setPickerYear(y => y + 1)}
-                className="p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 rounded-lg transition-colors"
+                className="rounded-md p-2 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
               >
                 <ChevronRight size={20} />
               </button>
@@ -192,7 +192,7 @@ export function MonthNav({
                     key={monthNum}
                     onClick={() => handleMonthSelect(monthNum)}
                     className={`
-                      p-2 rounded-lg text-sm font-medium transition-colors
+                      rounded-md p-2 text-sm font-medium transition-colors
                       ${isSelected 
                         ? "bg-sage-600 text-white" 
                         : exists
@@ -222,4 +222,3 @@ export function MonthNav({
     </div>
   );
 }
-

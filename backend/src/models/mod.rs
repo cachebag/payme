@@ -52,6 +52,7 @@ pub struct IncomeEntry {
     pub month_id: i64,
     pub label: String,
     pub amount: f64,
+    pub paid_on: Option<NaiveDate>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
@@ -66,7 +67,7 @@ pub struct MonthlyBudget {
 pub struct Item {
     pub id: i64,
     pub month_id: i64,
-    pub category_id: i64,
+    pub category_id: Option<i64>,
     pub description: String,
     pub amount: f64,
     pub spent_on: NaiveDate,
@@ -103,9 +104,9 @@ pub struct MonthSummary {
 pub struct ItemWithCategory {
     pub id: i64,
     pub month_id: i64,
-    pub category_id: i64,
-    pub category_label: String,
-    pub category_color: String,
+    pub category_id: Option<i64>,
+    pub category_label: Option<String>,
+    pub category_color: Option<String>,
     pub description: String,
     pub amount: f64,
     pub spent_on: NaiveDate,

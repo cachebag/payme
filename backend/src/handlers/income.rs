@@ -3,6 +3,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use chrono::NaiveDate;
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
@@ -18,6 +19,7 @@ pub struct CreateIncome {
     pub label: String,
     #[validate(range(min = 0.0))]
     pub amount: f64,
+    pub paid_on: Option<NaiveDate>,
 }
 
 #[derive(Deserialize, ToSchema, Validate)]
@@ -26,6 +28,13 @@ pub struct UpdateIncome {
     pub label: Option<String>,
     #[validate(range(min = 0.0))]
     pub amount: Option<f64>,
+    #[serde(default)]
+    pub paid_on: Option<Option<NaiveDate>>,
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct ReorderIncome {
+    pub ids: Vec<i64>,
 }
 
 #[utoipa::path(
@@ -46,11 +55,12 @@ pub async fn list_income(
 ) -> Result<Json<Vec<IncomeEntry>>, PaymeError> {
     verify_month_access(&pool, claims.sub, month_id).await?;
 
-    let entries: Vec<IncomeEntry> =
-        sqlx::query_as("SELECT id, month_id, label, amount FROM income_entries WHERE month_id = ?")
-            .bind(month_id)
-            .fetch_all(&pool)
-            .await?;
+    let entries: Vec<IncomeEntry> = sqlx::query_as(
+        "SELECT id, month_id, label, amount, paid_on FROM income_entries WHERE month_id = ? ORDER BY sort_order, id",
+    )
+    .bind(month_id)
+    .fetch_all(&pool)
+    .await?;
 
     Ok(Json(entries))
 }
@@ -76,12 +86,21 @@ pub async fn create_income(
     payload.validate()?;
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
+    let sort_order: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM income_entries WHERE month_id = ?",
+    )
+    .bind(month_id)
+    .fetch_one(&pool)
+    .await?;
+
     let id: i64 = sqlx::query_scalar(
-        "INSERT INTO income_entries (month_id, label, amount) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO income_entries (month_id, label, amount, paid_on, sort_order) VALUES (?, ?, ?, ?, ?) RETURNING id",
     )
     .bind(month_id)
     .bind(&payload.label)
     .bind(payload.amount)
+    .bind(payload.paid_on)
+    .bind(sort_order)
     .fetch_one(&pool)
     .await?;
 
@@ -90,6 +109,7 @@ pub async fn create_income(
         month_id,
         label: payload.label,
         amount: payload.amount,
+        paid_on: payload.paid_on,
     }))
 }
 
@@ -119,7 +139,7 @@ pub async fn update_income(
     verify_month_not_closed(&pool, claims.sub, month_id).await?;
 
     let existing: IncomeEntry = sqlx::query_as(
-        "SELECT id, month_id, label, amount FROM income_entries WHERE id = ? AND month_id = ?",
+        "SELECT id, month_id, label, amount, paid_on FROM income_entries WHERE id = ? AND month_id = ?",
     )
     .bind(income_id)
     .bind(month_id)
@@ -129,10 +149,12 @@ pub async fn update_income(
 
     let label = payload.label.unwrap_or(existing.label);
     let amount = payload.amount.unwrap_or(existing.amount);
+    let paid_on = payload.paid_on.unwrap_or(existing.paid_on);
 
-    sqlx::query("UPDATE income_entries SET label = ?, amount = ? WHERE id = ?")
+    sqlx::query("UPDATE income_entries SET label = ?, amount = ?, paid_on = ? WHERE id = ?")
         .bind(&label)
         .bind(amount)
+        .bind(paid_on)
         .bind(income_id)
         .execute(&pool)
         .await?;
@@ -142,7 +164,28 @@ pub async fn update_income(
         month_id,
         label,
         amount,
+        paid_on,
     }))
+}
+
+pub async fn reorder_income(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(month_id): Path<i64>,
+    Json(payload): Json<ReorderIncome>,
+) -> Result<StatusCode, PaymeError> {
+    verify_month_not_closed(&pool, claims.sub, month_id).await?;
+
+    for (index, id) in payload.ids.iter().enumerate() {
+        sqlx::query("UPDATE income_entries SET sort_order = ? WHERE id = ? AND month_id = ?")
+            .bind(index as i64)
+            .bind(id)
+            .bind(month_id)
+            .execute(&pool)
+            .await?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[utoipa::path(

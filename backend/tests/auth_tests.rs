@@ -107,6 +107,7 @@ async fn test_login_success() {
     assert_eq!(body["username"], "loginuser");
 
     let cookies = response.cookies();
+    assert!(cookies.iter().any(|c| c.name() == "payme_token"));
     assert!(cookies.iter().any(|c| c.name() == "token"));
 }
 
@@ -155,13 +156,14 @@ async fn test_logout() {
     response.assert_status_ok();
 
     let cookies = response.cookies();
-    let token_cookie = cookies.iter().find(|c| c.name() == "token");
+    let token_cookie = cookies.iter().find(|c| c.name() == "payme_token");
     if let Some(cookie) = token_cookie {
         assert!(cookie
             .max_age()
             .map(|d| d.whole_seconds() <= 0)
             .unwrap_or(true));
     }
+    assert!(cookies.iter().any(|c| c.name() == "token"));
 }
 
 #[tokio::test]

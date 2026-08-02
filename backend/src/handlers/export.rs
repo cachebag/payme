@@ -28,6 +28,9 @@ pub struct CategoryExport {
     pub label: String,
     pub default_amount: f64,
     pub color: String,
+    /// Retired categories are kept so historical months still resolve their labels.
+    #[serde(default)]
+    pub archived: bool,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -44,6 +47,8 @@ pub struct MonthExport {
 pub struct IncomeExport {
     pub label: String,
     pub amount: f64,
+    #[serde(default)]
+    pub paid_on: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -54,7 +59,9 @@ pub struct BudgetExport {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct ItemExport {
-    pub category_label: String,
+    /// `None` means the transaction is uncategorized.
+    #[serde(default)]
+    pub category_label: Option<String>,
     pub description: String,
     pub amount: f64,
     pub spent_on: String,
@@ -90,17 +97,26 @@ pub async fn export_json(
             .unwrap_or(0.0);
 
     let fixed_expenses: Vec<FixedExpense> =
-        sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ?")
+        sqlx::query_as("SELECT id, user_id, label, amount FROM fixed_expenses WHERE user_id = ? ORDER BY sort_order, id")
             .bind(claims.sub)
             .fetch_all(&pool)
             .await?;
 
     let categories: Vec<BudgetCategory> = sqlx::query_as(
-        "SELECT id, user_id, label, default_amount, color FROM budget_categories WHERE user_id = ?",
+        "SELECT id, user_id, label, default_amount, color FROM budget_categories WHERE user_id = ? ORDER BY sort_order, id",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
     .await?;
+
+    let archived_category_ids: std::collections::HashSet<i64> = sqlx::query_scalar(
+        "SELECT id FROM budget_categories WHERE user_id = ? AND archived_at IS NOT NULL",
+    )
+    .bind(claims.sub)
+    .fetch_all(&pool)
+    .await?
+    .into_iter()
+    .collect();
 
     let months: Vec<Month> = sqlx::query_as(
         "SELECT id, user_id, year, month, is_closed, closed_at FROM months WHERE user_id = ? ORDER BY year, month",
@@ -113,7 +129,7 @@ pub async fn export_json(
 
     for m in &months {
         let income_entries: Vec<IncomeEntry> = sqlx::query_as(
-            "SELECT id, month_id, label, amount FROM income_entries WHERE month_id = ?",
+            "SELECT id, month_id, label, amount, paid_on FROM income_entries WHERE month_id = ? ORDER BY sort_order, id",
         )
         .bind(m.id)
         .fetch_all(&pool)
@@ -125,6 +141,7 @@ pub async fn export_json(
             FROM monthly_budgets mb
             JOIN budget_categories bc ON mb.category_id = bc.id
             WHERE mb.month_id = ?
+            ORDER BY bc.sort_order, bc.id
             "#,
         )
         .bind(m.id)
@@ -132,7 +149,7 @@ pub async fn export_json(
         .await?;
 
         let items: Vec<Item> = sqlx::query_as(
-            "SELECT id, month_id, category_id, description, amount, spent_on, savings_destination FROM items WHERE month_id = ?",
+            "SELECT id, month_id, category_id, description, amount, spent_on, savings_destination FROM items WHERE month_id = ? ORDER BY sort_order, id",
         )
         .bind(m.id)
         .fetch_all(&pool)
@@ -140,15 +157,17 @@ pub async fn export_json(
 
         let mut item_exports = Vec::new();
         for item in items {
-            let cat = categories.iter().find(|c| c.id == item.category_id);
-            if let Some(cat) = cat {
-                item_exports.push(ItemExport {
-                    category_label: cat.label.clone(),
-                    description: item.description,
-                    amount: item.amount,
-                    spent_on: item.spent_on.to_string(),
-                });
-            }
+            // Uncategorized transactions export with no label rather than being dropped.
+            let category_label = item
+                .category_id
+                .and_then(|id| categories.iter().find(|c| c.id == id))
+                .map(|c| c.label.clone());
+            item_exports.push(ItemExport {
+                category_label,
+                description: item.description,
+                amount: item.amount,
+                spent_on: item.spent_on.to_string(),
+            });
         }
 
         month_exports.push(MonthExport {
@@ -160,6 +179,7 @@ pub async fn export_json(
                 .map(|i| IncomeExport {
                     label: i.label,
                     amount: i.amount,
+                    paid_on: i.paid_on.map(|date| date.to_string()),
                 })
                 .collect(),
             budgets: budgets
@@ -187,6 +207,7 @@ pub async fn export_json(
         categories: categories
             .into_iter()
             .map(|c| CategoryExport {
+                archived: archived_category_ids.contains(&c.id),
                 label: c.label,
                 default_amount: c.default_amount,
                 color: c.color,
@@ -268,27 +289,37 @@ pub async fn import_json(
             .await?;
     }
 
-    for expense in &data.fixed_expenses {
-        sqlx::query("INSERT INTO fixed_expenses (user_id, label, amount) VALUES (?, ?, ?)")
-            .bind(claims.sub)
-            .bind(&expense.label)
-            .bind(expense.amount)
-            .execute(&mut *tx)
-            .await?;
+    for (index, expense) in data.fixed_expenses.iter().enumerate() {
+        sqlx::query(
+            "INSERT INTO fixed_expenses (user_id, label, amount, sort_order) VALUES (?, ?, ?, ?)",
+        )
+        .bind(claims.sub)
+        .bind(&expense.label)
+        .bind(expense.amount)
+        .bind(index as i64)
+        .execute(&mut *tx)
+        .await?;
     }
 
     let mut category_map: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
-    for cat in &data.categories {
+    for (index, cat) in data.categories.iter().enumerate() {
         let id: i64 = sqlx::query_scalar(
-            "INSERT INTO budget_categories (user_id, label, default_amount, color) VALUES (?, ?, ?, ?) RETURNING id",
+            "INSERT INTO budget_categories (user_id, label, default_amount, color, sort_order, archived_at) VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN datetime('now') END) RETURNING id",
         )
         .bind(claims.sub)
         .bind(&cat.label)
         .bind(cat.default_amount)
         .bind(&cat.color)
+        .bind(index as i64)
+        .bind(cat.archived)
         .fetch_one(&mut *tx)
         .await?;
-        category_map.insert(cat.label.clone(), id);
+
+        // The export identifies categories by label, so a retired category and a live one
+        // sharing a name collapse into a single mapping. Point it at the live one.
+        if !cat.archived || !category_map.contains_key(&cat.label) {
+            category_map.insert(cat.label.clone(), id);
+        }
     }
 
     for month_data in &data.months {
@@ -302,19 +333,23 @@ pub async fn import_json(
         .fetch_one(&mut *tx)
         .await?;
 
-        for income in &month_data.income_entries {
-            sqlx::query("INSERT INTO income_entries (month_id, label, amount) VALUES (?, ?, ?)")
+        for (index, income) in month_data.income_entries.iter().enumerate() {
+            sqlx::query("INSERT INTO income_entries (month_id, label, amount, paid_on, sort_order) VALUES (?, ?, ?, ?, ?)")
                 .bind(month_id)
                 .bind(&income.label)
                 .bind(income.amount)
+                .bind(income.paid_on.as_deref())
+                .bind(index as i64)
                 .execute(&mut *tx)
                 .await?;
         }
 
         for budget in &month_data.budgets {
             if let Some(&cat_id) = category_map.get(&budget.category_label) {
+                // Two same-named categories can both hold a line in one month; they collapse
+                // onto one mapping here, so keep the first rather than failing the import.
                 sqlx::query(
-                    "INSERT INTO monthly_budgets (month_id, category_id, allocated_amount) VALUES (?, ?, ?)",
+                    "INSERT OR IGNORE INTO monthly_budgets (month_id, category_id, allocated_amount) VALUES (?, ?, ?)",
                 )
                 .bind(month_id)
                 .bind(cat_id)
@@ -324,19 +359,23 @@ pub async fn import_json(
             }
         }
 
-        for item in &month_data.items {
-            if let Some(&cat_id) = category_map.get(&item.category_label) {
-                sqlx::query(
-                    "INSERT INTO items (month_id, category_id, description, amount, spent_on) VALUES (?, ?, ?, ?, ?)",
-                )
-                .bind(month_id)
-                .bind(cat_id)
-                .bind(&item.description)
-                .bind(item.amount)
-                .bind(&item.spent_on)
-                .execute(&mut *tx)
-                .await?;
-            }
+        for (index, item) in month_data.items.iter().enumerate() {
+            // A missing or unmapped label imports as uncategorized instead of losing the row.
+            let cat_id: Option<i64> = item
+                .category_label
+                .as_ref()
+                .and_then(|label| category_map.get(label).copied());
+            sqlx::query(
+                "INSERT INTO items (month_id, category_id, description, amount, spent_on, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+            )
+            .bind(month_id)
+            .bind(cat_id)
+            .bind(&item.description)
+            .bind(item.amount)
+            .bind(&item.spent_on)
+            .bind(index as i64)
+            .execute(&mut *tx)
+            .await?;
         }
     }
 

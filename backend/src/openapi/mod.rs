@@ -44,7 +44,7 @@ use crate::models::{
         crate::handlers::budget::list_categories,
         crate::handlers::budget::create_category,
         crate::handlers::budget::update_category,
-        crate::handlers::budget::delete_category,
+        crate::handlers::budget::delete_month_category,
         crate::handlers::months::list_months,
         crate::handlers::months::get_or_create_current_month,
         crate::handlers::months::get_month,

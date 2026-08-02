@@ -171,3 +171,32 @@ async fn test_delete_item() {
     let body: Vec<serde_json::Value> = list_response.json();
     assert!(body.is_empty());
 }
+
+#[tokio::test]
+async fn test_create_item_without_category() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+    let month_id = create_test_month(&pool, user_id, 2024, 6).await;
+
+    let response = server
+        .post(&format!("/api/months/{}/items", month_id))
+        .add_header(auth_name(), auth_value(&token))
+        .json(&json!({"description": "Mystery cash", "amount": 25.0, "spent_on": "2024-06-10"}))
+        .await;
+    response.assert_status_ok();
+    let body: serde_json::Value = response.json();
+    assert!(body["category_id"].is_null());
+
+    let list: serde_json::Value = server
+        .get(&format!("/api/months/{}/items", month_id))
+        .add_header(auth_name(), auth_value(&token))
+        .await
+        .json();
+    let uncategorized = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["description"] == "Mystery cash")
+        .unwrap();
+    assert!(uncategorized["category_label"].is_null());
+    assert!(uncategorized["category_color"].is_null());
+}

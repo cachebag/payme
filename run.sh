@@ -20,7 +20,7 @@ sleep 2
 
 echo "Starting frontend..."
 cd "$SCRIPT_DIR/frontend"
-npm run dev &
+bun run dev &
 FRONTEND_PID=$!
 
 echo ""
@@ -31,4 +31,3 @@ echo ""
 echo "Press Ctrl+C to stop"
 
 wait
-

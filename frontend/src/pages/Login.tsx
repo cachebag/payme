@@ -32,9 +32,9 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sand-100 to-sand-200 dark:from-charcoal-950 dark:to-charcoal-900 p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-center mb-8 text-charcoal-800 dark:text-sand-100">
+        <h1 className="text-center text-xl font-semibold text-charcoal-900 dark:text-sand-100 mb-8">
           payme
         </h1>
 
@@ -87,4 +87,3 @@ export function Login({ onSwitchToRegister }: LoginProps) {
     </div>
   );
 }
-

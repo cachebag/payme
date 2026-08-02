@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::PaymeError;
 
+pub const AUTH_COOKIE_NAME: &str = "payme_token";
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: i64,
@@ -18,7 +20,7 @@ pub async fn auth_middleware(
     next: Next,
 ) -> Result<Response, PaymeError> {
     let token = jar
-        .get("token")
+        .get(AUTH_COOKIE_NAME)
         .map(|c| c.value().to_string())
         .or_else(|| {
             request

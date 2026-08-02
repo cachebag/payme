@@ -10,7 +10,7 @@ services:
     environment:
       - DATABASE_URL=sqlite:/data/payme.db?mode=rwc
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
-      - PORT=3001
+      - PAYME_BIND=0.0.0.0:3001
 
 volumes:
   payme_data:

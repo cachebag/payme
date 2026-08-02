@@ -31,7 +31,7 @@ async fn test_auth_from_cookie() {
 
     let mut config = TestServerConfig::new();
     config.save_cookies = true;
-    let server = config.build(app).unwrap();
+    let server = config.build(app);
 
     let login_response = server
         .post("/api/auth/login")
