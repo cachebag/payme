@@ -14,13 +14,13 @@
 
 #
 
-<img width="1532" height="1078" alt="image" src="https://github.com/user-attachments/assets/3981cde7-4e67-4fda-8fe8-ba965bb0a5ae" />
+<img width="1794" height="956" alt="image" src="https://github.com/user-attachments/assets/37c406d2-3eb3-4bf9-831f-c7591790f3a9" />
 
-payme was designed for self-hosting in my homelab environment. Run it on a Raspberry Pi, NAS, or any always-on server to track your household finances privately without relying on third-party services. Your financial data stays on your network, under your control.
+payme was designed for self-hosting in my homelab environment. You can run it on a Raspberry Pi, NAS, or any always-on server. There should be no reason that you need to pay for a subscription or learn complex platforms just to track your finances.
 
-I grew tired of my spreadsheet, and did not care for any of the third party services out there. So I decided to build my own. As such, you can see this is very opinionated. The lack of advanced financial budgeting features is intentional, though, I am open to different features and components.
+I grew tired of tracking everything in a spreadsheet, and did not care for any of the third party services out there. So I decided to build my own. As such, you can see this is very opinionated. The lack of advanced financial budgeting features is intentional; though, I am open to different features and components.
 
-Generally, if you don't like it, fork it and make it your own or consider contributing to the project (read [CONTRIBUTING.md](CONTRIBUTING.md) for more information).
+If you don't like it, fork it and make it your own or consider contributing to the project (read [CONTRIBUTING.md](CONTRIBUTING.md) for more information).
 
 ## Requirements
 
