@@ -90,13 +90,13 @@ export function RetirementSavingsCard({ refreshTrigger }: RetirementSavingsCardP
               />
               <button
                 onClick={saveEdit}
-                className="p-1 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-900 transition-colors"
+                className="p-2 md:p-1 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-900 transition-colors"
               >
                 <Check size={16} />
               </button>
               <button
                 onClick={cancelEdit}
-                className="p-1 text-charcoal-400 hover:bg-sand-100 dark:hover:bg-charcoal-800 transition-colors"
+                className="p-2 md:p-1 text-charcoal-400 hover:bg-sand-100 dark:hover:bg-charcoal-800 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -108,7 +108,7 @@ export function RetirementSavingsCard({ refreshTrigger }: RetirementSavingsCardP
               </span>
               <button
                 onClick={startEdit}
-                className="p-1 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-200 transition-colors"
+                className="p-2 md:p-1 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-200 transition-colors"
               >
                 <Pencil size={14} />
               </button>

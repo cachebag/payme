@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { api, UserExport } from "../api/client";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { PullToRefresh } from "./ui/PullToRefresh";
 
 interface LayoutProps {
   children: ReactNode;
@@ -71,7 +72,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-sand-300 bg-sand-50/90 backdrop-blur-md dark:border-charcoal-700 dark:bg-charcoal-950/90">
+      <header className="app-header sticky top-0 z-40 border-b border-sand-300 bg-sand-50/90 backdrop-blur-md dark:border-charcoal-700 dark:bg-charcoal-950/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-3 py-3 sm:px-5">
           <span className="text-base font-semibold tracking-tight text-charcoal-900 dark:text-sand-100">
             payme
@@ -138,7 +139,9 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-5 sm:py-7">{children}</main>
+      <main className="app-main mx-auto max-w-7xl px-3 py-5 sm:px-5 sm:py-7">
+        <PullToRefresh>{children}</PullToRefresh>
+      </main>
 
       <Modal isOpen={showImportConfirm} onClose={() => setShowImportConfirm(false)} title="Import Data">
         <div className="space-y-4">

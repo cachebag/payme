@@ -6,6 +6,7 @@ import { ProgressBar } from "./ui/ProgressBar";
 import { Button } from "./ui/Button";
 import { ReorderControls } from "./ui/ReorderControls";
 import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { useCurrency } from "../context/CurrencyContext";
 import { api, CustomSavingsGoal } from "../api/client";
 import { useSortableReorder } from "../hooks/useSortableReorder";
@@ -20,6 +21,7 @@ export function CustomSavingsGoals() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
   const [editCurrentAmount, setEditCurrentAmount] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const {
     orderedItems: orderedGoals,
     itemIds: goalIds,
@@ -86,15 +88,20 @@ export function CustomSavingsGoals() {
     setEditCurrentAmount("");
   };
 
-  const deleteGoal = async (goalId: number) => {
-    if (!confirm("Are you sure you want to delete this savings goal?")) return;
+  // window.confirm silently no-ops in iOS home-screen apps; use the in-app dialog.
+  const deleteGoal = (goalId: number) => {
+    setPendingDeleteId(goalId);
+  };
 
+  const confirmDeleteGoal = async () => {
+    if (pendingDeleteId === null) return;
     try {
-      await api.savingsGoals.delete(goalId);
-      setGoals((prev) => prev.filter((g) => g.id !== goalId));
+      await api.savingsGoals.delete(pendingDeleteId);
+      setGoals((prev) => prev.filter((g) => g.id !== pendingDeleteId));
     } catch (e) {
       console.error("Failed to delete savings goal:", e);
     }
+    setPendingDeleteId(null);
   };
 
   const moveGoal = async (index: number, direction: -1 | 1) => {
@@ -197,13 +204,13 @@ export function CustomSavingsGoals() {
                         />
                         <button
                           onClick={() => saveEditAmount(goal.id)}
-                          className="p-1 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-900 transition-colors"
+                          className="p-2 md:p-1 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-900 transition-colors"
                         >
                           <Check size={14} />
                         </button>
                         <button
                           onClick={cancelEditAmount}
-                          className="p-1 text-charcoal-400 hover:bg-sand-100 dark:hover:bg-charcoal-800 transition-colors"
+                          className="p-2 md:p-1 text-charcoal-400 hover:bg-sand-100 dark:hover:bg-charcoal-800 transition-colors"
                         >
                           <X size={14} />
                         </button>
@@ -218,17 +225,17 @@ export function CustomSavingsGoals() {
                         </span>
                         <button
                           onClick={() => startEditAmount(goal.id, goal.current_amount)}
-                          className="p-1 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-200 transition-colors ml-auto"
+                          className="p-2 md:p-1 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-200 transition-colors ml-auto"
                           title="Edit current amount"
                         >
-                          <Pencil size={12} />
+                          <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => deleteGoal(goal.id)}
-                          className="p-1 text-terracotta-500 hover:text-terracotta-600 dark:hover:text-terracotta-400 transition-colors"
+                          className="p-2 md:p-1 text-terracotta-500 hover:text-terracotta-600 dark:hover:text-terracotta-400 transition-colors"
                           title="Delete goal"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     )}
@@ -315,6 +322,16 @@ export function CustomSavingsGoals() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title="Delete savings goal?"
+        message="Are you sure you want to delete this savings goal?"
+        confirmLabel="Delete"
+        danger
+        onConfirm={confirmDeleteGoal}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </Card>
   );
 }

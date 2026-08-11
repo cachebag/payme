@@ -92,7 +92,7 @@ export function SavingsCard({ monthId, initialSavings, isReadOnly, onSavingsChan
           </span>
           <button
             onClick={() => setShowInfoModal(true)}
-            className="p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors touch-manipulation"
+            className="p-2 md:p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors touch-manipulation"
             title="How this works"
           >
             <Info size={12} className="text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300" />
@@ -150,15 +150,15 @@ export function SavingsCard({ monthId, initialSavings, isReadOnly, onSavingsChan
             />
             <button
               onClick={saveEditGoal}
-              className="p-0.5 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-900 transition-colors"
+              className="p-2 md:p-0.5 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-900 transition-colors"
             >
-              <Check size={12} />
+              <Check size={14} />
             </button>
             <button
               onClick={cancelEditGoal}
-              className="p-0.5 text-charcoal-400 hover:bg-sand-100 dark:hover:bg-charcoal-800 transition-colors"
+              className="p-2 md:p-0.5 text-charcoal-400 hover:bg-sand-100 dark:hover:bg-charcoal-800 transition-colors"
             >
-              <X size={12} />
+              <X size={14} />
             </button>
           </div>
         ) : (
@@ -168,9 +168,9 @@ export function SavingsCard({ monthId, initialSavings, isReadOnly, onSavingsChan
             </span>
             <button
               onClick={startEditGoal}
-              className="p-0.5 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-200 transition-colors"
+              className="p-2 md:p-0.5 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-200 transition-colors"
             >
-              <Pencil size={10} />
+              <Pencil size={14} />
             </button>
           </div>
         )}

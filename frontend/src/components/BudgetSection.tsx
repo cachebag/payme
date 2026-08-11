@@ -6,6 +6,7 @@ import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { ProgressBar } from "./ui/ProgressBar";
 import { Modal } from "./ui/Modal";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { ReorderControls } from "./ui/ReorderControls";
 import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
 import { useCurrency } from "../context/CurrencyContext";
@@ -28,6 +29,9 @@ export function BudgetSection({
 }: BudgetSectionProps) {
   const { formatCurrency } = useCurrency();
   const [isManaging, setIsManaging] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ categoryId: number; label: string } | null>(
+    null
+  );
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingBudgetId, setEditingBudgetId] = useState<number | null>(null);
@@ -89,12 +93,16 @@ export function BudgetSection({
     await onUpdate();
   };
 
-  const handleDeleteCategory = async (categoryId: number, label: string) => {
-    const confirmed = confirm(
-      `Stop using "${label}" from this month on? Earlier months keep it, along with anything already spent.`
-    );
-    if (!confirmed) return;
-    await api.categories.delete(monthId, categoryId);
+  // window.confirm silently no-ops in iOS home-screen apps, so deletion goes
+  // through an in-app dialog instead.
+  const handleDeleteCategory = (categoryId: number, label: string) => {
+    setPendingDelete({ categoryId, label });
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!pendingDelete) return;
+    await api.categories.delete(monthId, pendingDelete.categoryId);
+    setPendingDelete(null);
     await onUpdate();
   };
 
@@ -154,7 +162,7 @@ export function BudgetSection({
           </h3>
           <button
             onClick={() => setIsManaging(true)}
-            className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
+            className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
           >
             <Settings size={16} />
           </button>
@@ -213,26 +221,26 @@ export function BudgetSection({
                             {budget.category_label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-charcoal-500 dark:text-charcoal-400">
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="whitespace-nowrap text-xs text-charcoal-500 dark:text-charcoal-400">
                             {formatCurrency(budget.spent_amount)} / {formatCurrency(budget.allocated_amount)}
                           </span>
                           {!isReadOnly && (
                             <>
                               <button
                                 onClick={() => startEditBudget(budget)}
-                                className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"
+                                className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"
                               >
-                                <Edit2 size={12} />
+                                <Edit2 size={14} />
                               </button>
                               <button
                                 onClick={() =>
                                   handleDeleteCategory(budget.category_id, budget.category_label)
                                 }
                                 title="Stop using this category"
-                                className="p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800"
+                                className="p-2 md:p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800"
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={14} />
                               </button>
                             </>
                           )}
@@ -335,7 +343,7 @@ export function BudgetSection({
                         </span>
                         <button
                           onClick={() => startEditCategory(cat)}
-                          className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"
+                          className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -400,6 +408,20 @@ export function BudgetSection({
           )}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={pendingDelete !== null}
+        title="Stop using category?"
+        message={
+          pendingDelete
+            ? `Stop using "${pendingDelete.label}" from this month on? Earlier months keep it, along with anything already spent.`
+            : ""
+        }
+        confirmLabel="Stop Using"
+        danger
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => setPendingDelete(null)}
+      />
     </>
   );
 }

@@ -97,7 +97,7 @@ export function SortableHandle({
   return (
     <button
       type="button"
-      className={`cursor-grab rounded p-1 text-charcoal-500 transition-colors hover:bg-sand-200 hover:text-charcoal-800 active:cursor-grabbing dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 ${className}`}
+      className={`cursor-grab touch-none rounded p-1.5 md:p-1 text-charcoal-500 transition-colors hover:bg-sand-200 hover:text-charcoal-800 active:cursor-grabbing dark:text-charcoal-400 dark:hover:bg-charcoal-800 dark:hover:text-sand-200 ${className}`}
       title="Drag to reorder"
       {...attributes}
       {...listeners}

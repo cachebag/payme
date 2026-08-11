@@ -99,7 +99,7 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
         {!isReadOnly && !isAdding && (
           <button
             onClick={() => setIsAdding(true)}
-            className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
+            className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
           >
             <Plus size={16} />
           </button>
@@ -172,21 +172,21 @@ export function IncomeSection({ monthId, entries, isReadOnly, onUpdate }: Income
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-sage-600 dark:text-sage-400">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="whitespace-nowrap text-sm font-medium text-sage-600 dark:text-sage-400">
                         {formatCurrency(entry.amount)}
                       </span>
                       {!isReadOnly && (
                         <>
                           <button
                             onClick={() => startEdit(entry)}
-                            className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
+                            className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete(entry.id)}
-                            className="p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800 transition-colors"
+                            className="p-2 md:p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>

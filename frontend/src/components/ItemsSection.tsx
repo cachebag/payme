@@ -265,7 +265,7 @@ export function ItemsSection({
               <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
                 Description
               </th>
-              <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
+              <th className="hidden text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs sm:table-cell md:text-sm">
                 Category
               </th>
               <th className="text-right py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
@@ -346,11 +346,17 @@ export function ItemsSection({
                           <span className="md:hidden">{item.spent_on.slice(5)}</span>
                         </td>
                         <td className="py-2 px-1 text-charcoal-800 dark:text-sand-200 text-xs md:text-sm">
-                          <div className="max-w-[120px] md:max-w-none truncate">
-                            {item.description}
+                          <div className="flex max-w-[150px] items-center gap-1.5 truncate md:max-w-none">
+                            {/* On phones the category column is hidden; its color dot rides along here */}
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full sm:hidden"
+                              style={{ backgroundColor: item.category_color ?? "#71717a" }}
+                              title={item.category_label ?? "Uncategorized"}
+                            />
+                            <span className="truncate">{item.description}</span>
                           </div>
                         </td>
-                        <td className="py-2 px-1">
+                        <td className="hidden py-2 px-1 sm:table-cell">
                           <span
                             className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-sm border whitespace-nowrap"
                             style={{

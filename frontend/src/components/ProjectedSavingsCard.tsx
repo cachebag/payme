@@ -27,7 +27,7 @@ export function ProjectedSavingsCard({ savings, remaining, onAnalyzeClick }: Pro
         {onAnalyzeClick && (
           <button
             onClick={onAnalyzeClick}
-            className="p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors"
+            className="p-2 md:p-0.5 hover:bg-sand-200 dark:hover:bg-charcoal-700 rounded transition-colors"
             title="Why this amount?"
           >
             <HelpCircle size={14} className="text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300" />

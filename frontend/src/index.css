@@ -145,3 +145,46 @@ select option {
     size: A4;
   }
 }
+
+/* ---------- Mobile / installed-app polish ---------- */
+
+html {
+  /* Stop iOS from inflating text after rotation */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* No gray flash on tap; taps should feel like an app, not a page */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role="button"],
+a {
+  /* No long-press callout / text-selection on controls */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Draw under the notch/status bar, then pad content back out of it */
+header.app-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+main.app-main {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+}
+
+/* Native-feeling momentum scrolling inside modals and scrollable panes */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}

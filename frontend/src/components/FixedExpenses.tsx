@@ -91,7 +91,7 @@ export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: Fixed
           {!isReadOnly && (
             <button
               onClick={() => setIsManaging(true)}
-              className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
+              className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 transition-colors"
             >
               <Settings size={16} />
             </button>
@@ -201,17 +201,17 @@ export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: Fixed
                         )}
                         <span className="truncate text-sm">{expense.label}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{formatCurrency(expense.amount)}</span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="whitespace-nowrap text-sm">{formatCurrency(expense.amount)}</span>
                         <button
                           onClick={() => startEdit(expense)}
-                          className="p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"
+                          className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(expense.id)}
-                          className="p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800"
+                          className="p-2 md:p-1 text-terracotta-500 hover:bg-terracotta-100 dark:hover:bg-charcoal-800"
                         >
                           <Trash2 size={14} />
                         </button>
