@@ -4,6 +4,7 @@ target/
 
 # Build output
 frontend/dist/
+frontend/tsconfig.tsbuildinfo
 *.wasm
 
 # Environment and secrets
