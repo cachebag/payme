@@ -195,3 +195,50 @@ async fn test_stats_counts_a_month_with_only_fixed_expenses() {
     assert_eq!(body["average_monthly_spending"], 0.0);
     assert_eq!(body["monthly_trends"][0]["net"], -1500.0);
 }
+
+/// (year, month) shifted `offset` months from the current calendar month.
+fn calendar_month(offset: i32) -> (i32, i32) {
+    use chrono::{Datelike, Utc};
+    let now = Utc::now();
+    let total = now.year() * 12 + now.month() as i32 - 1 + offset;
+    (total.div_euclid(12), total.rem_euclid(12) + 1)
+}
+
+#[tokio::test]
+async fn test_category_comparison_ignores_empty_future_months() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+
+    let (py, pm) = calendar_month(-1);
+    let (cy, cm) = calendar_month(0);
+    let (ny, nm) = calendar_month(1);
+    let (fy, fm) = calendar_month(2);
+
+    let previous_id = create_test_month(&pool, user_id, py, pm).await;
+    let current_id = create_test_month(&pool, user_id, cy, cm).await;
+    // Paging ahead in the navigator leaves empty future months behind.
+    create_test_month(&pool, user_id, ny, nm).await;
+    create_test_month(&pool, user_id, fy, fm).await;
+
+    let cat_id = create_test_category(&pool, user_id, "Food", 500.0).await;
+    create_test_item(&pool, previous_id, cat_id, "Groceries", 100.0, "2024-01-15").await;
+    create_test_item(&pool, current_id, cat_id, "Groceries", 50.0, "2024-01-15").await;
+
+    let body: serde_json::Value = server
+        .get("/api/stats")
+        .add_header(auth_name(), auth_value(&token))
+        .await
+        .json();
+
+    let food = body["category_comparisons"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["category_label"] == "Food")
+        .expect("Food comparison present");
+    assert_eq!(
+        food["current_month_spent"], 50.0,
+        "current means the calendar month, not the newest empty future month"
+    );
+    assert_eq!(food["previous_month_spent"], 100.0);
+    assert_eq!(food["change_percent"], -50.0);
+}

@@ -1,4 +1,5 @@
 use axum::{extract::State, Json};
+use chrono::{Datelike, Utc};
 use sqlx::SqlitePool;
 
 use crate::error::PaymeError;
@@ -98,8 +99,18 @@ pub async fn get_stats(
     let mut category_comparisons: Vec<CategoryStats> = vec![];
 
     if !months.is_empty() {
-        let current_month_id = months[0].0;
-        let previous_month_id = months.get(1).map(|m| m.0);
+        // The newest month on record can be an empty future month created by paging ahead
+        // in the navigator; comparing two of those reads as "$0.00 everywhere". Anchor the
+        // comparison on the current calendar month (or the newest month not after it), so
+        // "vs Last Month" means what it says.
+        let today = Utc::now();
+        let (today_year, today_month) = (today.year(), today.month() as i32);
+        let current_idx = months
+            .iter()
+            .position(|&(_, year, month)| (year, month) <= (today_year, today_month))
+            .unwrap_or(months.len() - 1);
+        let current_month_id = months[current_idx].0;
+        let previous_month_id = months.get(current_idx + 1).map(|m| m.0);
 
         let categories: Vec<(i64, String, String, Option<String>)> = sqlx::query_as(
             "SELECT id, label, color, archived_at FROM budget_categories WHERE user_id = ?",
