@@ -4,7 +4,7 @@ COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/src ./src
 RUN cargo build --release
 
-FROM oven/bun:1.3 AS frontend-builder
+FROM oven/bun:1.4 AS frontend-builder
 WORKDIR /build
 COPY frontend/package.json frontend/bun.lock ./
 RUN bun install --frozen-lockfile
