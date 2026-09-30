@@ -9,6 +9,7 @@ export interface Currency {
 }
 
 export const SUPPORTED_CURRENCIES: Currency[] = [
+  { code: "THB", symbol: "฿", name: "Thai Baht", locale: "th-TH", position: "before" },  
   { code: "USD", symbol: "$", name: "US Dollar", locale: "en-US", position: "before" },
   { code: "EUR", symbol: "€", name: "Euro", locale: "de-DE", position: "after" },
   { code: "GBP", symbol: "£", name: "British Pound", locale: "en-GB", position: "before" },
