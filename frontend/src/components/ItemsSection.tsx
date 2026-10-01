@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Plus, Trash2, Edit2, Check, X, Search, Filter, Tags, Tag } from "lucide-react";
 import { ItemWithCategory, BudgetCategory, TagSummary, api } from "../api/client";
 import { Card } from "./ui/Card";
@@ -71,6 +71,61 @@ function MobileTagMenu({ tags }: { tags: TagSummary[] }) {
   );
 }
 
+function TagFilter({
+  tags,
+  selectedIds,
+  onChange,
+}: {
+  tags: TagSummary[];
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const matchingTags = [...tags]
+    .filter((tag) => tag.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  return (
+    <details className="relative">
+      <summary className="flex h-9 w-40 cursor-pointer list-none items-center gap-2 rounded-md border border-sand-300 px-3 text-xs text-charcoal-700 dark:border-charcoal-700 dark:text-sand-200 [&::-webkit-details-marker]:hidden">
+        <Tag size={14} className="shrink-0 text-charcoal-400" />
+        <span className="truncate">{selectedIds.length ? `${selectedIds.length} Tags` : "All Tags"}</span>
+      </summary>
+      <div className="absolute right-0 z-30 mt-1 w-56 rounded-md border border-sand-300 bg-charcoal-50 p-2 shadow-xl dark:border-charcoal-700 dark:bg-charcoal-900">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search Tags"
+          aria-label="Search Tags"
+          className="mb-2 h-8 text-xs"
+        />
+        <div className="max-h-48 space-y-1 overflow-y-auto">
+          {matchingTags.map((tag) => (
+            <label key={tag.id} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-sand-100 dark:hover:bg-charcoal-800">
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(tag.id)}
+                onChange={() =>
+                  onChange(
+                    selectedIds.includes(tag.id)
+                      ? selectedIds.filter((id) => id !== tag.id)
+                      : [...selectedIds, tag.id]
+                  )
+                }
+              />
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tag.color }} />
+              <span className="truncate">{tag.label}{tag.stopped ? " (Stopped)" : ""}</span>
+            </label>
+          ))}
+          {matchingTags.length === 0 && (
+            <div className="py-2 text-center text-xs text-charcoal-400">No Tags found</div>
+          )}
+        </div>
+      </div>
+    </details>
+  );
+}
+
 interface ItemsSectionProps {
   monthId: number;
   items: ItemWithCategory[];
@@ -98,7 +153,13 @@ export function ItemsSection({
   const [formError, setFormError] = useState("");
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterTags, setFilterTags] = useState<TagSummary[]>([]);
+  const [filterTagIds, setFilterTagIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    void api.tags.list().then(setFilterTags);
+  }, []);
 
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
@@ -199,10 +260,14 @@ export function ItemsSection({
           item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (item.category_label ?? "uncategorized")
             .toLowerCase()
-            .includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+            .includes(searchQuery.toLowerCase()) ||
+          item.tags.some((tag) => tag.label.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesTags = filterTagIds.every((id) =>
+          item.tags.some((tag) => tag.id === id)
+        );
+        return matchesCategory && matchesSearch && matchesTags;
       });
-  }, [orderedSpendingItems, filterCategory, searchQuery]);
+  }, [orderedSpendingItems, filterCategory, filterTagIds, searchQuery]);
 
   const handleMove = async (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
@@ -252,7 +317,14 @@ export function ItemsSection({
         </div>
       </div>
 
-      <ManageTags isOpen={isManagingTags} onClose={() => setIsManagingTags(false)} />
+      <ManageTags
+        isOpen={isManagingTags}
+        onClose={() => {
+          setIsManagingTags(false);
+          void api.tags.list().then(setFilterTags);
+          void onUpdate();
+        }}
+      />
 
       {isAdding && categories.length === 0 && (
         <div className="mb-4 p-4 bg-sand-100 dark:bg-charcoal-800 text-center rounded-lg">
@@ -323,7 +395,7 @@ export function ItemsSection({
             className="pl-9 h-9 text-xs"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <div className="relative w-40">
             <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400 z-10" />
             <Select
@@ -333,13 +405,15 @@ export function ItemsSection({
               className="pl-9 h-9 text-xs"
             />
           </div>
-          {(searchQuery || filterCategory !== "all") && (
+          <TagFilter tags={filterTags} selectedIds={filterTagIds} onChange={setFilterTagIds} />
+          {(searchQuery || filterCategory !== "all" || filterTagIds.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchQuery("");
                 setFilterCategory("all");
+                setFilterTagIds([]);
               }}
               className="h-9 px-2 text-[10px]"
             >
