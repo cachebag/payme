@@ -4,6 +4,7 @@ use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
 use crate::error::PaymeError;
+use crate::handlers::tags::{validate_color, validate_label};
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, FixedExpense, IncomeEntry, Item, Month};
 
@@ -14,7 +15,16 @@ pub struct UserExport {
     pub retirement_savings: Option<f64>,
     pub fixed_expenses: Vec<FixedExpenseExport>,
     pub categories: Vec<CategoryExport>,
+    #[serde(default)]
+    pub tags: Vec<TagExport>,
     pub months: Vec<MonthExport>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct TagExport {
+    pub label: String,
+    pub color: String,
+    pub stopped: bool,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -65,6 +75,14 @@ pub struct ItemExport {
     pub description: String,
     pub amount: f64,
     pub spent_on: String,
+    #[serde(default = "default_savings_destination")]
+    pub savings_destination: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+fn default_savings_destination() -> String {
+    "none".to_string()
 }
 
 #[utoipa::path(
@@ -104,6 +122,13 @@ pub async fn export_json(
 
     let categories: Vec<BudgetCategory> = sqlx::query_as(
         "SELECT id, user_id, label, default_amount, color FROM budget_categories WHERE user_id = ? ORDER BY sort_order, id",
+    )
+    .bind(claims.sub)
+    .fetch_all(&pool)
+    .await?;
+
+    let tags: Vec<(String, String, bool)> = sqlx::query_as(
+        "SELECT label, color, stopped FROM tags WHERE user_id = ? ORDER BY label COLLATE NOCASE",
     )
     .bind(claims.sub)
     .fetch_all(&pool)
@@ -167,6 +192,16 @@ pub async fn export_json(
                 description: item.description,
                 amount: item.amount,
                 spent_on: item.spent_on.to_string(),
+                savings_destination: item.savings_destination,
+                tags: sqlx::query_scalar(
+                    r#"SELECT t.label FROM tag_assignments ta
+                       JOIN tags t ON t.id = ta.tag_id
+                       WHERE ta.item_id = ? AND t.user_id = ? ORDER BY t.label COLLATE NOCASE"#,
+                )
+                .bind(item.id)
+                .bind(claims.sub)
+                .fetch_all(&pool)
+                .await?,
             });
         }
 
@@ -194,7 +229,7 @@ pub async fn export_json(
     }
 
     Ok(Json(UserExport {
-        version: 1,
+        version: 2,
         savings: Some(savings),
         retirement_savings: Some(retirement_savings),
         fixed_expenses: fixed_expenses
@@ -211,6 +246,14 @@ pub async fn export_json(
                 label: c.label,
                 default_amount: c.default_amount,
                 color: c.color,
+            })
+            .collect(),
+        tags: tags
+            .into_iter()
+            .map(|(label, color, stopped)| TagExport {
+                label,
+                color,
+                stopped,
             })
             .collect(),
         months: month_exports,
@@ -234,6 +277,54 @@ pub async fn import_json(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(data): Json<UserExport>,
 ) -> Result<StatusCode, PaymeError> {
+    if !(1..=2).contains(&data.version) {
+        return Err(PaymeError::BadRequest(
+            "Unsupported export version".to_string(),
+        ));
+    }
+
+    let mut tag_labels = std::collections::HashSet::new();
+    if data.version == 2 {
+        for tag in &data.tags {
+            let label = validate_label(tag.label.clone())?;
+            validate_color(&tag.color)?;
+            if !tag_labels.insert(label.to_lowercase()) {
+                return Err(PaymeError::BadRequest("Duplicate Tag label".to_string()));
+            }
+        }
+        for month in &data.months {
+            for item in &month.items {
+                if !matches!(
+                    item.savings_destination.as_str(),
+                    "none" | "savings" | "retirement_savings"
+                ) {
+                    return Err(PaymeError::BadRequest(
+                        "Invalid savings destination".to_string(),
+                    ));
+                }
+                if item.tags.len() > 5 {
+                    return Err(PaymeError::BadRequest(
+                        "A Spending Item can have at most 5 Tags".to_string(),
+                    ));
+                }
+                if item.savings_destination != "none" && !item.tags.is_empty() {
+                    return Err(PaymeError::BadRequest(
+                        "Transfers cannot have Tag Assignments".to_string(),
+                    ));
+                }
+                let assigned: std::collections::HashSet<_> =
+                    item.tags.iter().map(|label| label.to_lowercase()).collect();
+                if assigned.len() != item.tags.len()
+                    || !assigned.iter().all(|label| tag_labels.contains(label))
+                {
+                    return Err(PaymeError::BadRequest(
+                        "Invalid Spending Item Tag Assignments".to_string(),
+                    ));
+                }
+            }
+        }
+    }
+
     let mut tx = pool.begin().await?;
 
     let months: Vec<(i64,)> = sqlx::query_as("SELECT id FROM months WHERE user_id = ?")
@@ -269,6 +360,10 @@ pub async fn import_json(
         .execute(&mut *tx)
         .await?;
     sqlx::query("DELETE FROM fixed_expenses WHERE user_id = ?")
+        .bind(claims.sub)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("DELETE FROM tags WHERE user_id = ?")
         .bind(claims.sub)
         .execute(&mut *tx)
         .await?;
@@ -322,6 +417,24 @@ pub async fn import_json(
         }
     }
 
+    let mut tag_map = std::collections::HashMap::new();
+    if data.version == 2 {
+        for tag in &data.tags {
+            let label = tag.label.trim();
+            let id: i64 = sqlx::query_scalar(
+                "INSERT INTO tags (user_id, label, normalized_label, color, stopped) VALUES (?, ?, ?, ?, ?) RETURNING id",
+            )
+            .bind(claims.sub)
+            .bind(label)
+            .bind(label.to_lowercase())
+            .bind(&tag.color)
+            .bind(tag.stopped)
+            .fetch_one(&mut *tx)
+            .await?;
+            tag_map.insert(label.to_lowercase(), id);
+        }
+    }
+
     for month_data in &data.months {
         let month_id: i64 = sqlx::query_scalar(
             "INSERT INTO months (user_id, year, month, is_closed) VALUES (?, ?, ?, ?) RETURNING id",
@@ -365,17 +478,28 @@ pub async fn import_json(
                 .category_label
                 .as_ref()
                 .and_then(|label| category_map.get(label).copied());
-            sqlx::query(
-                "INSERT INTO items (month_id, category_id, description, amount, spent_on, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+            let item_id: i64 = sqlx::query_scalar(
+                "INSERT INTO items (month_id, category_id, description, amount, spent_on, savings_destination, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
             )
             .bind(month_id)
             .bind(cat_id)
             .bind(&item.description)
             .bind(item.amount)
             .bind(&item.spent_on)
+            .bind(&item.savings_destination)
             .bind(index as i64)
-            .execute(&mut *tx)
+            .fetch_one(&mut *tx)
             .await?;
+
+            if data.version == 2 {
+                for label in &item.tags {
+                    sqlx::query("INSERT INTO tag_assignments (tag_id, item_id) VALUES (?, ?)")
+                        .bind(tag_map[&label.to_lowercase()])
+                        .bind(item_id)
+                        .execute(&mut *tx)
+                        .await?;
+                }
+            }
         }
     }
 

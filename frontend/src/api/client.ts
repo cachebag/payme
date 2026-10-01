@@ -340,13 +340,21 @@ export interface UserExport {
   retirement_savings?: number;
   fixed_expenses: { label: string; amount: number }[];
   categories: { label: string; default_amount: number; archived?: boolean }[];
+  tags?: { label: string; color: string; stopped: boolean }[];
   months: {
     year: number;
     month: number;
     is_closed: boolean;
     income_entries: { label: string; amount: number; paid_on?: string | null }[];
     budgets: { category_label: string; allocated_amount: number }[];
-    items: { category_label: string | null; description: string; amount: number; spent_on: string }[];
+    items: {
+      category_label: string | null;
+      description: string;
+      amount: number;
+      spent_on: string;
+      savings_destination?: string;
+      tags?: string[];
+    }[];
   }[];
 }
 

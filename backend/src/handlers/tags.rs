@@ -26,7 +26,7 @@ pub struct UpdateTag {
     pub color: Option<String>,
 }
 
-fn validate_label(label: String) -> Result<String, PaymeError> {
+pub(crate) fn validate_label(label: String) -> Result<String, PaymeError> {
     let label = label.trim().to_string();
     if !(1..=50).contains(&label.chars().count()) {
         return Err(PaymeError::BadRequest(
@@ -36,7 +36,7 @@ fn validate_label(label: String) -> Result<String, PaymeError> {
     Ok(label)
 }
 
-fn validate_color(color: &str) -> Result<(), PaymeError> {
+pub(crate) fn validate_color(color: &str) -> Result<(), PaymeError> {
     if PRESET_COLORS.contains(&color) {
         Ok(())
     } else {

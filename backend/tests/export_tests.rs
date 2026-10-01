@@ -36,7 +36,7 @@ async fn test_export_json() {
     response.assert_status_ok();
     let body: serde_json::Value = response.json();
 
-    assert_eq!(body["version"], 1);
+    assert_eq!(body["version"], 2);
     assert_eq!(body["fixed_expenses"].as_array().unwrap().len(), 1);
     assert_eq!(body["categories"].as_array().unwrap().len(), 1);
     assert_eq!(body["months"].as_array().unwrap().len(), 1);
@@ -95,6 +95,8 @@ async fn test_import_json() {
         .await;
 
     let exported: serde_json::Value = export_response.json();
+    assert_eq!(exported["tags"], json!([]));
+    assert_eq!(exported["months"][0]["items"][0]["tags"], json!([]));
     assert_eq!(exported["fixed_expenses"].as_array().unwrap().len(), 2);
     assert_eq!(exported["categories"].as_array().unwrap().len(), 2);
     assert_eq!(exported["months"].as_array().unwrap().len(), 1);
@@ -148,6 +150,68 @@ async fn test_export_import_round_trip() {
 }
 
 #[tokio::test]
+async fn test_export_import_round_trip_preserves_tags_and_assignments() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+    let cat_id = create_test_category(&pool, user_id, "Food", 500.0).await;
+    let month_id = create_test_month(&pool, user_id, 2024, 6).await;
+    let item_id =
+        create_test_item(&pool, month_id, cat_id, "Client lunch", 150.0, "2024-06-15").await;
+    let active_tag_id: i64 = sqlx::query_scalar(
+        "INSERT INTO tags (user_id, label, normalized_label, color) VALUES (?, 'Work', 'work', '#3b82f6') RETURNING id",
+    )
+    .bind(user_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let stopped_tag_id: i64 = sqlx::query_scalar(
+        "INSERT INTO tags (user_id, label, normalized_label, color, stopped) VALUES (?, 'Claim', 'claim', '#10b981', 1) RETURNING id",
+    )
+    .bind(user_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    for tag_id in [active_tag_id, stopped_tag_id] {
+        sqlx::query("INSERT INTO tag_assignments (tag_id, item_id) VALUES (?, ?)")
+            .bind(tag_id)
+            .bind(item_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+    }
+
+    let exported: serde_json::Value = server
+        .get("/api/export/json")
+        .add_header(auth_name(), auth_value(&token))
+        .await
+        .json();
+
+    assert_eq!(exported["version"], 2);
+    assert_eq!(exported["tags"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        exported["months"][0]["items"][0]["tags"],
+        json!(["Claim", "Work"])
+    );
+
+    server
+        .post("/api/import/json")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&exported)
+        .await
+        .assert_status_ok();
+
+    let reexported: serde_json::Value = server
+        .get("/api/export/json")
+        .add_header(auth_name(), auth_value(&token))
+        .await
+        .json();
+    assert_eq!(reexported["tags"], exported["tags"]);
+    assert_eq!(
+        reexported["months"][0]["items"][0]["tags"],
+        json!(["Claim", "Work"])
+    );
+}
+
+#[tokio::test]
 async fn test_import_json_replaces_existing() {
     let (server, pool, user_id, token) = setup_with_user().await;
 
@@ -189,4 +253,136 @@ async fn test_import_json_replaces_existing() {
     let categories = exported["categories"].as_array().unwrap();
     assert_eq!(categories.len(), 1);
     assert_eq!(categories[0]["label"], "New Category");
+}
+
+#[tokio::test]
+async fn test_import_rejects_invalid_tag_data_atomically() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+    sqlx::query(
+        "INSERT INTO tags (user_id, label, normalized_label, color) VALUES (?, 'Existing', 'existing', '#71717a')",
+    )
+    .bind(user_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let invalid_import = json!({
+        "version": 2,
+        "savings": 0.0,
+        "retirement_savings": 0.0,
+        "fixed_expenses": [],
+        "categories": [],
+        "tags": [
+            {"label": "One", "color": "#71717a", "stopped": false},
+            {"label": "Two", "color": "#71717a", "stopped": false},
+            {"label": "Three", "color": "#71717a", "stopped": false},
+            {"label": "Four", "color": "#71717a", "stopped": false},
+            {"label": "Five", "color": "#71717a", "stopped": false},
+            {"label": "Six", "color": "#71717a", "stopped": false}
+        ],
+        "months": [{
+            "year": 2024,
+            "month": 6,
+            "is_closed": false,
+            "income_entries": [],
+            "budgets": [],
+            "items": [{
+                "category_label": null,
+                "description": "Invalid",
+                "amount": 1.0,
+                "spent_on": "2024-06-15",
+                "tags": ["One", "Two", "Three", "Four", "Five", "Six"]
+            }]
+        }]
+    });
+
+    server
+        .post("/api/import/json")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&invalid_import)
+        .await
+        .assert_status_bad_request();
+
+    let transfer_import = json!({
+        "version": 2,
+        "savings": 0.0,
+        "retirement_savings": 0.0,
+        "fixed_expenses": [],
+        "categories": [],
+        "tags": [{"label": "Work", "color": "#3b82f6", "stopped": false}],
+        "months": [{
+            "year": 2024,
+            "month": 6,
+            "is_closed": false,
+            "income_entries": [],
+            "budgets": [],
+            "items": [{
+                "category_label": null,
+                "description": "Transfer",
+                "amount": 1.0,
+                "spent_on": "2024-06-15",
+                "savings_destination": "savings",
+                "tags": ["Work"]
+            }]
+        }]
+    });
+    server
+        .post("/api/import/json")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&transfer_import)
+        .await
+        .assert_status_bad_request();
+
+    let mut invalid_destination = transfer_import;
+    invalid_destination["months"][0]["items"][0]["savings_destination"] = json!("unknown");
+    server
+        .post("/api/import/json")
+        .add_header(auth_name(), auth_value(&token))
+        .json(&invalid_destination)
+        .await
+        .assert_status_bad_request();
+
+    let tags: serde_json::Value = server
+        .get("/api/tags")
+        .add_header(auth_name(), auth_value(&token))
+        .await
+        .json();
+    assert_eq!(tags.as_array().unwrap().len(), 1);
+    assert_eq!(tags[0]["label"], "Existing");
+}
+
+#[tokio::test]
+async fn test_export_tags_are_owner_scoped() {
+    let (server, pool, user_id, token) = setup_with_user().await;
+    let other_user_id = create_test_user(&pool, "otheruser", "password123").await;
+    let mut tag_ids = Vec::new();
+    for (owner, label) in [(user_id, "Mine"), (other_user_id, "Theirs")] {
+        tag_ids.push(sqlx::query_scalar::<_, i64>(
+            "INSERT INTO tags (user_id, label, normalized_label, color) VALUES (?, ?, ?, '#71717a') RETURNING id",
+        )
+        .bind(owner)
+        .bind(label)
+        .bind(label.to_lowercase())
+        .fetch_one(&pool)
+        .await
+        .unwrap());
+    }
+    let category_id = create_test_category(&pool, user_id, "Food", 100.0).await;
+    let month_id = create_test_month(&pool, user_id, 2024, 6).await;
+    let item_id = create_test_item(&pool, month_id, category_id, "Lunch", 10.0, "2024-06-15").await;
+    sqlx::query("INSERT INTO tag_assignments (tag_id, item_id) VALUES (?, ?)")
+        .bind(tag_ids[1])
+        .bind(item_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let exported: serde_json::Value = server
+        .get("/api/export/json")
+        .add_header(auth_name(), auth_value(&token))
+        .await
+        .json();
+    assert_eq!(exported["tags"].as_array().unwrap().len(), 1);
+    assert_eq!(exported["tags"][0]["label"], "Mine");
+    assert_eq!(exported["months"][0]["items"][0]["tags"], json!([]));
 }
