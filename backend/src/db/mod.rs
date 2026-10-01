@@ -193,6 +193,28 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            normalized_label TEXT NOT NULL,
+            color TEXT NOT NULL,
+            stopped INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE UNIQUE INDEX IF NOT EXISTS tags_user_label ON tags(user_id, normalized_label)",
+    )
+    .execute(pool)
+    .await?;
+
     let _ = sqlx::query(
         "ALTER TABLE items ADD COLUMN savings_destination TEXT NOT NULL DEFAULT 'none'",
     )
@@ -271,6 +293,20 @@ pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     // outright: they still point at ids that no longer exist. Make them uncategorized.
     sqlx::query(
         "UPDATE items SET category_id = NULL WHERE category_id IS NOT NULL AND category_id NOT IN (SELECT id FROM budget_categories)",
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS tag_assignments (
+            tag_id INTEGER NOT NULL,
+            item_id INTEGER NOT NULL,
+            PRIMARY KEY (tag_id, item_id),
+            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+            FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+        )
+        "#,
     )
     .execute(pool)
     .await?;

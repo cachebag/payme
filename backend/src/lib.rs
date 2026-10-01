@@ -17,7 +17,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 use handlers::{
     auth, budget, export, fixed_expenses, health, income, items, monthly_data, months,
-    retirement_breakdown, savings, savings_goals, stats,
+    retirement_breakdown, savings, savings_goals, stats, tags,
 };
 use middleware::auth::auth_middleware;
 
@@ -92,6 +92,11 @@ pub fn create_app(pool: SqlitePool) -> Router {
         .route("/api/categories", post(budget::create_category))
         .route("/api/categories/reorder", put(budget::reorder_categories))
         .route("/api/categories/{id}", put(budget::update_category))
+        .route("/api/tags", get(tags::list_tags))
+        .route("/api/tags", post(tags::create_tag))
+        .route("/api/tags/{id}", put(tags::update_tag))
+        .route("/api/tags/{id}/stop", post(tags::stop_tag))
+        .route("/api/tags/{id}/restore", post(tags::restore_tag))
         .route(
             "/api/months/{month_id}/categories/{id}",
             delete(budget::delete_month_category),

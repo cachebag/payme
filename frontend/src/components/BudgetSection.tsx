@@ -11,6 +11,7 @@ import { ReorderControls } from "./ui/ReorderControls";
 import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
 import { useCurrency } from "../context/CurrencyContext";
 import { useSortableReorder } from "../hooks/useSortableReorder";
+import { PRESET_COLORS } from "../constants/colors";
 
 interface BudgetSectionProps {
   monthId: number;
@@ -54,19 +55,6 @@ export function BudgetSection({
     await api.categories.reorder(nextCategories.map((category) => category.id));
     await onUpdate();
   });
-
-  const PRESET_COLORS = [
-    "#71717a",
-    "#ef4444",
-    "#f97316",
-    "#f59e0b",
-    "#10b981",
-    "#06b6d4",
-    "#3b82f6",
-    "#6366f1",
-    "#8b5cf6",
-    "#d946ef",
-  ];
 
   const handleAddCategory = async () => {
     if (!label || !amount) return;

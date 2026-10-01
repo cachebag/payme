@@ -1,7 +1,9 @@
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
+    Json,
 };
+use serde_json::json;
 use thiserror::Error;
 use validator::ValidationErrors;
 
@@ -22,6 +24,9 @@ pub enum PaymeError {
     #[error("Bad request: {0}")]
     BadRequest(String),
 
+    #[error("Tag label conflict")]
+    TagLabelConflict { restorable_tag_id: Option<i64> },
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -34,10 +39,21 @@ impl IntoResponse for PaymeError {
             PaymeError::NotFound => StatusCode::NOT_FOUND,
             PaymeError::Unauthorized => StatusCode::UNAUTHORIZED,
             PaymeError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            PaymeError::TagLabelConflict { .. } => StatusCode::CONFLICT,
             PaymeError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         tracing::error!("{self}");
-        status.into_response()
+        match self {
+            PaymeError::TagLabelConflict { restorable_tag_id } => (
+                status,
+                Json(json!({
+                    "error": "Tag label already exists",
+                    "restorable_tag_id": restorable_tag_id
+                })),
+            )
+                .into_response(),
+            _ => status.into_response(),
+        }
     }
 }
 

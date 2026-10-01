@@ -1,5 +1,14 @@
 const BASE_URL = "/api";
 
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public restorableTagId: number | null = null
+  ) {
+    super(`HTTP ${status}`);
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -14,7 +23,8 @@ async function request<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    const body = await response.json().catch(() => null);
+    throw new ApiError(response.status, body?.restorable_tag_id ?? null);
   }
 
   if (response.status === 204) {
@@ -122,6 +132,16 @@ export const api = {
     // earlier months, closed months, and recorded transactions alone.
     delete: (monthId: number, id: number) =>
       request<void>(`/months/${monthId}/categories/${id}`, { method: "DELETE" }),
+  },
+
+  tags: {
+    list: () => request<Tag[]>("/tags"),
+    create: (data: { label: string; color: string }) =>
+      request<Tag>("/tags", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: { label?: string; color?: string }) =>
+      request<Tag>(`/tags/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    stop: (id: number) => request<Tag>(`/tags/${id}/stop`, { method: "POST" }),
+    restore: (id: number) => request<Tag>(`/tags/${id}/restore`, { method: "POST" }),
   },
 
   budgets: {
@@ -358,6 +378,15 @@ export interface BudgetCategory {
   label: string;
   default_amount: number;
   color: string;
+}
+
+export interface Tag {
+  id: number;
+  user_id: number;
+  label: string;
+  color: string;
+  stopped: boolean;
+  usage_count: number;
 }
 
 export interface MonthlyBudget {

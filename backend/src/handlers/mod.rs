@@ -11,3 +11,4 @@ pub mod retirement_breakdown;
 pub mod savings;
 pub mod savings_goals;
 pub mod stats;
+pub mod tags;

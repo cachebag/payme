@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Edit2, Check, X, Search, Filter } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, Search, Filter, Tags } from "lucide-react";
 import { ItemWithCategory, BudgetCategory, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
@@ -9,6 +9,7 @@ import { ReorderControls } from "./ui/ReorderControls";
 import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
 import { useCurrency } from "../context/CurrencyContext";
 import { useSortableReorder } from "../hooks/useSortableReorder";
+import { ManageTags } from "./ManageTags";
 
 interface ItemsSectionProps {
   monthId: number;
@@ -32,6 +33,7 @@ export function ItemsSection({
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
+  const [isManagingTags, setIsManagingTags] = useState(false);
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -149,20 +151,32 @@ export function ItemsSection({
         <h3 className="text-sm font-semibold text-charcoal-700 dark:text-sand-200">
           Spending Items
         </h3>
-        {!isReadOnly && !isAdding && (
+        <div className="flex items-center gap-1">
           <button
-            onClick={() => {
-              setIsAdding(true);
-              if (categories.length > 0) {
-                setCategoryId(categories[0].id.toString());
-              }
-            }}
+            onClick={() => setIsManagingTags(true)}
+            aria-label="Manage Tags"
             className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
           >
-            <Plus size={16} />
+            <Tags size={16} />
           </button>
-        )}
+          {!isReadOnly && !isAdding && (
+            <button
+              onClick={() => {
+                setIsAdding(true);
+                if (categories.length > 0) {
+                  setCategoryId(categories[0].id.toString());
+                }
+              }}
+              aria-label="Add Spending Item"
+              className="p-2 md:p-1 hover:bg-sand-200 dark:hover:bg-charcoal-800 active:bg-sand-300 dark:active:bg-charcoal-700 transition-colors rounded touch-manipulation"
+            >
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
       </div>
+
+      <ManageTags isOpen={isManagingTags} onClose={() => setIsManagingTags(false)} />
 
       {isAdding && categories.length === 0 && (
         <div className="mb-4 p-4 bg-sand-100 dark:bg-charcoal-800 text-center rounded-lg">

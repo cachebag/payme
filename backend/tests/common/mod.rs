@@ -25,7 +25,9 @@ pub async fn create_test_pool() -> SqlitePool {
         .await
         .expect("Failed to create in-memory database");
 
-    run_migrations(&pool).await;
+    payme::db::run_migrations(&pool)
+        .await
+        .expect("Failed to run migrations");
     pool
 }
 
