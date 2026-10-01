@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Edit2, Check, X, Search, Filter, Tags } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, Search, Filter, Tags, Tag } from "lucide-react";
 import { ItemWithCategory, BudgetCategory, TagSummary, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
@@ -12,30 +12,62 @@ import { useSortableReorder } from "../hooks/useSortableReorder";
 import { ManageTags } from "./ManageTags";
 import { TagPicker } from "./TagPicker";
 
-function TagChips({ tags }: { tags: TagSummary[] }) {
-  if (tags.length === 0) return null;
+function DesktopTagChips({ tags }: { tags: TagSummary[] }) {
+  if (tags.length === 0) return <span className="text-charcoal-400">–</span>;
   const names = tags.map((tag) => tag.label).join(", ");
   return (
     <div
-      className="group relative mt-1 flex w-fit max-w-full gap-1 outline-none"
+      className="group relative flex w-fit max-w-full items-center gap-1 outline-none"
       tabIndex={0}
       aria-label={`Tags: ${names}`}
       title={names}
     >
-      {tags.slice(0, 3).map((tag) => (
+      {tags.slice(0, 2).map((tag) => (
         <span
           key={tag.id}
-          className="max-w-20 truncate rounded-full border px-1.5 py-0.5 text-[10px]"
+          className="max-w-28 truncate rounded-md px-2 py-1 text-xs"
           style={{ color: tag.color, borderColor: `${tag.color}60`, backgroundColor: `${tag.color}18` }}
         >
           {tag.label}
         </span>
       ))}
-      {tags.length > 3 && <span className="text-[10px] text-charcoal-500">+{tags.length - 3}</span>}
+      {tags.length > 2 && (
+        <span className="rounded-md bg-sand-200 px-2 py-1 text-xs text-charcoal-500 dark:bg-charcoal-800 dark:text-charcoal-300">
+          +{tags.length - 2}
+        </span>
+      )}
       <span className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden whitespace-nowrap rounded bg-charcoal-900 px-2 py-1 text-xs text-white shadow group-hover:block group-focus:block">
         {names}
       </span>
     </div>
+  );
+}
+
+function MobileTagMenu({ tags }: { tags: TagSummary[] }) {
+  if (tags.length === 0) return <span className="text-charcoal-400">–</span>;
+  return (
+    <details className="relative w-fit">
+      <summary
+        className="flex cursor-pointer list-none items-center gap-1 rounded-md border border-sand-300 px-2 py-1 text-xs text-charcoal-600 dark:border-charcoal-700 dark:text-sand-300 [&::-webkit-details-marker]:hidden"
+        aria-label={`Show ${tags.length} Tags`}
+      >
+        <Tag size={14} />
+        {tags.length}
+      </summary>
+      <div className="absolute left-1/2 top-full z-30 mt-2 min-w-36 -translate-x-1/2 rounded-md border border-sand-300 bg-charcoal-50 p-3 shadow-xl dark:border-charcoal-700 dark:bg-charcoal-900">
+        <div className="mb-2 text-xs font-semibold text-charcoal-700 dark:text-sand-200">
+          Tags <span className="ml-1 text-charcoal-400">{tags.length}</span>
+        </div>
+        <div className="space-y-2">
+          {tags.map((tag) => (
+            <div key={tag.id} className="flex items-center gap-2 whitespace-nowrap text-xs text-charcoal-700 dark:text-sand-200">
+              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: tag.color }} />
+              {tag.label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
   );
 }
 
@@ -317,11 +349,11 @@ export function ItemsSection({
         </div>
       </div>
 
-      <div className="overflow-x-auto -mx-4 px-4">
-        <table className="w-full text-sm">
+      <div className="-mx-4 overflow-visible px-4">
+        <table className="w-full table-fixed text-sm sm:table-auto">
           <thead>
             <tr className="border-b border-sand-300 dark:border-charcoal-700">
-              <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
+              <th className="w-14 text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs sm:w-auto md:text-sm">
                 Date
               </th>
               <th className="text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
@@ -330,10 +362,13 @@ export function ItemsSection({
               <th className="hidden text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs sm:table-cell md:text-sm">
                 Category
               </th>
-              <th className="text-right py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs md:text-sm">
+              <th className="w-14 text-left py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs sm:w-auto md:text-sm">
+                Tags
+              </th>
+              <th className="w-20 text-right py-2 px-1 font-medium text-charcoal-600 dark:text-sand-400 text-xs sm:w-auto md:text-sm">
                 Amount
               </th>
-              {!isReadOnly && <th className="w-28 md:w-32"></th>}
+              {!isReadOnly && <th className="w-24 sm:w-28 md:w-32"></th>}
             </tr>
           </thead>
           <tbody>
@@ -366,18 +401,20 @@ export function ItemsSection({
                             onChange={(e) => setDescription(e.target.value)}
                             className="text-xs"
                           />
-                          <div className="mt-2 min-w-48">
-                            <TagPicker selectedIds={tagIds} onChange={setTagIds} />
-                          </div>
-                          {formError && <p className="mt-2 text-xs text-terracotta-600">{formError}</p>}
                         </td>
-                        <td className="py-2">
+                        <td className="hidden py-2 sm:table-cell">
                           <Select
                             options={editCategoryOptions}
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
                             className="text-xs"
                           />
+                        </td>
+                        <td className="py-2">
+                          <div className="min-w-0 sm:min-w-48">
+                            <TagPicker selectedIds={tagIds} onChange={setTagIds} />
+                          </div>
+                          {formError && <p className="mt-2 text-xs text-terracotta-600">{formError}</p>}
                         </td>
                         <td className="py-2">
                           <Input
@@ -421,7 +458,6 @@ export function ItemsSection({
                             />
                             <span className="truncate">{item.description}</span>
                           </div>
-                          <TagChips tags={item.tags} />
                         </td>
                         <td className="hidden py-2 px-1 sm:table-cell">
                           <span
@@ -434,6 +470,14 @@ export function ItemsSection({
                           >
                             {item.category_label ?? "Uncategorized"}
                           </span>
+                        </td>
+                        <td className="py-2 px-1">
+                          <div className="sm:hidden">
+                            <MobileTagMenu tags={item.tags} />
+                          </div>
+                          <div className="hidden sm:block">
+                            <DesktopTagChips tags={item.tags} />
+                          </div>
                         </td>
                         <td className={`py-2 px-1 text-right font-medium text-xs md:text-sm whitespace-nowrap text-terracotta-600 dark:text-terracotta-400`}>
                           {formatCurrency(item.amount)}
