@@ -23,7 +23,7 @@ printpdf = "0.12.5"
 uuid = { version = "1.24.0", features = ["v4"] }
 dotenvy = "0.15.7"
 time = "0.3.55"
-utoipa = { version = "5.5.0", features = ["axum_extras", "chrono" ] }
+utoipa = { version = "6.0.0", features = ["axum_extras", "chrono" ] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 thiserror = "2.0.19"
 tracing = "0.1.44"
