@@ -8,6 +8,7 @@ use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
 use crate::error::PaymeError;
+use crate::handlers::items::load_item_tags;
 use crate::middleware::auth::Claims;
 use crate::models::{
     IncomeEntry, ItemWithCategory, Month, MonthSummary, MonthlyBudgetWithCategory,
@@ -399,7 +400,7 @@ async fn get_month_summary(
         )
         .collect();
 
-    let items: Vec<ItemWithCategory> = sqlx::query_as(
+    let mut items: Vec<ItemWithCategory> = sqlx::query_as(
         r#"
         SELECT i.id, i.month_id, i.category_id, bc.label as category_label, bc.color as category_color, i.description, i.amount, i.spent_on, i.savings_destination
         FROM items i
@@ -411,6 +412,8 @@ async fn get_month_summary(
     .bind(month_id)
     .fetch_all(pool)
     .await?;
+
+    load_item_tags(pool, month_id, &mut items).await?;
 
     let budgets: Vec<MonthlyBudgetWithCategory> = budgets
         .into_iter()

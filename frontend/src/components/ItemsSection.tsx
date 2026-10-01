@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, Trash2, Edit2, Check, X, Search, Filter, Tags } from "lucide-react";
-import { ItemWithCategory, BudgetCategory, api } from "../api/client";
+import { ItemWithCategory, BudgetCategory, TagSummary, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
@@ -10,6 +10,34 @@ import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
 import { useCurrency } from "../context/CurrencyContext";
 import { useSortableReorder } from "../hooks/useSortableReorder";
 import { ManageTags } from "./ManageTags";
+import { TagPicker } from "./TagPicker";
+
+function TagChips({ tags }: { tags: TagSummary[] }) {
+  if (tags.length === 0) return null;
+  const names = tags.map((tag) => tag.label).join(", ");
+  return (
+    <div
+      className="group relative mt-1 flex w-fit max-w-full gap-1 outline-none"
+      tabIndex={0}
+      aria-label={`Tags: ${names}`}
+      title={names}
+    >
+      {tags.slice(0, 3).map((tag) => (
+        <span
+          key={tag.id}
+          className="max-w-20 truncate rounded-full border px-1.5 py-0.5 text-[10px]"
+          style={{ color: tag.color, borderColor: `${tag.color}60`, backgroundColor: `${tag.color}18` }}
+        >
+          {tag.label}
+        </span>
+      ))}
+      {tags.length > 3 && <span className="text-[10px] text-charcoal-500">+{tags.length - 3}</span>}
+      <span className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden whitespace-nowrap rounded bg-charcoal-900 px-2 py-1 text-xs text-white shadow group-hover:block group-focus:block">
+        {names}
+      </span>
+    </div>
+  );
+}
 
 interface ItemsSectionProps {
   monthId: number;
@@ -34,35 +62,47 @@ export function ItemsSection({
   const [categoryId, setCategoryId] = useState<string>("");
   const [spentOn, setSpentOn] = useState(new Date().toISOString().split("T")[0]);
   const [isManagingTags, setIsManagingTags] = useState(false);
+  const [tagIds, setTagIds] = useState<number[]>([]);
+  const [formError, setFormError] = useState("");
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleAdd = async () => {
     if (!description || !amount || !categoryId) return;
-    await api.items.create(monthId, {
-      description,
-      amount: parseFloat(amount),
-      category_id: parseInt(categoryId),
-      spent_on: spentOn,
-      savings_destination: "none",
-    });
-    resetForm();
-    await onUpdate();
+    try {
+      await api.items.create(monthId, {
+        description,
+        amount: parseFloat(amount),
+        category_id: parseInt(categoryId),
+        spent_on: spentOn,
+        savings_destination: "none",
+        tag_ids: tagIds,
+      });
+      resetForm();
+      await onUpdate();
+    } catch {
+      setFormError("Could not save this Spending Item. Check the selected Tags and try again.");
+    }
   };
 
   const handleUpdate = async (id: number) => {
     if (!description || !amount) return;
     // An uncategorized item can be saved without picking a category; it stays uncategorized.
-    await api.items.update(monthId, id, {
-      description,
-      amount: parseFloat(amount),
-      ...(categoryId ? { category_id: parseInt(categoryId) } : {}),
-      spent_on: spentOn,
-      savings_destination: "none",
-    });
-    resetForm();
-    await onUpdate();
+    try {
+      await api.items.update(monthId, id, {
+        description,
+        amount: parseFloat(amount),
+        ...(categoryId ? { category_id: parseInt(categoryId) } : {}),
+        spent_on: spentOn,
+        savings_destination: "none",
+        tag_ids: tagIds,
+      });
+      resetForm();
+      await onUpdate();
+    } catch {
+      setFormError("Could not save this Spending Item. Check the selected Tags and try again.");
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -76,6 +116,8 @@ export function ItemsSection({
     setAmount(item.amount.toString());
     setCategoryId(item.category_id?.toString() ?? "");
     setSpentOn(item.spent_on);
+    setTagIds(item.tags.map((tag) => tag.id));
+    setFormError("");
   };
 
   const resetForm = () => {
@@ -85,6 +127,8 @@ export function ItemsSection({
     setCategoryId("");
     setSpentOn(new Date().toISOString().split("T")[0]);
     setIsAdding(false);
+    setTagIds([]);
+    setFormError("");
   };
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.label }));
@@ -230,6 +274,10 @@ export function ItemsSection({
               Cancel
             </Button>
           </div>
+          <div className="mt-3">
+            <TagPicker selectedIds={tagIds} onChange={setTagIds} />
+          </div>
+          {formError && <p className="mt-2 text-xs text-terracotta-600">{formError}</p>}
         </div>
       )}
 
@@ -318,6 +366,10 @@ export function ItemsSection({
                             onChange={(e) => setDescription(e.target.value)}
                             className="text-xs"
                           />
+                          <div className="mt-2 min-w-48">
+                            <TagPicker selectedIds={tagIds} onChange={setTagIds} />
+                          </div>
+                          {formError && <p className="mt-2 text-xs text-terracotta-600">{formError}</p>}
                         </td>
                         <td className="py-2">
                           <Select
@@ -369,6 +421,7 @@ export function ItemsSection({
                             />
                             <span className="truncate">{item.description}</span>
                           </div>
+                          <TagChips tags={item.tags} />
                         </td>
                         <td className="hidden py-2 px-1 sm:table-cell">
                           <span

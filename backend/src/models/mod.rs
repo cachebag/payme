@@ -121,6 +121,16 @@ pub struct ItemWithCategory {
     pub amount: f64,
     pub spent_on: NaiveDate,
     pub savings_destination: String,
+    #[sqlx(skip)]
+    pub tags: Vec<TagSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct TagSummary {
+    pub id: i64,
+    pub label: String,
+    pub color: String,
+    pub stopped: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

@@ -256,6 +256,7 @@ mod tests {
                 amount: 150.0,
                 spent_on: NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
                 savings_destination: "none".to_string(),
+                tags: vec![],
             }],
             savings: Some(MonthlySavings {
                 id: 1,

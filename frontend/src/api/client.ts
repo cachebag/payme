@@ -182,9 +182,9 @@ export const api = {
     list: (monthId: number) => request<ItemWithCategory[]>(`/months/${monthId}/items`),
     create: (
       monthId: number,
-      data: { category_id?: number; description: string; amount: number; spent_on: string; savings_destination?: string }
+      data: { category_id?: number; description: string; amount: number; spent_on: string; savings_destination?: string; tag_ids?: number[] }
     ) =>
-      request<Item>(`/months/${monthId}/items`, {
+      request<ItemWithCategory>(`/months/${monthId}/items`, {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -197,9 +197,10 @@ export const api = {
         amount?: number;
         spent_on?: string;
         savings_destination?: string;
+        tag_ids?: number[];
       }
     ) =>
-      request<Item>(`/months/${monthId}/items/${itemId}`, {
+      request<ItemWithCategory>(`/months/${monthId}/items/${itemId}`, {
         method: "PUT",
         body: JSON.stringify(data),
       }),
@@ -427,6 +428,14 @@ export interface Item {
 export interface ItemWithCategory extends Item {
   category_label: string | null;
   category_color: string | null;
+  tags: TagSummary[];
+}
+
+export interface TagSummary {
+  id: number;
+  label: string;
+  color: string;
+  stopped: boolean;
 }
 
 export interface MonthlySavings {
