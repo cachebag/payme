@@ -12,6 +12,12 @@ use crate::error::PaymeError;
 use crate::middleware::auth::Claims;
 use crate::models::{MonthlyFixedExpense, MonthlySavings};
 
+#[derive(serde::Serialize, ToSchema)]
+pub struct ApplyForwardResponse {
+    /// How many later open months were overwritten.
+    pub months_updated: i64,
+}
+
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct CreateMonthlyFixedExpense {
     #[validate(length(min = 1, max = 100))]
@@ -269,6 +275,69 @@ pub async fn delete_monthly_fixed_expense(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/months/{month_id}/fixed-expenses/apply-forward",
+    params(("month_id" = i64, Path, description = "Month ID")),
+    responses(
+        (status = 200, body = ApplyForwardResponse),
+        (status = 404, description = "Month not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Months",
+    summary = "Apply this month's fixed expenses to future months",
+    description = "Replaces the fixed expenses of every later open month with an exact copy of this month's: same set, same amounts, same order. Earlier months and closed months are left untouched."
+)]
+pub async fn apply_monthly_fixed_expenses_forward(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(month_id): Path<i64>,
+) -> Result<Json<ApplyForwardResponse>, PaymeError> {
+    let (year, month): (i64, i64) =
+        sqlx::query_as("SELECT year, month FROM months WHERE id = ? AND user_id = ?")
+            .bind(month_id)
+            .bind(claims.sub)
+            .fetch_optional(&pool)
+            .await?
+            .ok_or(PaymeError::NotFound)?;
+
+    let source: Vec<(String, f64, i64, Option<i64>)> = sqlx::query_as(
+        "SELECT label, amount, sort_order, COALESCE(group_id, id) FROM monthly_fixed_expenses WHERE month_id = ? ORDER BY sort_order, id",
+    )
+    .bind(month_id)
+    .fetch_all(&pool)
+    .await?;
+
+    let later_open_months = later_open_month_ids(&pool, claims.sub, year, month).await?;
+    let months_updated = later_open_months.len() as i64;
+
+    let mut tx = pool.begin().await?;
+    for later_month_id in later_open_months {
+        // "Apply forward" means the later month should look exactly like this one, so its
+        // own list is replaced wholesale rather than merged.
+        sqlx::query("DELETE FROM monthly_fixed_expenses WHERE month_id = ?")
+            .bind(later_month_id)
+            .execute(&mut *tx)
+            .await?;
+
+        for (index, (label, amount, _sort_order, group_id)) in source.iter().enumerate() {
+            sqlx::query(
+                "INSERT INTO monthly_fixed_expenses (month_id, label, amount, sort_order, group_id) VALUES (?, ?, ?, ?, ?)",
+            )
+            .bind(later_month_id)
+            .bind(label)
+            .bind(amount)
+            .bind(index as i64)
+            .bind(group_id)
+            .execute(&mut *tx)
+            .await?;
+        }
+    }
+    tx.commit().await?;
+
+    Ok(Json(ApplyForwardResponse { months_updated }))
 }
 
 pub async fn reorder_monthly_fixed_expenses(
