@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Check, X, Settings } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, Settings, FastForward } from "lucide-react";
 import { MonthlyBudgetWithCategory, BudgetCategory, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
@@ -29,6 +29,8 @@ export function BudgetSection({
 }: BudgetSectionProps) {
   const { formatCurrency } = useCurrency();
   const [isManaging, setIsManaging] = useState(false);
+  const [isConfirmingApply, setIsConfirmingApply] = useState(false);
+  const [applyResult, setApplyResult] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ categoryId: number; label: string } | null>(
     null
   );
@@ -103,6 +105,17 @@ export function BudgetSection({
     if (!pendingDelete) return;
     await api.categories.delete(monthId, pendingDelete.categoryId);
     setPendingDelete(null);
+    await onUpdate();
+  };
+
+  const confirmApplyForward = async () => {
+    setIsConfirmingApply(false);
+    const { months_updated } = await api.budgets.applyForward(monthId);
+    setApplyResult(
+      months_updated === 0
+        ? "No later open months to update. Defaults for new months were updated."
+        : `Applied to ${months_updated} later month${months_updated === 1 ? "" : "s"}.`
+    );
     await onUpdate();
   };
 
@@ -261,7 +274,14 @@ export function BudgetSection({
         </div>
       </Card>
 
-      <Modal isOpen={isManaging} onClose={() => setIsManaging(false)} title="Manage Categories">
+      <Modal
+        isOpen={isManaging}
+        onClose={() => {
+          setIsManaging(false);
+          setApplyResult(null);
+        }}
+        title="Manage Categories"
+      >
         <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-4">
           Categories define your budget types. Default amounts apply to new months. To stop
           using one, remove it from the budget list &mdash; the months before it keep their
@@ -406,8 +426,33 @@ export function BudgetSection({
               Add Category
             </Button>
           )}
+
+          <div className="pt-3 mt-2 border-t border-sand-300 dark:border-charcoal-700">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsConfirmingApply(true)}
+              className="w-full"
+            >
+              <FastForward size={16} className="mr-2" />
+              Apply this month's budget to future months
+            </Button>
+            <p className="mt-2 text-xs text-charcoal-500 dark:text-charcoal-400 text-center">
+              {applyResult ??
+                "Copies this month's categories and limits into every later open month. Spending is never copied."}
+            </p>
+          </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={isConfirmingApply}
+        title="Apply budget forward?"
+        message="Every later open month will budget the same categories with the same limits as this month. Categories not budgeted this month are dropped from those months, though their transactions stay. Closed months are left alone."
+        confirmLabel="Apply"
+        onConfirm={confirmApplyForward}
+        onCancel={() => setIsConfirmingApply(false)}
+      />
 
       <ConfirmDialog
         isOpen={pendingDelete !== null}

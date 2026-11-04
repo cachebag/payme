@@ -9,7 +9,7 @@ use utoipa::ToSchema;
 use validator::Validate;
 
 use crate::error::PaymeError;
-use crate::handlers::monthly_data::later_open_month_ids;
+use crate::handlers::monthly_data::{later_open_month_ids, ApplyForwardResponse};
 use crate::middleware::auth::Claims;
 use crate::models::{BudgetCategory, MonthlyBudget};
 
@@ -328,6 +328,80 @@ pub async fn list_monthly_budgets(
     .await?;
 
     Ok(Json(budgets))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/months/{month_id}/budgets/apply-forward",
+    params(("month_id" = i64, Path, description = "Month ID")),
+    responses(
+        (status = 200, body = ApplyForwardResponse),
+        (status = 404, description = "Month not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Budgets",
+    summary = "Apply this month's budget limits to future months",
+    description = "Makes every later open month budget the same categories with the same limits as this month. Categories this month does not budget are dropped from those months; their transactions are kept. Spending is never copied. The category defaults used to seed brand-new months are updated to match as well. Earlier months and closed months are left untouched."
+)]
+pub async fn apply_monthly_budgets_forward(
+    State(pool): State<SqlitePool>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(month_id): Path<i64>,
+) -> Result<Json<ApplyForwardResponse>, PaymeError> {
+    let (year, month): (i64, i64) =
+        sqlx::query_as("SELECT year, month FROM months WHERE id = ? AND user_id = ?")
+            .bind(month_id)
+            .bind(claims.sub)
+            .fetch_optional(&pool)
+            .await?
+            .ok_or(PaymeError::NotFound)?;
+
+    let source: Vec<(i64, f64)> = sqlx::query_as(
+        "SELECT category_id, allocated_amount FROM monthly_budgets WHERE month_id = ?",
+    )
+    .bind(month_id)
+    .fetch_all(&pool)
+    .await?;
+
+    let later_open_months = later_open_month_ids(&pool, claims.sub, year, month).await?;
+    let months_updated = later_open_months.len() as i64;
+
+    let mut tx = pool.begin().await?;
+
+    // Only the limit carries forward. Transactions belong to the month they were spent in
+    // and are never touched here.
+    for later_month_id in &later_open_months {
+        sqlx::query("DELETE FROM monthly_budgets WHERE month_id = ?")
+            .bind(later_month_id)
+            .execute(&mut *tx)
+            .await?;
+
+        for (category_id, allocated_amount) in &source {
+            sqlx::query(
+                "INSERT INTO monthly_budgets (month_id, category_id, allocated_amount) VALUES (?, ?, ?)",
+            )
+            .bind(later_month_id)
+            .bind(category_id)
+            .bind(allocated_amount)
+            .execute(&mut *tx)
+            .await?;
+        }
+    }
+
+    // New months are seeded from category defaults, so "going forward" has to include the
+    // template too or the next month created would silently revert to the old limits.
+    for (category_id, allocated_amount) in &source {
+        sqlx::query("UPDATE budget_categories SET default_amount = ? WHERE id = ? AND user_id = ?")
+            .bind(allocated_amount)
+            .bind(category_id)
+            .bind(claims.sub)
+            .execute(&mut *tx)
+            .await?;
+    }
+
+    tx.commit().await?;
+
+    Ok(Json(ApplyForwardResponse { months_updated }))
 }
 
 #[utoipa::path(
