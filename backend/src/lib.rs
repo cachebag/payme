@@ -105,6 +105,10 @@ pub fn create_app(pool: SqlitePool) -> Router {
             get(budget::list_monthly_budgets),
         )
         .route(
+            "/api/months/{month_id}/budgets/apply-forward",
+            post(budget::apply_monthly_budgets_forward),
+        )
+        .route(
             "/api/months/{month_id}/budgets/{id}",
             put(budget::update_monthly_budget),
         )
