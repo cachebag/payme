@@ -131,6 +131,11 @@ export const api = {
         method: "PUT",
         body: JSON.stringify({ allocated_amount: amount }),
       }),
+    // Copies this month's category set and limits (never spending) into every later open month.
+    applyForward: (monthId: number) =>
+      request<ApplyForwardResponse>(`/months/${monthId}/budgets/apply-forward`, {
+        method: "POST",
+      }),
   },
 
   income: {
@@ -259,6 +264,11 @@ export const api = {
       }),
     delete: (monthId: number, id: number) =>
       request<void>(`/months/${monthId}/fixed-expenses/${id}`, { method: "DELETE" }),
+    // Replaces every later open month's list with this month's: same set, amounts, and order.
+    applyForward: (monthId: number) =>
+      request<ApplyForwardResponse>(`/months/${monthId}/fixed-expenses/apply-forward`, {
+        method: "POST",
+      }),
   },
 
   retirementSavings: {
@@ -343,6 +353,10 @@ export interface FixedExpense {
   user_id: number;
   label: string;
   amount: number;
+}
+
+export interface ApplyForwardResponse {
+  months_updated: number;
 }
 
 export interface MonthlyFixedExpense {

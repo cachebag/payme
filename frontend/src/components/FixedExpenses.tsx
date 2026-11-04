@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Check, X, Settings } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, Settings, FastForward } from "lucide-react";
 import { MonthlyFixedExpense, api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { ReorderControls } from "./ui/ReorderControls";
 import { SortableHandle, SortableItem, SortableList } from "./ui/SortableList";
 import { useCurrency } from "../context/CurrencyContext";
@@ -20,6 +21,8 @@ interface FixedExpensesProps {
 export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: FixedExpensesProps) {
   const { formatCurrency } = useCurrency();
   const [isManaging, setIsManaging] = useState(false);
+  const [isConfirmingApply, setIsConfirmingApply] = useState(false);
+  const [applyResult, setApplyResult] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
@@ -77,6 +80,17 @@ export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: Fixed
     setLabel("");
     setAmount("");
     setIsAdding(false);
+  };
+
+  const confirmApplyForward = async () => {
+    setIsConfirmingApply(false);
+    const { months_updated } = await api.monthlyFixedExpenses.applyForward(monthId);
+    setApplyResult(
+      months_updated === 0
+        ? "No later open months to update."
+        : `Applied to ${months_updated} later month${months_updated === 1 ? "" : "s"}.`
+    );
+    await onUpdate();
   };
 
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -150,7 +164,14 @@ export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: Fixed
         )}
       </Card>
 
-      <Modal isOpen={isManaging} onClose={() => setIsManaging(false)} title="Manage Fixed Expenses">
+      <Modal
+        isOpen={isManaging}
+        onClose={() => {
+          setIsManaging(false);
+          setApplyResult(null);
+        }}
+        title="Manage Fixed Expenses"
+      >
         <div className="space-y-3">
           <SortableList ids={expenseIds} onDragEnd={handleExpenseDragEnd}>
             {orderedExpenses.map((expense, index) => (
@@ -258,8 +279,34 @@ export function FixedExpenses({ monthId, expenses, isReadOnly, onUpdate }: Fixed
               Add Expense
             </Button>
           )}
+
+          <div className="pt-3 mt-2 border-t border-sand-300 dark:border-charcoal-700">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsConfirmingApply(true)}
+              disabled={isReadOnly}
+              className="w-full"
+            >
+              <FastForward size={16} className="mr-2" />
+              Apply to future months
+            </Button>
+            <p className="mt-2 text-xs text-charcoal-500 dark:text-charcoal-400 text-center">
+              {applyResult ??
+                "Makes every later open month match this list: same expenses, amounts, and order."}
+            </p>
+          </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={isConfirmingApply}
+        title="Apply fixed expenses forward?"
+        message="Every later open month will be overwritten to match this month's fixed expenses exactly, including amounts and order. Closed months are left alone."
+        confirmLabel="Apply"
+        onConfirm={confirmApplyForward}
+        onCancel={() => setIsConfirmingApply(false)}
+      />
     </>
   );
 }
