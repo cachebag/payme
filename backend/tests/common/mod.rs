@@ -1,9 +1,6 @@
 #![allow(dead_code)]
 
-use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
-    Argon2,
-};
+use argon2::{password_hash::PasswordHasher, Argon2};
 use axum::Router;
 use axum_test::TestServer;
 use chrono::{Duration, Utc};
@@ -203,10 +200,8 @@ async fn run_migrations(pool: &SqlitePool) {
 }
 
 pub async fn create_test_user(pool: &SqlitePool, username: &str, password: &str) -> i64 {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let password_hash = argon2
-        .hash_password(password.as_bytes(), &salt)
+    let password_hash = Argon2::default()
+        .hash_password(password.as_bytes())
         .expect("Failed to hash password")
         .to_string();
 

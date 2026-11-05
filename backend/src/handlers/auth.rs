@@ -1,5 +1,5 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{PasswordHasher, PasswordVerifier},
     Argon2,
 };
 use axum::{extract::State, response::IntoResponse, Json};
@@ -49,10 +49,8 @@ pub async fn register(
     Json(payload): Json<AuthRequest>,
 ) -> Result<impl IntoResponse, PaymeError> {
     payload.validate()?;
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let password_hash = argon2
-        .hash_password(payload.password.as_bytes(), &salt)
+    let password_hash = Argon2::default()
+        .hash_password(payload.password.as_bytes())
         .map_err(|e| PaymeError::Internal(e.to_string()))?
         .to_string();
 
@@ -96,10 +94,8 @@ pub async fn login(
             .await?
             .ok_or(PaymeError::Unauthorized)?;
 
-    let parsed_hash =
-        PasswordHash::new(&user.2).map_err(|e| PaymeError::Internal(e.to_string()))?;
     Argon2::default()
-        .verify_password(payload.password.as_bytes(), &parsed_hash)
+        .verify_password(payload.password.as_bytes(), user.2.as_str())
         .map_err(|_| PaymeError::Unauthorized)?;
 
     let secret = std::env::var("JWT_SECRET")
@@ -278,16 +274,12 @@ pub async fn change_password(
         .await?
         .ok_or(PaymeError::NotFound)?;
 
-    let parsed_hash =
-        PasswordHash::new(&user.0).map_err(|e| PaymeError::Internal(e.to_string()))?;
     Argon2::default()
-        .verify_password(payload.current_password.as_bytes(), &parsed_hash)
+        .verify_password(payload.current_password.as_bytes(), user.0.as_str())
         .map_err(|_| PaymeError::Unauthorized)?;
 
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let new_password_hash = argon2
-        .hash_password(payload.new_password.as_bytes(), &salt)
+    let new_password_hash = Argon2::default()
+        .hash_password(payload.new_password.as_bytes())
         .map_err(|e| PaymeError::Internal(e.to_string()))?
         .to_string();
 
@@ -335,10 +327,8 @@ pub async fn clear_all_data(
         .await?
         .ok_or(PaymeError::NotFound)?;
 
-    let parsed_hash =
-        PasswordHash::new(&user.0).map_err(|e| PaymeError::Internal(e.to_string()))?;
     Argon2::default()
-        .verify_password(payload.password.as_bytes(), &parsed_hash)
+        .verify_password(payload.password.as_bytes(), user.0.as_str())
         .map_err(|_| PaymeError::Unauthorized)?;
 
     sqlx::query("DELETE FROM users WHERE id = ?")
